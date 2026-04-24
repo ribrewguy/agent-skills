@@ -1,0 +1,15 @@
+{
+  "name": "ribrewguy-skills",
+  "owner": {
+    "name": "ribrewguy",
+    "url": "https://github.com/ribrewguy"
+  },
+  "description": "Claude Code skills authored and maintained by ribrewguy. Each skill is designed, evaluated, and iterated with the skill-creator workflow.",
+  "plugins": [
+    {
+      "name": "rest-api-design",
+      "source": ".",
+      "description": "HTTP REST API design and review skill with a 4-case eval set covering design-from-scratch, PR audit with severity tags, payments idempotency traps, and bounded-list discipline."
+    }
+  ]
+}
