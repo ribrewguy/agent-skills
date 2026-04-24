@@ -1,119 +1,180 @@
 # agent-skills
 
-Claude Code skills authored and maintained by [@ribrewguy](https://github.com/ribrewguy). Each skill is designed, evaluated, and iterated with the [skill-creator](https://github.com/anthropics/skills) workflow, and ships with a reproducible eval set so the skill's expected output is documented in verifiable terms — not just prose.
+A small, growing collection of skills I've built for AI coding tools. They're just markdown with a bit of YAML frontmatter — the `SKILL.md` format that [Claude Code](https://claude.com/code), [Gemini CLI](https://geminicli.com), [OpenAI Codex](https://developers.openai.com/codex), [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli), and [Cline](https://docs.cline.bot) all read natively. Other tools (Cursor, Aider) don't have a native skills system, but you can point their rule files at these.
 
-## Skills in this repo
+Each skill gets shaped the same way: write a draft, run it against its own test prompts, read the outputs next to a baseline, revise, repeat. The test prompts and per-case assertions ship with the skill in `evals/evals.json`, so "the skill works" means something you can actually measure instead of vibes.
 
-| Skill | Purpose |
-|---|---|
-| [`rest-api-design`](plugins/rest-api-design/skills/rest-api-design/SKILL.md) | Design and review HTTP REST APIs. Covers resource-oriented URLs, HTTP method semantics (PATCH for state transitions — not sub-resource verbs), status codes, domain-expressive error codes that don't echo HTTP status, flat error envelopes, cursor/offset/page pagination, idempotency keys on side-effectful POSTs, content-type negotiation (NDJSON / SSE / vendor media types), patch format selection (plain JSON / `merge-patch+json` / `json-patch+json`), typed contracts across TypeScript / Python / Go / Rust, and reviewer-grade output conventions with severity tagging. |
+## What's in here
+
+### `rest-api-design`
+
+For designing or reviewing HTTP REST APIs. Covers the usual suspects — URLs, methods, status codes, pagination, idempotency — plus a few opinions that tend to surface in code review:
+
+- **State transitions are `PATCH`**, not a `/complete` or `/cancel` sub-resource verb. Side effects (emails, audit rows) belong to the state change in the service layer, not to a URL invention. Inventing verbs fragments the URL space and doesn't compose with generic update clients.
+- **Error codes name the domain reason**, not the HTTP status. `TaskNotFound` or `CardDeclined`, not `NOT_FOUND` or `BAD_REQUEST`. The HTTP status classifies at the protocol layer; the code explains *why* within the domain. Echoing the status wastes the field.
+- **Flat error envelopes.** If your type is `APIError`, wrapping its contents in `{ error: { ... } }` is a layer of indirection that HTTP status already provides. Drop the wrapper.
+- **Typed contracts are language-agnostic.** Examples in TypeScript, Python, Go, and Rust — because "REST" isn't a TypeScript-ism.
+- **Reviewer-grade output with severity tags.** When you ask it to audit a PR, every finding comes back tagged `Critical` / `High` / `Medium` / `Low`, so the author knows what blocks merge and what's polish. The skill also stays strictly in its lane — crypto, auth internals, file layout, etc. get flagged and handed off to neighbor skills rather than absorbed into one über-review.
+
+Full skill at [`plugins/rest-api-design/skills/rest-api-design/SKILL.md`](plugins/rest-api-design/skills/rest-api-design/SKILL.md).
 
 ## Install
 
-### Option A — as a Claude Code plugin (recommended)
+Pick the section that matches your tool. If you use multiple tools, the "canonical home" pattern at the end of the Claude Code section sets you up to share one copy of the skill across all of them.
 
-From inside Claude Code:
+### Claude Code
 
-```bash
+Easiest path — install via the plugin marketplace:
+
+```
 /plugin marketplace add ribrewguy/agent-skills
 /plugin install rest-api-design@ribrewguy-skills
 ```
 
-The first command registers this repo as a plugin marketplace. The second installs the `rest-api-design` plugin from it. After installation the skill is invokable as `/rest-api-design` and triggers automatically when a task matches its description.
+Run `/plugin marketplace update ribrewguy-skills` to pull updates. Auto-update on session start is off by default for third-party marketplaces; flip it on in the `/plugin` UI if you want it.
 
-To get updates when the repo changes:
+Once installed, the skill fires automatically when a task matches its description — or you can invoke it explicitly with `/rest-api-design`.
 
-```bash
-/plugin marketplace update ribrewguy-skills
-```
-
-Auto-update on session start is opt-in per-marketplace — toggle it via the `/plugin` UI if you want it.
-
-### Option B — manual symlink (no plugin manifest needed)
-
-If you manage skills yourself (e.g., you have a central `~/.agents/skills/` that multiple AI tools symlink into), you can skip the plugin layer and point `~/.claude/skills/` directly at the repo:
+**Prefer a symlink?** Clone the repo and point Claude Code at the skill directly:
 
 ```bash
 git clone git@github.com:ribrewguy/agent-skills.git ~/Projects/agent-skills
-ln -s ~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design ~/.claude/skills/rest-api-design
+ln -s ~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design \
+      ~/.claude/skills/rest-api-design
 ```
 
-Or, if you keep a canonical skills home outside `~/.claude/`:
+`git pull` in the repo updates what Claude Code sees — no `/plugin update` dance.
+
+**The canonical-home pattern** (if you use more than one AI tool): keep a single `~/.agents/skills/` directory and let every tool symlink into it. Copilot CLI reads `~/.agents/skills/` natively, and the others can be pointed at it. Set it up once:
 
 ```bash
-ln -s ~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design ~/.agents/skills/rest-api-design
+ln -s ~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design \
+      ~/.agents/skills/rest-api-design
 ln -s ../../.agents/skills/rest-api-design ~/.claude/skills/rest-api-design
 ```
 
-Claude Code watches `~/.claude/skills/` for changes during a session, so the skill becomes available without a restart (first-time creation of `~/.claude/skills/` does need a new session).
+Then one `git pull` updates every tool.
 
-## Verify the install
+### Gemini CLI
 
-In a new Claude Code session, run `/help` and look under Skills — `rest-api-design` should appear. Or just drop a prompt that should trigger it:
+Gemini has a native skills system at `~/.gemini/skills/` (user-level) and `.gemini/skills/` or `.agents/skills/` (workspace-level):
 
-> "Audit this endpoint: `POST /api/createOrder` returning `200 { order_id: '...' }`. What's wrong?"
+```bash
+ln -s ~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design \
+      ~/.gemini/skills/rest-api-design
+```
 
-If the skill is active, the output will catch the verb-in-URL, the wrong success status, the missing `Location` header, and the snake_case response key — each tagged with severity.
+Or if you're using the canonical-home pattern, point Gemini at the same shared home:
 
-## Using the skill
+```bash
+ln -s ../../.agents/skills/rest-api-design ~/.gemini/skills/rest-api-design
+```
 
-Typical prompts that invoke it:
+Gemini loads skill metadata at session start and activates the body on demand via its `activate_skill` tool. Docs: [Agent Skills | Gemini CLI](https://geminicli.com/docs/cli/skills/).
 
-- *"Design the HTTP contract for a `<resource>` API — list with search/filter/sort, create, update, delete. Include typed request/response."*
-- *"Review this PR against our REST conventions. List every violation with severity, and propose the corrected alternative."*
-- *"Is `POST /api/payments` ready to ship? Here's the draft."*
-- *"Should this endpoint use PATCH or a sub-resource action?"*
+### OpenAI Codex CLI
 
-The skill produces reviewer-grade output: violations are tagged `Critical` / `High` / `Medium` / `Low`, issues outside the REST surface (crypto, auth internals, file layout) are explicitly flagged as out-of-lane and deferred to the appropriate neighbor skill, and the reasoning is argued directly rather than cited from the skill's own rulebook.
+Codex looks for `SKILL.md` files under `~/.codex/skills/` (configurable in `~/.codex/config.toml`):
 
-## Development
+```bash
+ln -s ~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design \
+      ~/.codex/skills/rest-api-design
+```
 
-### Editing the skill
+Same thing via the canonical home:
 
-The skill lives at [`plugins/rest-api-design/skills/rest-api-design/SKILL.md`](plugins/rest-api-design/skills/rest-api-design/SKILL.md). If you installed via Option B (symlink), edits in the repo flow through to Claude Code immediately — `git pull` is the update path. If you installed via Option A (plugin), run `/plugin marketplace update ribrewguy-skills` after pulling to pick up changes.
+```bash
+ln -s ../../.agents/skills/rest-api-design ~/.codex/skills/rest-api-design
+```
 
-### Running the evals
+Docs: [Agent Skills – Codex](https://developers.openai.com/codex/skills).
 
-Eval definitions live at [`plugins/rest-api-design/skills/rest-api-design/evals/evals.json`](plugins/rest-api-design/skills/rest-api-design/evals/evals.json) — four test cases with per-assertion pass/fail criteria. Each case is designed to be adversarial or to probe a specific skill rule:
+### GitHub Copilot CLI
 
-| Eval | Probes |
-|---|---|
-| `design-task-api-from-scratch` | Whether the skill produces the canonical envelope shapes (pagination, errors), picks PATCH over sub-resource verbs for state transitions, and uses domain-expressive error codes. |
-| `pr-audit-multiple-violations` | Whether the skill catches a realistic cluster of REST violations and tags each with severity, without drifting into adjacent concerns (password hashing, file layout). |
-| `payments-post-idempotency-trap` | Whether the skill identifies the missing `Idempotency-Key` on a money-moving POST and reshapes the proposed error envelope to the flat / domain-expressive form. |
-| `bounded-notifications-not-a-list` | Whether the skill resists the urge to paginate a bounded-by-policy resource and avoids inventing extra top-level envelope fields. |
+Copilot CLI reads a handful of directories natively — including `~/.agents/skills/` and `~/.claude/skills/` — so if you're using either of those, you're already covered. If you want an explicit Copilot-specific home:
 
-To run the evals yourself, use the skill-creator workflow: spawn one subagent per eval with the skill loaded, one baseline subagent per eval without it (or with a different version of the skill), grade each output against the assertions, and aggregate into a benchmark. The [skill-creator](https://github.com/anthropics/skills) plugin automates this.
+```bash
+ln -s ~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design \
+      ~/.copilot/skills/rest-api-design
+```
 
-### Repo layout
+As of April 2026 there's also a registry-style `gh skill` subcommand for install/publish — check the [Copilot CLI skills docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills) for the latest.
+
+### Cline
+
+Cline reads `~/.cline/skills/` (user) and `.cline/skills/` (workspace):
+
+```bash
+ln -s ~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design \
+      ~/.cline/skills/rest-api-design
+```
+
+Cline keeps skills under 5k tokens in the context window and lazy-loads anything under a `docs/` subdirectory — same progressive-disclosure pattern as Claude Code. Docs: [Skills | Cline](https://docs.cline.bot/customization/skills).
+
+### Cursor
+
+Cursor doesn't have a native skills system — it uses `.cursor/rules/` with `.mdc` files for project-level rules. To use a skill here, reference it from a rule file:
+
+```markdown
+<!-- .cursor/rules/rest-api.mdc -->
+# REST API conventions
+When designing or reviewing HTTP REST APIs, apply the guidance in
+~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design/SKILL.md.
+
+Key rules: state transitions use PATCH, error codes name the domain
+reason (not HTTP status), flat error envelopes, pagination uses
+cursor with default limit 20 and max 100. Full details in the file
+above.
+```
+
+Or paste the relevant sections of `SKILL.md` directly into the rule file. Docs: [Cursor Rules](https://docs.cursor.com/context/rules-for-ai).
+
+### Aider
+
+Aider uses `CONVENTIONS.md` loaded via `--read` or a project-level `.aider.conf.yml`. Easiest path:
+
+```bash
+# in the project where you want the skill active:
+echo "read: ~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design/SKILL.md" \
+  >> .aider.conf.yml
+```
+
+Aider then includes the skill content as read-only context on every prompt. Docs: [Aider configuration](https://aider.chat/docs/config.html).
+
+## Check that it's working
+
+Drop this prompt in a fresh session:
+
+> Review this endpoint — `POST /api/createOrder` returning `200 { order_id: '...' }`. What's wrong?
+
+If the skill is loaded, you'll get back at least: verb in the URL (`/createOrder` should be `POST /api/orders`), wrong status (`200` should be `201 Created`), missing `Location` header, `snake_case` response key (`order_id` should be `id`), and each finding tagged with severity. Without the skill, you'll get a looser answer that misses some of these or treats them all with equal weight.
+
+## Editing or adding skills
+
+Each skill lives at `plugins/<plugin-name>/skills/<skill-name>/SKILL.md`, with eval definitions next to it at `evals/evals.json`. To add a new one:
+
+1. **Plugin manifest** — `plugins/<your-plugin>/.claude-plugin/plugin.json` with `name`, `description`, `version`.
+2. **Skill file** — `plugins/<your-plugin>/skills/<your-skill>/SKILL.md`, standard YAML frontmatter + Markdown body. See [Claude Code's skill docs](https://code.claude.com/docs/en/skills.md) for the exact schema.
+3. **Marketplace entry** — add to `.claude-plugin/marketplace.json` under `plugins`, with `source: ./plugins/<your-plugin>`.
+4. **Evals** (optional but the whole point) — `plugins/<your-plugin>/skills/<your-skill>/evals/evals.json` with test cases and per-assertion pass/fail criteria. This is what makes "the skill works" a measurable claim.
+
+Open a PR. If you ran evals, drop the benchmark in the PR description.
+
+## Repo layout
 
 ```
 .claude-plugin/
-  └── marketplace.json                    # marketplace manifest — lists all plugins in this repo
+  └── marketplace.json                    # lists all plugins in this repo
 plugins/
   └── rest-api-design/
-      ├── .claude-plugin/
-      │   └── plugin.json                  # plugin manifest — name, version, description
-      └── skills/
-          └── rest-api-design/
-              ├── SKILL.md                 # the skill itself
-              └── evals/evals.json         # test cases and assertions
+      ├── .claude-plugin/plugin.json      # this plugin's manifest
+      └── skills/rest-api-design/
+          ├── SKILL.md                    # the skill
+          └── evals/evals.json            # test cases + assertions
 LICENSE
 README.md
 ```
 
-Each plugin is self-contained under `plugins/<plugin-name>/` with its own `.claude-plugin/plugin.json`. The repo-level `.claude-plugin/marketplace.json` lists every plugin and its `source` path. This layout scales cleanly — adding a second plugin is a new subdirectory under `plugins/` and an entry in `marketplace.json`.
-
-### Contributing a new skill
-
-To add a new skill to this repo:
-
-1. Create `plugins/<plugin-name>/.claude-plugin/plugin.json` with `name`, `description`, `version`.
-2. Create `plugins/<plugin-name>/skills/<skill-name>/SKILL.md` with the [Claude Code skill format](https://code.claude.com/docs/en/skills.md) (YAML frontmatter with `name`, `description`; Markdown body).
-3. Add an entry to [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) under `plugins` pointing `source` at `./plugins/<plugin-name>` so the skill is installable from the marketplace.
-4. (Optional but encouraged) Add `plugins/<plugin-name>/skills/<skill-name>/evals/evals.json` with test cases and per-case assertions so the skill's expected output is verifiable.
-5. Open a PR — include the iteration-1 benchmark if you ran evals.
-
 ## License
 
-[MIT](LICENSE) — do what you want, attribution preserved, no warranty.
+[MIT](LICENSE). Use it, fork it, break it, whatever.
