@@ -6,7 +6,7 @@ Claude Code skills authored and maintained by [@ribrewguy](https://github.com/ri
 
 | Skill | Purpose |
 |---|---|
-| [`rest-api-design`](skills/rest-api-design/SKILL.md) | Design and review HTTP REST APIs. Covers resource-oriented URLs, HTTP method semantics (PATCH for state transitions — not sub-resource verbs), status codes, domain-expressive error codes that don't echo HTTP status, flat error envelopes, cursor/offset/page pagination, idempotency keys on side-effectful POSTs, content-type negotiation (NDJSON / SSE / vendor media types), patch format selection (plain JSON / `merge-patch+json` / `json-patch+json`), typed contracts across TypeScript / Python / Go / Rust, and reviewer-grade output conventions with severity tagging. |
+| [`rest-api-design`](plugins/rest-api-design/skills/rest-api-design/SKILL.md) | Design and review HTTP REST APIs. Covers resource-oriented URLs, HTTP method semantics (PATCH for state transitions — not sub-resource verbs), status codes, domain-expressive error codes that don't echo HTTP status, flat error envelopes, cursor/offset/page pagination, idempotency keys on side-effectful POSTs, content-type negotiation (NDJSON / SSE / vendor media types), patch format selection (plain JSON / `merge-patch+json` / `json-patch+json`), typed contracts across TypeScript / Python / Go / Rust, and reviewer-grade output conventions with severity tagging. |
 
 ## Install
 
@@ -35,13 +35,13 @@ If you manage skills yourself (e.g., you have a central `~/.agents/skills/` that
 
 ```bash
 git clone git@github.com:ribrewguy/agent-skills.git ~/Projects/agent-skills
-ln -s ~/Projects/agent-skills/skills/rest-api-design ~/.claude/skills/rest-api-design
+ln -s ~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design ~/.claude/skills/rest-api-design
 ```
 
 Or, if you keep a canonical skills home outside `~/.claude/`:
 
 ```bash
-ln -s ~/Projects/agent-skills/skills/rest-api-design ~/.agents/skills/rest-api-design
+ln -s ~/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design ~/.agents/skills/rest-api-design
 ln -s ../../.agents/skills/rest-api-design ~/.claude/skills/rest-api-design
 ```
 
@@ -70,11 +70,11 @@ The skill produces reviewer-grade output: violations are tagged `Critical` / `Hi
 
 ### Editing the skill
 
-The skill lives at [`skills/rest-api-design/SKILL.md`](skills/rest-api-design/SKILL.md). If you installed via Option B (symlink), edits in the repo flow through to Claude Code immediately — `git pull` is the update path. If you installed via Option A (plugin), run `/plugin marketplace update ribrewguy-skills` after pulling to pick up changes.
+The skill lives at [`plugins/rest-api-design/skills/rest-api-design/SKILL.md`](plugins/rest-api-design/skills/rest-api-design/SKILL.md). If you installed via Option B (symlink), edits in the repo flow through to Claude Code immediately — `git pull` is the update path. If you installed via Option A (plugin), run `/plugin marketplace update ribrewguy-skills` after pulling to pick up changes.
 
 ### Running the evals
 
-Eval definitions live at [`skills/rest-api-design/evals/evals.json`](skills/rest-api-design/evals/evals.json) — four test cases with per-assertion pass/fail criteria. Each case is designed to be adversarial or to probe a specific skill rule:
+Eval definitions live at [`plugins/rest-api-design/skills/rest-api-design/evals/evals.json`](plugins/rest-api-design/skills/rest-api-design/evals/evals.json) — four test cases with per-assertion pass/fail criteria. Each case is designed to be adversarial or to probe a specific skill rule:
 
 | Eval | Probes |
 |---|---|
@@ -85,30 +85,35 @@ Eval definitions live at [`skills/rest-api-design/evals/evals.json`](skills/rest
 
 To run the evals yourself, use the skill-creator workflow: spawn one subagent per eval with the skill loaded, one baseline subagent per eval without it (or with a different version of the skill), grade each output against the assertions, and aggregate into a benchmark. The [skill-creator](https://github.com/anthropics/skills) plugin automates this.
 
+### Repo layout
+
+```
+.claude-plugin/
+  └── marketplace.json                    # marketplace manifest — lists all plugins in this repo
+plugins/
+  └── rest-api-design/
+      ├── .claude-plugin/
+      │   └── plugin.json                  # plugin manifest — name, version, description
+      └── skills/
+          └── rest-api-design/
+              ├── SKILL.md                 # the skill itself
+              └── evals/evals.json         # test cases and assertions
+LICENSE
+README.md
+```
+
+Each plugin is self-contained under `plugins/<plugin-name>/` with its own `.claude-plugin/plugin.json`. The repo-level `.claude-plugin/marketplace.json` lists every plugin and its `source` path. This layout scales cleanly — adding a second plugin is a new subdirectory under `plugins/` and an entry in `marketplace.json`.
+
 ### Contributing a new skill
 
 To add a new skill to this repo:
 
-1. Create `skills/<skill-name>/SKILL.md` with the [Claude Code skill format](https://code.claude.com/docs/en/skills.md) (YAML frontmatter with `name`, `description`; Markdown body).
-2. Add an entry to [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) under `plugins` so it's installable from the marketplace.
-3. (Optional but encouraged) Add `skills/<skill-name>/evals/evals.json` with test cases and per-case assertions so the skill's expected output is verifiable.
-4. Open a PR — include the iteration-1 benchmark if you ran evals.
-
-If the repo grows to more than one or two skills, it's worth restructuring to the canonical multi-plugin layout:
-
-```
-.claude-plugin/marketplace.json
-plugins/
-  rest-api-design/
-    .claude-plugin/plugin.json
-    skills/rest-api-design/SKILL.md
-  other-skill/
-    .claude-plugin/plugin.json
-    skills/other-skill/SKILL.md
-```
-
-with each plugin's `marketplace.json` entry pointing at `./plugins/<name>` instead of `.`.
+1. Create `plugins/<plugin-name>/.claude-plugin/plugin.json` with `name`, `description`, `version`.
+2. Create `plugins/<plugin-name>/skills/<skill-name>/SKILL.md` with the [Claude Code skill format](https://code.claude.com/docs/en/skills.md) (YAML frontmatter with `name`, `description`; Markdown body).
+3. Add an entry to [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) under `plugins` pointing `source` at `./plugins/<plugin-name>` so the skill is installable from the marketplace.
+4. (Optional but encouraged) Add `plugins/<plugin-name>/skills/<skill-name>/evals/evals.json` with test cases and per-case assertions so the skill's expected output is verifiable.
+5. Open a PR — include the iteration-1 benchmark if you ran evals.
 
 ## License
 
-TBD — to be added before wider distribution. Until then, consider this code available for personal use and review only.
+[MIT](LICENSE) — do what you want, attribution preserved, no warranty.

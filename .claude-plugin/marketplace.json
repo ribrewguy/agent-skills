@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "rest-api-design",
-      "source": ".",
+      "source": "./plugins/rest-api-design",
       "description": "HTTP REST API design and review skill with a 4-case eval set covering design-from-scratch, PR audit with severity tags, payments idempotency traps, and bounded-list discipline."
     }
   ]
