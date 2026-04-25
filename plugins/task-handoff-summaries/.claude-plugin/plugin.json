@@ -1,0 +1,9 @@
+{
+  "name": "task-handoff-summaries",
+  "description": "Structured implementation, handoff, and closeout summaries. Three rigorous report formats — one for implementation done before commit, one for multi-agent worker handoff to an orchestrator, one for closeout after completion. Each has a fixed field set, hard rules against using the summary to mask incomplete work, and bead/task-aware vocabulary. Composes with structured-code-review (the reviewer's input package) and multi-agent-git-workflow (role vocabulary).",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}

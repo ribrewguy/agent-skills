@@ -13,10 +13,11 @@ The catalog. Each skill has its own page with a summary, its key opinions, insta
 
 - **[rest-api-design](rest-api-design)** — design and review HTTP REST APIs. Resource-oriented URLs, PATCH for state transitions, domain-expressive error codes, flat error envelopes, idempotency, content-type negotiation, typed contracts across TS/Python/Go/Rust.
 - **[structured-code-review](structured-code-review)** — a rigorous, review-only output format for code reviews. Source-of-truth-aware preamble, severity-tagged findings, file:line citations, no-findings-still-formal. Composes with domain-review skills.
+- **[task-handoff-summaries](task-handoff-summaries)** — three structured report formats: implementation summary (before commit), worker handoff summary (multi-agent → orchestrator), closeout summary (after completion). Hard rules against using the summary to mask incomplete work.
 
 ## In development
 
-- **task-handoff-summaries** — structured implementation summaries (before commit) and closeout summaries (after completion). Bead-aware and multi-agent-aware (worker handoff vs. orchestrator closeout vs. single-agent).
+- **cross-agent-adversarial-review** — pattern for routine cross-vendor agent peer review (Claude reviews Codex's work; Codex reviews Claude's). The handoff package, the disagreement protocol, the iteration loop, the redact-self-assessment-before-handoff rule.
 - **multi-agent-git-workflow** — full git workflow for multi-agent work: branch hierarchy, worktree discipline, orchestrator/worker roles, 3-tier promotion (`develop` → `uat` → `main`), conventional commits, UAT gate ceremony.
 
 ## How skills are evaluated
