@@ -1,0 +1,46 @@
+---
+title: Skills
+nav_order: 3
+has_children: true
+permalink: /skills/
+---
+
+# Skills
+
+The catalog. Each skill has its own page with a summary, its key opinions, install snippets, and a link to the canonical SKILL.md.
+
+## Currently shipping
+
+- **[rest-api-design](rest-api-design)** — design and review HTTP REST APIs. Resource-oriented URLs, PATCH for state transitions, domain-expressive error codes, flat error envelopes, idempotency, content-type negotiation, typed contracts across TS/Python/Go/Rust.
+- **[structured-code-review](structured-code-review)** — a rigorous, review-only output format for code reviews. Source-of-truth-aware preamble, severity-tagged findings, file:line citations, no-findings-still-formal. Composes with domain-review skills.
+
+## In development
+
+- **task-handoff-summaries** — structured implementation summaries (before commit) and closeout summaries (after completion). Bead-aware and multi-agent-aware (worker handoff vs. orchestrator closeout vs. single-agent).
+- **multi-agent-git-workflow** — full git workflow for multi-agent work: branch hierarchy, worktree discipline, orchestrator/worker roles, 3-tier promotion (`develop` → `uat` → `main`), conventional commits, UAT gate ceremony.
+
+## How skills are evaluated
+
+Every skill in this collection passes through an evaluation loop before it ships:
+
+1. Draft the SKILL.md based on real policies or design intent
+2. Write 4 test prompts in `evals/evals.json` that probe the skill's distinct opinions
+3. Spawn parallel runs — one with the skill loaded, one baseline without
+4. Grade outputs against per-case assertions; aggregate into a benchmark
+5. Iterate until the with-skill output is materially better than the baseline on the assertions that matter
+
+The eval set ships in the repo at `plugins/<plugin-name>/skills/<skill-name>/evals/evals.json` so anyone can re-run it.
+
+## Contributing a new skill
+
+To add a new skill to the collection:
+
+1. **Plugin manifest** — `plugins/<plugin-name>/.claude-plugin/plugin.json` with `name`, `description`, `version`.
+2. **Skill file** — `plugins/<plugin-name>/skills/<skill-name>/SKILL.md` in the standard SKILL format (YAML frontmatter with `name`, `description`; markdown body).
+3. **Marketplace entry** — add to `.claude-plugin/marketplace.json` under `plugins` with `source: ./plugins/<plugin-name>`.
+4. **Evals** (optional but the whole point) — `plugins/<plugin-name>/skills/<skill-name>/evals/evals.json` with test cases and per-assertion pass/fail criteria.
+5. **Docs page** — `skills/<skill-name>.md` (this directory) with the human-facing summary, key opinions, install snippets, and a link to the SKILL.md.
+
+Open a PR. If you ran evals, drop the iteration-1 benchmark in the PR description.
+
+See the existing [rest-api-design](rest-api-design) and [structured-code-review](structured-code-review) pages for the format.
