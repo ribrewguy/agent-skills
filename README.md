@@ -1,4 +1,4 @@
-# agent-skills
+# RI Brew Guy's AI Agent Skills
 
 A small, growing collection of skills I've built for AI coding tools. They're just markdown with a bit of YAML frontmatter — the `SKILL.md` format that [Claude Code](https://claude.com/code), [Gemini CLI](https://geminicli.com), [OpenAI Codex](https://developers.openai.com/codex), [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli), and [Cline](https://docs.cline.bot) all read natively. Other tools (Cursor, Aider) don't have a native skills system, but you can point their rule files at these.
 
@@ -50,7 +50,7 @@ After that, every install command in this section uses `"$REPO/..."` and you can
 > [!TIP]
 > If you use more than one AI tool, set up the canonical-home pattern first (right below). The per-tool sections after it are one-click expandable — open the one you need.
 
-<details>
+<details markdown="1">
 <summary><b>Canonical-home pattern (recommended for multi-tool setups)</b></summary>
 
 Keep a single `~/.agents/skills/` directory and let every tool symlink into it. GitHub Copilot CLI reads `~/.agents/skills/` natively, and the others get pointed at it with one line each. Set the canonical entry up once:
@@ -65,7 +65,7 @@ Now `git pull` in `$REPO` updates every tool that reaches into `~/.agents/skills
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Claude Code</b> (symlink alternative to the marketplace)</summary>
 
 ```bash
@@ -78,7 +78,7 @@ ln -s "$REPO/plugins/rest-api-design/skills/rest-api-design" \
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Gemini CLI</b></summary>
 
 Gemini has a native skills system at `~/.gemini/skills/` (user-level), plus workspace-level `.gemini/skills/` and `.agents/skills/`:
@@ -95,7 +95,7 @@ Gemini loads skill metadata at session start and activates the body on demand vi
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>OpenAI Codex CLI</b></summary>
 
 Codex looks for `SKILL.md` files under `~/.codex/skills/` (configurable in `~/.codex/config.toml`):
@@ -112,7 +112,7 @@ Docs: [Agent Skills – Codex](https://developers.openai.com/codex/skills).
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>GitHub Copilot CLI</b></summary>
 
 Copilot CLI reads `~/.agents/skills/` and `~/.claude/skills/` natively — so if you set up either of those above, you're already done. If you want an explicit Copilot-specific home:
@@ -127,7 +127,7 @@ As of April 2026 there's also a registry-style `gh skill` subcommand for install
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Cline</b></summary>
 
 Cline reads `~/.cline/skills/` (user) and `.cline/skills/` (workspace):
@@ -144,7 +144,7 @@ Cline keeps skills under 5k tokens in context and lazy-loads anything under a `d
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Cursor</b> — rule-file reference (no native skills system)</summary>
 
 Cursor uses `.cursor/rules/` with `.mdc` files for project-level rules. Reference the skill from a rule file (replace `<path-to-cloned-repo>` with your actual clone path — rule files don't get shell variable expansion):
@@ -165,7 +165,7 @@ Or paste the relevant sections of `SKILL.md` directly into the rule file. Docs: 
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Aider</b></summary>
 
 Aider uses `CONVENTIONS.md` loaded via `--read` or a project-level `.aider.conf.yml`. Easiest path:

@@ -1,4 +1,4 @@
-title: agent-skills
+title: RI Brew Guy's AI Agent Skills
 description: A growing collection of skills for AI coding tools — Claude Code, Gemini CLI, Codex, Copilot CLI, Cline, and more. The SKILL.md format works across all of them.
 remote_theme: pages-themes/cayman@v0.2.0
 plugins:
