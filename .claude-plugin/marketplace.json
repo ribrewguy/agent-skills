@@ -10,6 +10,11 @@
       "name": "rest-api-design",
       "source": "./plugins/rest-api-design",
       "description": "HTTP REST API design and review skill with a 4-case eval set covering design-from-scratch, PR audit with severity tags, payments idempotency traps, and bounded-list discipline."
+    },
+    {
+      "name": "structured-code-review",
+      "source": "./plugins/structured-code-review",
+      "description": "Rigorous, review-only code review output: source-of-truth-aware preamble, severity-tagged findings (High/Medium/Low), file:line citations, no-findings-still-formal. Composes with domain-review skills like rest-api-design."
     }
   ]
 }
