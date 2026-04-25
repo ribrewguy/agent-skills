@@ -9,6 +9,11 @@ plugins:
 
 color_scheme: light
 
+# Generate directory-style URLs (`/install/claude-code/` rather than
+# `/install/claude-code.html`) so trailing-slash and bare paths both resolve.
+# Just-the-docs nav and jekyll-relative-links both respect this setting.
+permalink: pretty
+
 # Search is one of the main reasons we switched themes — turn it on with sane defaults.
 search_enabled: true
 search:
