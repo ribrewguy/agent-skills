@@ -1,0 +1,9 @@
+{
+  "name": "cross-agent-review",
+  "description": "Workflow for routine cross-vendor AI agent peer review — Claude reviews Codex's work, Codex reviews Claude's, etc. Defines the handoff package (what to include, what to redact), the cold-review discipline (don't anchor on the implementer's self-assessment), the disagreement protocol when agents conflict, and the bounded iteration loop. Composes with task-handoff-summaries (handoff package format), structured-code-review (reviewer output format), and any domain-review skill.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}
