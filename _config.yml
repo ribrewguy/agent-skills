@@ -1,0 +1,26 @@
+title: agent-skills
+description: A growing collection of skills for AI coding tools — Claude Code, Gemini CLI, Codex, Copilot CLI, Cline, and more. The SKILL.md format works across all of them.
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-relative-links
+
+# Make .md → .html links work without explicit .html in the markdown.
+relative_links:
+  enabled: true
+  collections: true
+
+# Don't ship dev-time files, evals, or tooling configs in the rendered site.
+exclude:
+  - .gitignore
+  - .git
+  - "*.swp"
+  - "**/evals/"
+  - "**/.claude-plugin/"
+
+# Map / to README.md so the repo's main doc is the homepage.
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge

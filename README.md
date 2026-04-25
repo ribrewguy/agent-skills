@@ -47,7 +47,11 @@ export REPO="$(pwd)/agent-skills"
 
 After that, every install command in this section uses `"$REPO/..."` and you can paste it as-is.
 
-#### The canonical-home pattern (recommended for multi-tool setups)
+> [!TIP]
+> If you use more than one AI tool, set up the canonical-home pattern first (right below). The per-tool sections after it are one-click expandable — open the one you need.
+
+<details>
+<summary><b>Canonical-home pattern (recommended for multi-tool setups)</b></summary>
 
 Keep a single `~/.agents/skills/` directory and let every tool symlink into it. GitHub Copilot CLI reads `~/.agents/skills/` natively, and the others get pointed at it with one line each. Set the canonical entry up once:
 
@@ -59,7 +63,10 @@ ln -s "$REPO/plugins/rest-api-design/skills/rest-api-design" \
 
 Now `git pull` in `$REPO` updates every tool that reaches into `~/.agents/skills/` — directly or via symlink. The per-tool sections below show both options: point at `~/.agents/skills/` (preferred when you use multiple tools), or point straight at the repo.
 
-#### Claude Code (symlink alternative to the marketplace)
+</details>
+
+<details>
+<summary><b>Claude Code</b> (symlink alternative to the marketplace)</summary>
 
 ```bash
 mkdir -p ~/.claude/skills
@@ -69,7 +76,10 @@ ln -s "$REPO/plugins/rest-api-design/skills/rest-api-design" \
       ~/.claude/skills/rest-api-design
 ```
 
-#### Gemini CLI
+</details>
+
+<details>
+<summary><b>Gemini CLI</b></summary>
 
 Gemini has a native skills system at `~/.gemini/skills/` (user-level), plus workspace-level `.gemini/skills/` and `.agents/skills/`:
 
@@ -83,7 +93,10 @@ ln -s "$REPO/plugins/rest-api-design/skills/rest-api-design" \
 
 Gemini loads skill metadata at session start and activates the body on demand via its `activate_skill` tool. Docs: [Agent Skills | Gemini CLI](https://geminicli.com/docs/cli/skills/).
 
-#### OpenAI Codex CLI
+</details>
+
+<details>
+<summary><b>OpenAI Codex CLI</b></summary>
 
 Codex looks for `SKILL.md` files under `~/.codex/skills/` (configurable in `~/.codex/config.toml`):
 
@@ -97,7 +110,10 @@ ln -s "$REPO/plugins/rest-api-design/skills/rest-api-design" \
 
 Docs: [Agent Skills – Codex](https://developers.openai.com/codex/skills).
 
-#### GitHub Copilot CLI
+</details>
+
+<details>
+<summary><b>GitHub Copilot CLI</b></summary>
 
 Copilot CLI reads `~/.agents/skills/` and `~/.claude/skills/` natively — so if you set up either of those above, you're already done. If you want an explicit Copilot-specific home:
 
@@ -109,7 +125,10 @@ ln -s "$REPO/plugins/rest-api-design/skills/rest-api-design" \
 
 As of April 2026 there's also a registry-style `gh skill` subcommand for install/publish — check the [Copilot CLI skills docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills) for the latest.
 
-#### Cline
+</details>
+
+<details>
+<summary><b>Cline</b></summary>
 
 Cline reads `~/.cline/skills/` (user) and `.cline/skills/` (workspace):
 
@@ -123,9 +142,12 @@ ln -s "$REPO/plugins/rest-api-design/skills/rest-api-design" \
 
 Cline keeps skills under 5k tokens in context and lazy-loads anything under a `docs/` subdirectory — same progressive-disclosure pattern as Claude Code. Docs: [Skills | Cline](https://docs.cline.bot/customization/skills).
 
-#### Cursor
+</details>
 
-Cursor doesn't have a native skills system — it uses `.cursor/rules/` with `.mdc` files for project-level rules. Reference the skill from a rule file (replace `<path-to-cloned-repo>` with your actual clone path — rule files don't get shell variable expansion):
+<details>
+<summary><b>Cursor</b> — rule-file reference (no native skills system)</summary>
+
+Cursor uses `.cursor/rules/` with `.mdc` files for project-level rules. Reference the skill from a rule file (replace `<path-to-cloned-repo>` with your actual clone path — rule files don't get shell variable expansion):
 
 ```markdown
 <!-- .cursor/rules/rest-api.mdc -->
@@ -141,7 +163,10 @@ above.
 
 Or paste the relevant sections of `SKILL.md` directly into the rule file. Docs: [Cursor Rules](https://docs.cursor.com/context/rules-for-ai).
 
-#### Aider
+</details>
+
+<details>
+<summary><b>Aider</b></summary>
 
 Aider uses `CONVENTIONS.md` loaded via `--read` or a project-level `.aider.conf.yml`. Easiest path:
 
@@ -154,6 +179,8 @@ echo "read: $REPO/plugins/rest-api-design/skills/rest-api-design/SKILL.md" \
 (`$REPO` gets expanded by the shell here, so the value baked into `.aider.conf.yml` will be the absolute path to the skill — no further substitution needed when Aider reads the config.)
 
 Aider then includes the skill content as read-only context on every prompt. Docs: [Aider configuration](https://aider.chat/docs/config.html).
+
+</details>
 
 ## Check that it's working
 
