@@ -1,0 +1,19 @@
+{
+  "eval_id": 1,
+  "eval_name": "pr-audit-multiple-violations",
+  "prompt": "Review the PR diff (creating GET /api/users returning raw array, POST /api/createUser returning 200 with snake_case, GET /api/users/:id/delete for destructive, bespoke {events,total,limit,offset} envelope). List every violation, why it matters, and the correct alternative.",
+  "assertions": [
+    "Catches snake_case on the wire (user_id, created_at, password_hash) and prescribes camelCase at the boundary",
+    "Catches verb in URL (/api/createUser) and proposes POST /api/users",
+    "Catches GET used for destructive action (/api/users/:id/delete) and proposes DELETE /api/users/:id",
+    "Catches the raw-array response from getUsers and proposes a paginated envelope",
+    "Catches the bespoke listEvents envelope ({events,total,limit,offset}) and proposes the canonical shape",
+    "Catches validation reporting one field at a time and prescribes returning all fields at once in details[]",
+    "Catches POST returning 200 and prescribes 201 Created + Location header",
+    "Notes lack of X-Request-ID on responses (or absence of the correlating requestId in error bodies)",
+    "The proposed error envelope is FLAT with domain-expressive codes — does not wrap contents in { error: {...} }, does not echo HTTP status as the code",
+    "Does NOT recommend introducing a `/v1/` URL prefix — follows the One-Version Rule's 'no default version segment'",
+    "Does NOT recommend returning `total` on an unbounded list (no COUNT(*) recommendation) — recognizes the skill's 'never return total on unbounded sets' rule",
+    "Flags the URL exposing DB implementation (user_table_v2 referenced / DB naming leaking)"
+  ]
+}

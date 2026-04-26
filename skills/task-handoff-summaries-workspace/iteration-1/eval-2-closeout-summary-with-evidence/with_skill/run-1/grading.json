@@ -1,0 +1,16 @@
+{
+  "expectations": [
+    {"text": "Output uses the closeout summary format (not implementation or worker handoff)", "passed": true, "evidence": "Header reads '## Closeout Summary' and follows Format 3."},
+    {"text": "All 7 sections appear: Process Used, Execution Context, Task Scope, Closeout Outcome, Evidence, Behavioral Impact, Risks/Gaps, File Reference Summary", "passed": true, "evidence": "All 8 named sections appear as labeled fields. Task Scope appears as 'Bead Scope' (Beads adapter mapping defined in the skill)."},
+    {"text": "Process Used: Full process (or Full bead process)", "passed": true, "evidence": "'Process Used: Full bead process'."},
+    {"text": "Execution Context: Single-agent", "passed": true, "evidence": "'Execution Context: Single-agent'."},
+    {"text": "Task Scope names proj-42 with the bead title", "passed": true, "evidence": "'Bead Scope: proj-42 — Add staging branch and 3-tier deploy flow'."},
+    {"text": "Closeout Outcome names the active branch and the integration target reached (develop)", "passed": true, "evidence": "'Active branch: feature/proj-42_staging-branch' and 'Integration target reached: develop'."},
+    {"text": "Evidence section is concrete: lint/typecheck/unit/build with numbers, e2e deferred with reason, UAT status, commit SHA 9a2b3c4, push yes, branch cleanup status, promotion stopped at develop", "passed": true, "evidence": "Evidence lists Lint 0 errors; Typecheck 0 errors; Unit tests 142/142; Build succeeded; E2E deferred with reason (no CI secrets, §13); UAT not applicable; Commit 9a2b3c4; Push yes; Branch merged to develop, local + remote deleted; Promotion reached develop, no PR open to uat or main."},
+    {"text": "Risks/Gaps captures the concrete unresolved items: branch protection not applied (with reason), e2e/integration secrets not provisioned, baseline error counts on develop, promotion not yet to uat or main", "passed": true, "evidence": "All four items present and concrete: rulesets not supported on plan tier, e2e/integration secrets unprovisioned, 200 lint / 80 typecheck / 12 unit baseline on develop, promotion stopped at develop."},
+    {"text": "File Reference Summary names the relevant files without dumping a full changelog (docs amendments and new workflow files)", "passed": true, "evidence": "Lists docs files (with new vs amended sections), CI workflow files, and tooling files; not a full diff dump."},
+    {"text": "Output does not falsely claim the work reached uat or main when it stopped at develop", "passed": true, "evidence": "Both Evidence and Risks/Gaps explicitly state promotion stopped at develop with no PR open to uat or main."},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of the skill name."}
+  ],
+  "summary": {"passed": 11, "failed": 0, "total": 11, "pass_rate": 1.0}
+}

@@ -1,0 +1,15 @@
+{
+  "expectations": [
+    {"text": "Output begins with the literal line `Findings:`", "passed": true, "evidence": "Line 1: 'Findings:'"},
+    {"text": "All eight preamble fields are present in order", "passed": true, "evidence": "Lines 2-9 contain all eight required fields in the specified order"},
+    {"text": "Review Scope names task-103", "passed": true, "evidence": "Line 2: 'Review Scope: Task task-103'"},
+    {"text": "Findings are tagged with severity in backticks (`High`, `Medium`, `Low`, or `Critical` if a higher tier is used)", "passed": true, "evidence": "Every finding bullet starts with a backtick severity: `High`, `Medium`, or `Low`"},
+    {"text": "The use of POST sub-resource verb (`/api/tasks/:id/complete`) is identified as inconsistent with REST conventions — should be PATCH on the resource", "passed": true, "evidence": "First High finding: 'State transition is modeled as `POST /api/tasks/:id/complete` — a sub-resource action verb instead of a `PATCH` on the task resource. ... Replace with `PATCH /api/tasks/:id`'"},
+    {"text": "The missing Idempotency-Key on the side-effectful POST is identified as a finding", "passed": true, "evidence": "Second High finding: 'No `Idempotency-Key` handling on a side-effectful, non-GET request that updates state, sends an email, and writes an audit row'"},
+    {"text": "The snake_case wire field `task_id` is identified as a finding (should be camelCase)", "passed": true, "evidence": "First Medium finding: 'Response uses `task_id` (snake_case) on the wire ... Return `{ \"taskId\": ..., \"status\": \"COMPLETED\" }`'"},
+    {"text": "The `200` status (rather than reflecting the state-transition correctly) and the bypass of the canonical error envelope are noted where relevant", "passed": true, "evidence": "Medium finding addresses 200 status semantics; another Medium finding addresses missing error handling that bypasses the canonical `{ code, message, details?, requestId }` envelope"},
+    {"text": "Findings are ordered by severity, highest first", "passed": true, "evidence": "Order: 3 `High` findings, 5 `Medium` findings, 1 `Low` finding"},
+    {"text": "Output does not cite either skill by name (no mention of 'structured-code-review' or 'rest-api-design' as the source of any rule)", "passed": true, "evidence": "Neither 'structured-code-review' nor 'rest-api-design' appears in the output"}
+  ],
+  "summary": {"passed": 10, "failed": 0, "total": 10, "pass_rate": 1.00}
+}

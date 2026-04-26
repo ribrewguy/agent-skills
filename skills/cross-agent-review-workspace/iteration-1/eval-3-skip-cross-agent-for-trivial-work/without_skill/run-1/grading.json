@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Recommendation for change 1 (typo fix): SKIP cross-agent review (trivial mechanical change, no risk)",
+      "passed": true,
+      "evidence": "'Change 1 — Typo fix... Recommendation: Do NOT apply cross-agent review. ... One-character change in a string literal. Risk surface is \"is the new spelling correct\".'"
+    },
+    {
+      "text": "Recommendation for change 2 (axios patch bump): SKIP cross-agent review (low-risk dependency bump, deterministic gates / lockfile diff is the right level of review)",
+      "passed": true,
+      "evidence": "'Change 2 — axios 1.7.0 → 1.7.1... Recommendation: Do NOT apply cross-agent review. ... The signal that matters here comes from the upstream changelog, the security advisory feeds, and CI.'"
+    },
+    {
+      "text": "Recommendation for change 3 (POST /api/transfers — money-touching): APPLY cross-agent review (money-touching path, security-sensitive, side effects — the canonical case for cross-agent)",
+      "passed": true,
+      "evidence": "'Change 3 — POST /api/transfers... Recommendation: APPLY cross-agent review. This is the textbook case... Money-touching, Side-effecting, New endpoint surface.'"
+    },
+    {
+      "text": "Recommendation for change 4 (email batching refactor): APPLY cross-agent review (load-bearing refactor of integration code; potential for missed edge cases the implementing agent's framing might foreclose)",
+      "passed": true,
+      "evidence": "'Change 4 — Email batching refactor... Recommendation: APPLY cross-agent review. ... \"behavior should be identical\" is exactly the claim that quietly turns out wrong in 1 of 20 cases.'"
+    },
+    {
+      "text": "Reasoning for each recommendation cites the actual triggers (security/money/concurrency/refactor depth/etc.) — not boilerplate",
+      "passed": true,
+      "evidence": "Specific triggers cited per change: money-touching, side-effecting, partial-failure semantics, behavior-preservation refactor of integration code, etc."
+    },
+    {
+      "text": "Output is honest about the tradeoff — doesn't recommend cross-agent for everything (which would be cheap-talk safety-theater) and doesn't recommend it for nothing",
+      "passed": true,
+      "evidence": "Closing 'Honest tradeoff' section explicitly weighs cost vs. benefit; split 2/4 skip and 2/4 apply."
+    },
+    {
+      "text": "Output does not cite this skill by name",
+      "passed": true,
+      "evidence": "Uses 'cross-agent review' as the user's own term but does not cite a skill by name."
+    }
+  ],
+  "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}
+}

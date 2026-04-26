@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Output uses structured-code-review's format (begins with `Findings:`, has 8-field preamble, severity-tagged findings)",
+      "passed": true,
+      "evidence": "Begins with 'Findings:' followed by an 8-field preamble (Reviewer / Implementer / Source of truth / Files reviewed / Gates re-run / Mode / Severity scale / Disposition); each finding tagged Critical / High / Medium / Low."
+    },
+    {
+      "text": "Identifies the timing-attack vulnerability: `token === expected` is NOT constant-time, violating the design's 'timing-safe' requirement (severity: High or Critical)",
+      "passed": true,
+      "evidence": "Finding 2 — Critical: '`token === expected` is not constant-time, violating the explicit timing-safe requirement'."
+    },
+    {
+      "text": "Identifies that comparing the user-supplied token directly to SESSION_SIGNING_KEY is fundamentally wrong — the token should be cryptographically verified (HMAC, JWT signature, etc.), not compared directly to a signing key (severity: High or Critical)",
+      "passed": true,
+      "evidence": "Finding 1 — Critical: 'Authentication compares user-supplied token to the signing key directly... The expected design is to verify the token cryptographically — e.g., HMAC-verify a signed payload, or validate a JWT signature.'"
+    },
+    {
+      "text": "Identifies the missing 'malformed' and 'expired' validation paths — the design says expired tokens should return 401, but the code only checks presence and equality, no expiration check",
+      "passed": true,
+      "evidence": "Finding 4 — High: 'malformed validation path required by the design is not implemented' and Finding 5 — High: 'Expiration validation required by the design is not implemented'."
+    },
+    {
+      "text": "Identifies that `decode(token).userId` is called only AFTER the equality check passes, but if the token equals SESSION_SIGNING_KEY (which it shouldn't), decode() is being called on a signing key string — undefined behavior",
+      "passed": true,
+      "evidence": "Finding 3 — High: '`decode(token)` is invoked on a value that is, by construction, the signing key... the behavior is undefined in practice — depending on `decode`'s implementation it will throw, return `undefined`, or return whatever happens to fall out of decoding a non-token value.'"
+    },
+    {
+      "text": "Does NOT include phrases that suggest the reviewer is anchoring on the implementer's confidence (no 'the implementer was careful but missed X', no 'as expected, the work mostly looks good')",
+      "passed": true,
+      "evidence": "No such anchoring phrases; tone is consistently adversarial. Disposition is 'Ship is BLOCKED'."
+    },
+    {
+      "text": "Findings are framed as 'found problems', not as 'minor improvements' — the framing matches the adversarial-review intent",
+      "passed": true,
+      "evidence": "Findings labeled Critical/High; phrasing like 'Block ship' and 'This change is not safe to ship in its current form'."
+    },
+    {
+      "text": "Output does not cite either skill by name",
+      "passed": true,
+      "evidence": "No mention of 'cross-agent-review' or 'structured-code-review' as skill citations in the body (the format is followed without naming it)."
+    }
+  ],
+  "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}
+}

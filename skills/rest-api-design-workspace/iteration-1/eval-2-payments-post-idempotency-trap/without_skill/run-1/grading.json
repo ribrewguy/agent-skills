@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "Identifies the missing Idempotency-Key header as the primary gap",
+      "passed": false,
+      "evidence": "The review covers auth, validation, error responses, PCI, logging, rate limiting, async webhooks, and status codes — but never mentions Idempotency-Key, idempotency, or duplicate-charge protection on retries"
+    },
+    {
+      "text": "Describes retry semantics: same key + same payload returns the original response exactly",
+      "passed": false,
+      "evidence": "No discussion of retry semantics or idempotency key handling"
+    },
+    {
+      "text": "Describes 409 CONFLICT when the same key is reused with a different payload",
+      "passed": false,
+      "evidence": "Status codes mention 422, 402, 429 but no 409 in the context of idempotency-key reuse"
+    },
+    {
+      "text": "Recommends persisting the idempotency key alongside the payload hash + response for a retention window (mentions 24h or longer for financial writes)",
+      "passed": false,
+      "evidence": "No mention of persisting idempotency keys, payload hashes, or retention windows"
+    },
+    {
+      "text": "Does not mistakenly green-light the draft without flagging the idempotency gap",
+      "passed": false,
+      "evidence": "Summary closes with 'Beyond that the shape looks fine' — effectively green-lighting the contract while missing the central money-moving gap"
+    },
+    {
+      "text": "Error envelope in the revised contract is flat (top-level { code, message, details?, requestId }) with domain-expressive codes like `IdempotencyKeyReused` — not wrapped in `error:`, not `CONFLICT` as the code",
+      "passed": false,
+      "evidence": "Section 3 example wraps payload in '{ error: { code, message } }'; no IdempotencyKeyReused code present (the topic is absent entirely)"
+    }
+  ],
+  "summary": {"passed": 0, "failed": 6, "total": 6, "pass_rate": 0.00}
+}

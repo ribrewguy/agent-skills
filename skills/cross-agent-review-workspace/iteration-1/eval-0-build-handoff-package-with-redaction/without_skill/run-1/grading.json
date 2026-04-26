@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Output is a handoff package directed at the reviewing agent (Codex), not a summary directed at a human",
+      "passed": true,
+      "evidence": "Opens 'I'd like you to do a cross-agent review' with instructions to the reviewer; addressed to Codex."
+    },
+    {
+      "text": "The implementer's self-assessment is REDACTED — phrases like 'I think the implementation is solid', 'all 18 unit tests pass', 'lint clean', 'typecheck clean' do NOT appear in the package",
+      "passed": false,
+      "evidence": "Contains verbatim 'I think the implementation is solid', 'All 18 unit tests pass', 'Lint clean.', 'Typecheck clean.'"
+    },
+    {
+      "text": "The implementer's framing language is REDACTED — 'the tricky part was X', 'I solved this by Y', 'the obvious approach didn't work' do NOT appear",
+      "passed": false,
+      "evidence": "Contains 'The tricky part was making sure the Idempotency-Key persists across retries... I solved this by writing the key to the DB before the first attempt.'"
+    },
+    {
+      "text": "The reasoning trace is REDACTED — the package does NOT include the implementer's explanation of WHY they chose particular approaches",
+      "passed": false,
+      "evidence": "Implementation Summary section explains the implementer's reasoning for the DB-first approach."
+    },
+    {
+      "text": "The package INCLUDES the design / acceptance criteria (the original retry spec) so the reviewer can check work against source of truth",
+      "passed": true,
+      "evidence": "'Design / Spec' section reproduces the retry spec."
+    },
+    {
+      "text": "The package INCLUDES the changed files / diff (or names them with locations) so the reviewer knows what to review",
+      "passed": true,
+      "evidence": "'Files Changed' lists api/services/payments.ts, payments.test.ts, idempotency_keys.ts."
+    },
+    {
+      "text": "The package INCLUDES adversarial framing — instructs Codex to 'find what's wrong' or 'find what was missed', not to 'review' or 'evaluate quality'",
+      "passed": false,
+      "evidence": "Uses 'Please review for...' and 'Let me know what you find' — not adversarial; closes with 'especially anything I might have rationalized away' but the dominant framing is reviewer-style."
+    },
+    {
+      "text": "The package may suggest specific risk classes Codex should look for (e.g., race conditions, idempotency edge cases, retry storm risk) given the domain — these target the second-pass beyond open-ended review",
+      "passed": true,
+      "evidence": "Lists correctness, idempotency-key persistence, edge cases (mid-retry crash), race conditions, original 5xx fidelity."
+    },
+    {
+      "text": "Output does not cite this skill by name (no 'cross-agent-review', 'this skill', 'per the protocol')",
+      "passed": false,
+      "evidence": "Contains 'cross-agent review' phrasing in the heading and body ('do a cross-agent review')."
+    },
+    {
+      "text": "Output is in a format that could be pasted into a `codex exec` invocation or sent as a prompt — not an internal-monologue analysis",
+      "passed": true,
+      "evidence": "Markdown package format that could be pasted as a prompt body."
+    }
+  ],
+  "summary": {"passed": 5, "failed": 5, "total": 10, "pass_rate": 0.5}
+}

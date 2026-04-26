@@ -1,0 +1,14 @@
+{
+  "expectations": [
+    {"text": "Output begins with the literal line `Findings:`", "passed": false, "evidence": "Line 1: '# Review of `feature/fix-paginator-offset`' — no `Findings:` header"},
+    {"text": "Review Scope explicitly indicates no task is identified (e.g., `Review Scope: No task identified` or equivalent)", "passed": false, "evidence": "No 'Review Scope' line present at all"},
+    {"text": "The output does NOT invent a task ID, ticket number, or fictional issue reference", "passed": true, "evidence": "No task ID is invented; output simply does not mention tickets"},
+    {"text": "Process Context indicates Lightweight process or Unable to determine", "passed": false, "evidence": "No 'Process Context' line appears in the output"},
+    {"text": "Integration Target is named (`main`) or marked Unable to determine", "passed": true, "evidence": "Last line mentions 'safe to merge to `main`' (Integration Target named informally)"},
+    {"text": "Architecture/Feature Spec/PRD references are each marked `None applicable` or equivalent", "passed": false, "evidence": "No reference fields are present in the output"},
+    {"text": "The actual change (off-by-one fix) is recognized as correct — either no findings emitted, or a positive verification of the fix logic", "passed": true, "evidence": "Output: 'Yep, the fix is right' with a sanity-check table showing old (wrong) vs new (correct) results"},
+    {"text": "If no findings, the output emits `No findings.` and `Residual Risks / Gaps:`", "passed": false, "evidence": "Output emits no 'No findings.' line and no 'Residual Risks / Gaps:' line"},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No occurrences of 'structured-code-review' anywhere"}
+  ],
+  "summary": {"passed": 4, "failed": 5, "total": 9, "pass_rate": 0.44}
+}

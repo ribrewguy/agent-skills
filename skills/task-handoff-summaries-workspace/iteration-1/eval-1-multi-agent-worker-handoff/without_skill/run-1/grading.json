@@ -1,0 +1,15 @@
+{
+  "expectations": [
+    {"text": "Output uses the worker handoff summary format (not the implementation or closeout format)", "passed": true, "evidence": "Title 'Worker Handoff — proj-42-w2'; structured as a worker-to-orchestrator handoff."},
+    {"text": "All 6 fields appear: Task (or Bead), Branch with Published+Commit, Implementation Outcome with integration target, Quality Gates, Risks/Gaps, Review Notes", "passed": false, "evidence": "Conceptual content is present but the labeled fields 'Implementation Outcome', 'Risks/Gaps', and 'Review Notes' are not used. Sections are titled Summary, Branch Info, What I Did, Quality Gates, Things to Watch in Integration, Other Issues."},
+    {"text": "Task identifier names proj-42-w2 explicitly", "passed": true, "evidence": "Title and Summary reference 'bead proj-42-w2' explicitly."},
+    {"text": "Branch field names feature/proj-42-w2_staging-source-ref, marks Published as yes, includes commit SHA 7a3f9b1", "passed": true, "evidence": "Branch Info lists branch name, 'Published to remote: Yes', and 'Handoff commit SHA: 7a3f9b1'."},
+    {"text": "Quality Gates section reports concrete results (142/142 unit tests, 0 lint errors, typecheck passed) — not vague", "passed": true, "evidence": "'Lint: 0 errors; Typecheck: passing; Unit tests: 142/142 passing'."},
+    {"text": "Intended integration target is named (integration/proj-42_staging-bringup)", "passed": true, "evidence": "'Intended integration target: integration/proj-42_staging-bringup'."},
+    {"text": "Review Notes call out the github.head_ref consideration the worker wants the orchestrator to verify", "passed": true, "evidence": "'Things to Watch in Integration' section discusses github.head_ref behavior and asks the orchestrator to confirm parent-epic protections."},
+    {"text": "Output is concise (worker handoff is shorter than the user-facing implementation summary; no Behavioral Impact / File Reference Summary unless explicitly relevant)", "passed": true, "evidence": "No Behavioral Impact or File Reference Summary sections; output is concise."},
+    {"text": "Output does not falsely claim the branch was accepted, merged, or that closeout happened — handoff is pre-acceptance", "passed": true, "evidence": "Closes with 'Handing off to the orchestrator for integration review and acceptance' — explicitly pre-acceptance."},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of the skill name."}
+  ],
+  "summary": {"passed": 9, "failed": 1, "total": 10, "pass_rate": 0.9}
+}

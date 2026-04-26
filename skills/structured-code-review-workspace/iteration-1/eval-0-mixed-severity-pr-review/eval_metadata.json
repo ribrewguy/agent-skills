@@ -1,0 +1,20 @@
+{
+  "eval_id": 0,
+  "eval_name": "mixed-severity-pr-review",
+  "prompt": "Review this PR. The change adds an admin user listing endpoint to a Python FastAPI service.\n\n```python\n# api/routes/admin.py (new file)\nfrom fastapi import APIRouter\nfrom api.db import db\n\nAPI_KEY = 'sk_live_Adm1n_2024_HARDCODED'  # used by the legacy ETL job\n\nrouter = APIRouter()\n\n@router.get('/admin/listAllUsers')\nasync def list_all_users(req):\n    rows = db.execute(f\"SELECT * FROM users WHERE created_at > '{req.query_params.get('since')}'\")\n    return rows\n```\n\nThe associated task is `task-101` and the design says: 'Admin user listing endpoint, paginated, requires admin permission, filters by creation date.' The PRD entry is at `docs/prds/02-admin-tooling.md` §3 ('Admin endpoints must be auditable and rate-limited').",
+  "assertions": [
+    "Output begins with the literal line `Findings:` (no preceding text)",
+    "All eight preamble fields are present, in order: Review Scope, Process Context, Execution Context, Integration Target, Design Reference, Architecture Reference, Feature Specification Reference, PRD Reference",
+    "Review Scope names task-101 (e.g., `Review Scope: Task task-101`)",
+    "PRD Reference cites docs/prds/02-admin-tooling.md (with section reference)",
+    "At least one finding is tagged severity High (the hardcoded API key OR the SQL injection vulnerability via f-string interpolation)",
+    "The hardcoded API key (`sk_live_Adm1n_2024_HARDCODED`) is identified as a finding",
+    "The SQL injection via f-string interpolation of req.query_params is identified as a finding",
+    "The verb in URL (`/listAllUsers`) is identified — should be `GET /admin/users`",
+    "The missing pagination is identified (design says 'paginated')",
+    "The missing admin permission check is identified (design says 'requires admin permission')",
+    "Findings are ordered by severity, highest first (no Low listed before a High)",
+    "Each finding includes a file path with a line number reference, severity in backticks, Problem/Why/Source of truth/Proposed fix structure",
+    "Output does not cite this skill by name (no 'structured-code-review', 'per the skill', 'as required by the skill')"
+  ]
+}

@@ -55,6 +55,8 @@ For other tools, see [Install](../install).
 
 ## Eval results
 
+Full per-eval breakdown, interactive review viewer, and links to raw model outputs: **[cross-agent-review evaluations](../evals/cross-agent-review)**.
+
 Iteration-1 benchmark: **100% pass rate with-skill vs. 77% baseline** (+23pp delta) across four cases. Per-eval pattern: largest delta on the redact-self-assessment handoff (+50pp) and disagreement-summary even-handedness (+30pp); smaller delta on the cold-review (+13pp because both can review code competently); zero delta on skip-trivial-work (the prompt itself supplied the policy framing, a non-discriminating eval to revisit in iteration-2).
 
 | Eval | What it probes |

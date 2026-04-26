@@ -1,0 +1,65 @@
+{
+  "expectations": [
+    {
+      "text": "Catches snake_case on the wire (user_id, created_at, password_hash) and prescribes camelCase at the boundary",
+      "passed": true,
+      "evidence": "Section 3 mentions snake_case is unusual and shows camelCase example (userName, createdAt). Hedged ('If you have any reason to keep snake_case... be consistent') but the camelCase recommendation is present"
+    },
+    {
+      "text": "Catches verb in URL (/api/createUser) and proposes POST /api/users",
+      "passed": true,
+      "evidence": "Section 2: 'verb in the URL... `createUser` is the HTTP method's job (POST)'; fix: 'POST /v1/users'"
+    },
+    {
+      "text": "Catches GET used for destructive action (/api/users/:id/delete) and proposes DELETE /api/users/:id",
+      "passed": true,
+      "evidence": "Section 4: 'DELETE /v1/users/:id with 204 No Content on success'"
+    },
+    {
+      "text": "Catches the raw-array response from getUsers and proposes a paginated envelope",
+      "passed": true,
+      "evidence": "Section 1: 'A bare array is hard to evolve... Wrap the response in an envelope and add pagination from day one' with example `{ users, page, pageSize, total }`"
+    },
+    {
+      "text": "Catches the bespoke listEvents envelope ({events,total,limit,offset}) and proposes the canonical shape",
+      "passed": true,
+      "evidence": "Section 5: 'Bespoke per-endpoint envelopes are inconsistent... Pick a shape and use it everywhere' with example `{ data, pagination: { page, pageSize, total } }`"
+    },
+    {
+      "text": "Catches validation reporting one field at a time and prescribes returning all fields at once in details[]",
+      "passed": true,
+      "evidence": "Section 6: 'Returning only the first validation error means the user has to round-trip... Return all validation failures in one response' with fields object example"
+    },
+    {
+      "text": "Catches POST returning 200 and prescribes 201 Created + Location header",
+      "passed": true,
+      "evidence": "Section 3: 'conventional success status for a POST that creates a resource is 201 Created with a Location header'; fix shows '201 Created' with 'Location: /v1/users/abc123'"
+    },
+    {
+      "text": "Notes lack of X-Request-ID on responses (or absence of the correlating requestId in error bodies)",
+      "passed": false,
+      "evidence": "No mention of X-Request-ID, request correlation, or requestId field anywhere in the review"
+    },
+    {
+      "text": "The proposed error envelope is FLAT with domain-expressive codes — does not wrap contents in { error: {...} }, does not echo HTTP status as the code",
+      "passed": false,
+      "evidence": "Summary recommends '`{ error: { code, message, fields? } }`' — explicitly wrapped under `error:`. Section 6 example shows code 'VALIDATION_ERROR' which echoes the HTTP 422 status"
+    },
+    {
+      "text": "Does NOT recommend introducing a `/v1/` URL prefix — follows the One-Version Rule's 'no default version segment'",
+      "passed": false,
+      "evidence": "Section 2: 'consider versioning the prefix (/v1/) so you have a clear migration path later'; final summary: 'Adopting /v1/ as a prefix from the start gives you room to evolve' — explicitly recommends /v1/"
+    },
+    {
+      "text": "Does NOT recommend returning `total` on an unbounded list (no COUNT(*) recommendation) — recognizes the skill's 'never return total on unbounded sets' rule",
+      "passed": false,
+      "evidence": "Section 1 recommends `{ users, page, pageSize, total }`; Section 5 recommends `{ data, pagination: { page, pageSize, total } }` — both include `total`"
+    },
+    {
+      "text": "Flags the URL exposing DB implementation (user_table_v2 referenced / DB naming leaking)",
+      "passed": false,
+      "evidence": "No mention of user_table_v2 or any URL exposing DB schema/implementation"
+    }
+  ],
+  "summary": {"passed": 7, "failed": 5, "total": 12, "pass_rate": 0.58}
+}

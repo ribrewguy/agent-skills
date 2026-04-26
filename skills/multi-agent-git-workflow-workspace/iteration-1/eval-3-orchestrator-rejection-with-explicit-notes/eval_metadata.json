@@ -1,0 +1,6 @@
+{
+  "id": 3,
+  "name": "orchestrator-rejection-with-explicit-notes",
+  "skill": "multi-agent-git-workflow",
+  "prompt": "I'm the orchestrator on epic proj-42. Worker proj-42-w3 (source-ref enforcement workflow + pre-commit hook config) handed me their branch. When I try to integrate it: lint passes, typecheck FAILS with 4 errors in `.github/workflows/ci-staging.yml.types.ts` (the worker added a typed wrapper but the types don't compile), unit tests pass for the rest of the suite but the worker added 2 new tests that FAIL because they assume `process.env.NODE_VERSION` is set (it isn't in CI). The branch also adds an `.husky/` directory but the team's pre-commit hook policy says simple-git-hooks, not husky — that's a divergence from the bead design. Write the rejection notes for the worker. Do NOT silently fix the issues."
+}

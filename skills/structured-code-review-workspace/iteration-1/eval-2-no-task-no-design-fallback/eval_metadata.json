@@ -1,0 +1,16 @@
+{
+  "eval_id": 2,
+  "eval_name": "no-task-no-design-fallback",
+  "prompt": "I made a small change on a feature branch. There's no associated ticket — I just noticed an off-by-one in a paginator. Can you review it?\n\n```diff\n  // src/server/list.ts\n  function paginate<T>(items: T[], offset: number, limit: number): T[] {\n-   return items.slice(offset, offset + limit - 1)\n+   return items.slice(offset, offset + limit)\n  }\n```\n\nThis is on `feature/fix-paginator-offset`. Going to merge to `main` after review.",
+  "assertions": [
+    "Output begins with the literal line `Findings:`",
+    "Review Scope explicitly indicates no task is identified (e.g., `Review Scope: No task identified` or equivalent)",
+    "The output does NOT invent a task ID, ticket number, or fictional issue reference",
+    "Process Context indicates Lightweight process or Unable to determine",
+    "Integration Target is named (`main`) or marked Unable to determine",
+    "Architecture/Feature Spec/PRD references are each marked `None applicable` or equivalent",
+    "The actual change (off-by-one fix) is recognized as correct — either no findings emitted, or a positive verification of the fix logic",
+    "If no findings, the output emits `No findings.` and `Residual Risks / Gaps:`",
+    "Output does not cite this skill by name"
+  ]
+}

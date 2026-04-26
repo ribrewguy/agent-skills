@@ -1,0 +1,16 @@
+{
+  "eval_id": 1,
+  "eval_name": "no-findings-clean-change",
+  "prompt": "Review this small change. The author renamed a variable for clarity in a utility function. The change is associated with `task-102` (Process: Lightweight process — no PRD or architecture spec; just a clarity refactor). Diff:\n\n```diff\n  // src/utils/format.ts\n- export function formatDate(d: Date): string {\n-   const x = d.toISOString()\n-   return x.split('T')[0]\n- }\n+ export function formatDate(date: Date): string {\n+   const isoString = date.toISOString()\n+   return isoString.split('T')[0]\n+ }\n```\n\nNo other files changed. The function is covered by an existing test that still passes. There's no design doc — this is a maintainability tweak.",
+  "assertions": [
+    "Output begins with the literal line `Findings:`",
+    "All eight preamble fields are present in order, even though there are no findings",
+    "Review Scope names task-102",
+    "Process Context indicates Lightweight process",
+    "Architecture Reference, Feature Specification Reference, and PRD Reference are each marked `None applicable`",
+    "The output contains the literal line `No findings.`",
+    "The output contains the literal line `Residual Risks / Gaps:` (with content — even if 'None noted')",
+    "Findings list is empty (the format does not list any High/Medium/Low entries)",
+    "Output does not cite this skill by name"
+  ]
+}

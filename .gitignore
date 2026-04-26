@@ -1,5 +1,6 @@
-# Skill development workspaces — iteration outputs, grading, benchmarks, review HTML
-skills/*-workspace/
+# Workspace data is published under skills/*-workspace/ for transparency on
+# eval results. To suppress local re-runs from being committed, uncomment:
+# skills/*-workspace/
 
 # OS / editor
 .DS_Store

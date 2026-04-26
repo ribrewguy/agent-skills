@@ -57,6 +57,8 @@ For other tools, see [Install](../install).
 
 ## Eval results
 
+Full per-eval breakdown, interactive review viewer, and links to raw model outputs: **[structured-code-review evaluations](../evals/structured-code-review)**.
+
 Iteration-1 benchmark: **100% pass rate with-skill vs. 31% baseline** across four test cases (+69pp delta, the largest skill effect we've measured in this collection):
 
 | Eval | What it probes |

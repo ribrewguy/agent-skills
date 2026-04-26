@@ -62,6 +62,8 @@ The skill itself is language-agnostic; the examples use multiple languages so th
 
 ## Eval results
 
+Full per-eval breakdown, interactive review viewer, and links to raw model outputs: **[rest-api-design evaluations](../evals/rest-api-design)**.
+
 Iteration-2 benchmark (after rework based on user feedback): **100% pass rate with-skill vs. 82.5% with old version of the skill** across four test cases:
 
 | Eval | What it probes |

@@ -1,0 +1,15 @@
+{
+  "expectations": [
+    {"text": "Output uses the closeout summary format", "passed": true, "evidence": "Header reads '## Closeout Summary' and follows Format 3 fields."},
+    {"text": "Process Used: Lightweight process", "passed": true, "evidence": "'Process Used: Lightweight process'."},
+    {"text": "Execution Context: Single-agent", "passed": true, "evidence": "'Execution Context: Single-agent'."},
+    {"text": "Task Scope explicitly states 'No task was worked on.' (or equivalent — 'No bead was worked on.')", "passed": true, "evidence": "'Task Scope: No task was worked on.'"},
+    {"text": "Output does NOT invent a task ID, ticket number, or fictional bead reference", "passed": true, "evidence": "No invented IDs; Task Scope states no task."},
+    {"text": "Closeout Outcome describes the typo fix and that it merged directly to main", "passed": true, "evidence": "'Fixed a one-line typo in an admin UI button label: pubish → publish.' and 'Integration target reached: main (merged directly to main; allowed for trivial typo fixes per team convention)'."},
+    {"text": "Evidence section is concrete (lint passed, typecheck passed, unit tests passing, commit 4d5e6f7, pushed, branch deleted)", "passed": true, "evidence": "Evidence lists Lint passed, Typecheck passed, Unit tests passing, Commit 4d5e6f7, Push yes, Branch merged to main and deleted."},
+    {"text": "Behavioral Impact notes the user-visible button label change (pubish → publish)", "passed": true, "evidence": "'Admin UI button label now reads \"publish\" (previously \"pubish\").'"},
+    {"text": "Risks/Gaps states there are no known remaining gaps (or equivalent)", "passed": true, "evidence": "'No known remaining gaps at closeout.'"},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of the skill name."}
+  ],
+  "summary": {"passed": 10, "failed": 0, "total": 10, "pass_rate": 1.0}
+}

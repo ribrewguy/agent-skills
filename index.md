@@ -40,6 +40,7 @@ The skills here are extracted from real `policies/development/` directories I ma
 
 - **[Install](install)**: set up the skills for your AI tool of choice.
 - **[Skills](skills)**: browse the catalog, see what each one covers, link out to the canonical SKILL.md.
+- **[Evaluations](evals)**: every skill's eval results, with side-by-side outputs and per-assertion grading. The receipts for "the skill works."
 - **[Concepts](concepts)**: the cross-cutting ideas these skills share. The canonical-home symlink pattern, dependency tiers, severity ladders, composition over absorption.
 
 This site is also the docs for contributors who want to add their own skills to the collection. See [Skills → Contributing a new skill](skills#contributing-a-new-skill).

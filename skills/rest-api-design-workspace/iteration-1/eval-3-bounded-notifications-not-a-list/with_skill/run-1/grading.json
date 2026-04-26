@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Does NOT add cursor/offset/page pagination (recognizes this as bounded-by-policy, not a growing list)",
+      "passed": true,
+      "evidence": "Section 'No pagination': 'This is bounded by policy at 5 — it is not a growing list. Cursor / offset / page parameters don't belong here.'"
+    },
+    {
+      "text": "Returns the canonical `{ data: [...] }` envelope — NOT a bespoke envelope with a resource-named key like `{ notifications: [...] }`, and does not invent extra top-level fields like unreadCount or fetchedAt unless explicitly requested",
+      "passed": true,
+      "evidence": "Response shape is `{ \"data\": [...] }`; explicit notes 'No top-level resource name (no { \"notifications\": [...] })' and 'No invented sibling fields. No unreadCount, no fetchedAt, no lastSeenId'"
+    },
+    {
+      "text": "URL contains no verbs (no /getNotifications, /fetchRecent, /latest)",
+      "passed": true,
+      "evidence": "URL: 'GET /api/notifications/recent. Plural noun, no verbs — getNotifications, fetchRecent, latest would all bake the action into the URL'"
+    },
+    {
+      "text": "Explicitly notes the bound is server-enforced (client cannot request more than 5)",
+      "passed": true,
+      "evidence": "'Do not let the client request fewer than 5, or — much more importantly — more than 5. The bound is server-enforced and fixed.' and 'the server returns at most 5, period'"
+    },
+    {
+      "text": "Notes that broadening the bound later would be a breaking change (Hyrum's Law / contract discipline) — OR explicitly warns against exposing a `limit` query param",
+      "passed": true,
+      "evidence": "Both: 'No limit / count / take query parameter. Do not let the client request... more than 5'; AND 'Broadening the bound is a breaking change. Going from \"always 5\" to \"configurable, default 20\" is not additive'; AND Hyrum's Law explicitly invoked"
+    }
+  ],
+  "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.00}
+}

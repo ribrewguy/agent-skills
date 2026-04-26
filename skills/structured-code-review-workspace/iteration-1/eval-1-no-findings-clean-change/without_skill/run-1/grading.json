@@ -1,0 +1,14 @@
+{
+  "expectations": [
+    {"text": "Output begins with the literal line `Findings:`", "passed": false, "evidence": "Line 1: '# Review' — no `Findings:` header"},
+    {"text": "All eight preamble fields are present in order, even though there are no findings", "passed": false, "evidence": "Output uses prose section headings ('## What changed', '## Why this is safe to merge'); none of the eight preamble fields appear"},
+    {"text": "Review Scope names task-102", "passed": false, "evidence": "task-102 is not mentioned anywhere in the output"},
+    {"text": "Process Context indicates Lightweight process", "passed": false, "evidence": "No 'Process Context' line is present in the output"},
+    {"text": "Architecture Reference, Feature Specification Reference, and PRD Reference are each marked `None applicable`", "passed": false, "evidence": "None of these reference fields appear in the output"},
+    {"text": "The output contains the literal line `No findings.`", "passed": false, "evidence": "Output says 'LGTM — ship it' but does not contain the literal 'No findings.' line"},
+    {"text": "The output contains the literal line `Residual Risks / Gaps:` (with content — even if 'None noted')", "passed": false, "evidence": "No 'Residual Risks / Gaps:' line appears"},
+    {"text": "Findings list is empty (the format does not list any High/Medium/Low entries)", "passed": true, "evidence": "No High/Medium/Low entries are listed (output is in approval prose)"},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No occurrences of 'structured-code-review' anywhere in the output"}
+  ],
+  "summary": {"passed": 2, "failed": 7, "total": 9, "pass_rate": 0.22}
+}

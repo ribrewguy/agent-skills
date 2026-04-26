@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Output uses the disagreement summary format (Topic / Implementing agent's position / Reviewing agent's position / What both agree on / What's at stake / Recommended escalation)",
+      "passed": true,
+      "evidence": "Headed 'Cross-Agent Review Disagreement' with all six sections in the prescribed order: Topic / Implementing agent's position / Reviewing agent's position / What both agree on / What's at stake in the choice / Recommended escalation."
+    },
+    {
+      "text": "Topic is one sentence describing the contested decision (default for non-tagged reads: replica vs. primary)",
+      "passed": true,
+      "evidence": "'For database reads that are NOT explicitly tagged with a freshness requirement, should the default route be the read replica or the primary?'"
+    },
+    {
+      "text": "Implementing agent's position section captures what they did and the tradeoff they accepted (replica-by-default → relieves primary load, but relies on caller correctness)",
+      "passed": true,
+      "evidence": "States the routing choice and 'Tradeoff they accepted: a small surface of bugs where a caller fails to set `requires_fresh: true`... in exchange for the load-relief benefit'."
+    },
+    {
+      "text": "Reviewing agent's position section captures what they recommend and the tradeoff they propose (primary-by-default → loses replica load relief, but eliminates silent-stale-data class of bugs)",
+      "passed": true,
+      "evidence": "'Tradeoff they propose: forfeiting most of the replica's load-relief value... in exchange for eliminating a class of silent data-inconsistency bugs that are hard to catch in testing.'"
+    },
+    {
+      "text": "What both agree on section names the shared facts (replica lag exists and is <100ms-ish)",
+      "passed": true,
+      "evidence": "'Replica lag exists and is roughly <100ms in this setup. The decision is not about the magnitude of replica lag — it is purely about which side the default should land on for reads that are not explicitly tagged.'"
+    },
+    {
+      "text": "What's at stake section names the consequence of the choice — silent data inconsistency vs. primary load",
+      "passed": true,
+      "evidence": "'Silent data-inconsistency bugs (read-your-own-writes failures presenting as \"intermittent\" customer-visible problems) vs. realized primary-load relief from the replica investment.'"
+    },
+    {
+      "text": "Recommended escalation suggests a specific human and a specific question",
+      "passed": true,
+      "evidence": "'engineering owner of the orders / payments data path' with a specific question quoted in full."
+    },
+    {
+      "text": "The summary is even-handed — does NOT advocate for either side, does NOT add the writer's own analysis on top",
+      "passed": true,
+      "evidence": "Both positions framed symmetrically with their own tradeoffs; no writer's verdict; conclusion just routes to a human."
+    },
+    {
+      "text": "Does NOT escalate to a third agent (the skill specifically says don't recurse to another agent)",
+      "passed": true,
+      "evidence": "Escalation target is a human ('engineering owner'), not another agent."
+    },
+    {
+      "text": "Output does not cite this skill by name",
+      "passed": true,
+      "evidence": "No mention of 'cross-agent-review' or 'this skill' (the heading 'Cross-Agent Review Disagreement' refers to the document type per the skill template, not a citation of the skill)."
+    }
+  ],
+  "summary": {"passed": 10, "failed": 0, "total": 10, "pass_rate": 1.0}
+}
