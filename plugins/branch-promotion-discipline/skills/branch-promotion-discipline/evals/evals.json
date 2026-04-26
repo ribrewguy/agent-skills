@@ -1,0 +1,66 @@
+{
+  "skill_name": "branch-promotion-discipline",
+  "evals": [
+    {
+      "id": 0,
+      "name": "set-up-3-tier-flow-from-single-main",
+      "prompt": "We currently merge feature branches directly to `main` and deploy from there. We want to move to a 3-tier flow with a stakeholder acceptance environment between develop and main. Design the branch flow: name the long-lived branches, how code moves between them, the per-tier CI gate matrix, the branch protection rules, and the adoption sequence for a team of ~6 engineers who haven't worked with this before.",
+      "expectations": [
+        "Names exactly three long-lived branches: develop, uat (or staging), main",
+        "Specifies one-way promotion: develop to uat to main; explicitly forbids skipping a tier",
+        "Forbids backflow (main to uat as a normal flow); only post-hotfix forward-merge is allowed",
+        "Includes a CI gate matrix where each tier has at least one gate the previous tier doesn't (e.g., e2e or environment smoke tests at uat that aren't on develop)",
+        "Branch protection rules escalate with tier (e.g., more required approvers on main than develop)",
+        "Source-ref enforcement is mentioned: PRs to uat must come from develop (or hotfix), PRs to main must come from uat",
+        "Adoption sequence acknowledges this is a culture change and includes a transition step (e.g., create develop and uat from main tip, update CI, communicate the change)",
+        "Output does not cite this skill by name (no 'branch-promotion-discipline says', 'this skill', etc.)"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "hotfix-flow-with-forward-merge",
+      "prompt": "Production has a bug. Customer-facing API endpoint returns 500 because of a null-pointer when an optional field is missing in the request payload. Fix is roughly 5 lines. Our flow is develop / uat / main with one-way promotion. What's the hotfix path? Be specific about which branch to fork from, the PR target sequence, gate requirements at each step, and what happens after the fix lands in main.",
+      "expectations": [
+        "Branches the hotfix from `uat` (NOT directly from `main`) so the fix passes through stakeholder acceptance",
+        "PR sequence is hotfix to uat, then uat to main (not hotfix directly to main)",
+        "Source-ref check on uat accepts hotfix/* as a valid source",
+        "After the hotfix reaches main, instructs forward-merge from uat back to develop to keep them in sync",
+        "Explicitly explains why the forward-merge matters (without it, develop reintroduces the bug at next promotion)",
+        "Notes the regression-only exception: if the bug exists only on main (introduced in the most recent uat-to-main promotion), branching from main is acceptable with explicit approval",
+        "CI gates on the hotfix PRs are the same as a normal promotion at each tier (no skipping gates because of urgency)",
+        "Output does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "reject-pr-skipping-uat",
+      "prompt": "A PR is open from `develop` directly to `main` with the description 'urgent feature for client demo tomorrow, please merge'. Should this PR be merged? Why or why not, and what should happen instead? The repo's flow is develop / uat / main with one-way promotion. The team is on Pacific time and the demo is at 9am Pacific tomorrow.",
+      "expectations": [
+        "Rejects the PR in its current form (does NOT merge develop directly to main, regardless of urgency)",
+        "Explains why: skipping uat defeats the stakeholder-acceptance tier; main is supposed to mean 'passed acceptance', not 'whatever was on develop'",
+        "Proposes the correct path: promote develop to uat first, then uat to main",
+        "Estimates the time cost of the correct path realistically (uat smoke + acceptance can be done in tens of minutes if the gate matrix is tight, hours if e2e is slow)",
+        "Acknowledges the demo deadline as a real constraint without using it as a reason to bypass the tier",
+        "If the demo can be served from the uat environment instead of waiting for production, suggests that as a workaround (uat is deployed, stakeholders accept there)",
+        "Does NOT recommend disabling branch protection or going around the source-ref check",
+        "Output does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "design-ci-gate-matrix",
+      "prompt": "Design the CI gate matrix for a 3-tier flow (develop / uat / main). For each tier, list the required gates and explain WHY each gate runs at that tier (or doesn't). Cover at least: lint, typecheck, unit tests, build artifact, integration tests, end-to-end tests, environment smoke tests. Assume the team has all of these gates available; the question is which ones gate which tier.",
+      "expectations": [
+        "Each tier has at least one gate the previous tier doesn't (uat strictly stricter than develop, main strictly stricter than uat)",
+        "Lint, typecheck, unit tests, build artifact are required at all three tiers",
+        "Integration tests and end-to-end tests are required at uat and main (optional or deferred on develop)",
+        "Environment smoke tests at uat run against the UAT deployed environment; environment smoke tests at main run against production",
+        "Justification given for why slower gates (e2e) are gated at uat rather than per-merge on develop (cost-benefit: develop has many merges per day, e2e cost would be high and signal usually low-pre-promotion)",
+        "Source-ref check is required at uat and main (optional on develop)",
+        "Source-ref check, if mentioned at develop, accepts feature/* and integration/* but rejects uat or main as source refs",
+        "Output reads as a matrix (table or per-tier list), not as a flat list of all gates",
+        "Output does not cite this skill by name"
+      ]
+    }
+  ]
+}
