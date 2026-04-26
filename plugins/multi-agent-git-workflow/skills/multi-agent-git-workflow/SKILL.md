@@ -14,7 +14,7 @@ Two distinct concerns covered together because they're the same git-author momen
 1. **Multi-agent topology**, how branches, worktrees, and roles are arranged so multiple agents don't trip over each other and so integration is auditable.
 2. **Commit discipline**, Conventional Commits, mandatory task ID, co-author line, UAT gate ceremony, no silent amends.
 
-The 3-tier promotion (`develop` → `uat` → `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, and pre-commit hook setup are in the planned **branch-promotion-discipline** skill, this skill stays in the multi-agent + commit-format lane.
+The 3-tier promotion (`develop` → `uat` → `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, and pre-commit hook setup are in the **branch-promotion-discipline** skill, this skill stays in the multi-agent + commit-format lane.
 
 ## Tooling and dependencies
 
@@ -37,7 +37,7 @@ The 3-tier promotion (`develop` → `uat` → `main`), UAT branch as a long-live
 - [`task-handoff-summaries`](../../../task-handoff-summaries/skills/task-handoff-summaries/SKILL.md), the worker handoff and orchestrator close-out summaries reference this skill's role and branch vocabulary directly. The two skills are designed to be used together.
 - [`structured-code-review`](../../../structured-code-review/skills/structured-code-review/SKILL.md), when an orchestrator reviews a worker's branch (or a PR is reviewed before a develop merge), the review uses that format.
 - [`cross-agent-review`](../../../cross-agent-review/skills/cross-agent-review/SKILL.md), high-stakes branches benefit from cross-vendor review before integration.
-- *(planned)* `branch-promotion-discipline`, the layer above this one: 3-tier promotion (`develop` → `uat` → `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement.
+- `branch-promotion-discipline`, the layer above this one: 3-tier promotion (`develop` → `uat` → `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement.
 
 ## When to use
 
@@ -233,7 +233,7 @@ If a pre-commit hook fails:
 
 ## UAT gate (per-commit human approval ceremony)
 
-The "UAT gate" is a per-change ceremony performed before commit when the change affects externally visible behavior. It is **distinct** from the long-lived `uat` branch in the planned `branch-promotion-discipline` skill.
+The "UAT gate" is a per-change ceremony performed before commit when the change affects externally visible behavior. It is **distinct** from the long-lived `uat` branch in the `branch-promotion-discipline` skill.
 
 - If changes affect externally visible behavior, **ask the user whether they want UAT before any commit**.
 - If UAT is requested, **don't commit or push until UAT approval**.
@@ -343,4 +343,4 @@ Other trackers work the same way, substitute their issue ID format and adjust th
 - [`task-handoff-summaries`](../../../task-handoff-summaries/skills/task-handoff-summaries/SKILL.md), the worker handoff format and orchestrator close-out summary reference this skill's role and branch vocabulary.
 - [`structured-code-review`](../../../structured-code-review/skills/structured-code-review/SKILL.md), the format for orchestrator rejection notes and PR reviews.
 - [`cross-agent-review`](../../../cross-agent-review/skills/cross-agent-review/SKILL.md), when a worker branch goes through cross-vendor review before orchestrator acceptance, this is the workflow.
-- *(planned)* `branch-promotion-discipline`, the next layer up: 3-tier `develop` → `uat` → `main` promotion, UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, pre-commit hook setup.
+- `branch-promotion-discipline`, the next layer up: 3-tier `develop` → `uat` → `main` promotion, UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, pre-commit hook setup.

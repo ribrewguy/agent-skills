@@ -16,10 +16,7 @@ The catalog. Each skill has its own page with a summary, its key opinions, insta
 - **[task-handoff-summaries](task-handoff-summaries)**: three structured report formats. Implementation summary (before commit), worker handoff summary (multi-agent to orchestrator), closeout summary (after completion). Hard rules against using the summary to mask incomplete work.
 - **[cross-agent-review](cross-agent-review)**: workflow for routine cross-vendor agent peer review (Claude reviews Codex's work; Codex reviews Claude's). The handoff package with self-assessment redacted, the cold-review discipline, the disagreement protocol, the bounded iteration loop.
 - **[multi-agent-git-workflow](multi-agent-git-workflow)**: git discipline for multi-agent work. Branch hierarchy, worktree-per-agent topology, orchestrator/worker roles, merge authority, acceptance/rejection rules, plus universal commit discipline (Conventional Commits, mandatory task ID, co-author line, UAT gate, no silent amends).
-
-## In development
-
-- **branch-promotion-discipline**: the layer above multi-agent-git-workflow. 3-tier `develop` to `uat` to `main` promotion, UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, pre-commit hook setup.
+- **[branch-promotion-discipline](branch-promotion-discipline)**: the layer above multi-agent-git-workflow. 3-tier `develop` to `uat` to `main` promotion, UAT branch as a long-lived environment, per-tier CI gate matrix, source-ref enforcement, hotfix flow with forward-merge, branch protection ruleset, pre-commit hook setup.
 
 ## How skills are evaluated
 

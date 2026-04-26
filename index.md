@@ -27,6 +27,7 @@ That's the Claude Code path. For other tools (Gemini, Codex, Copilot, Cline, Cur
 - **[task-handoff-summaries](skills/task-handoff-summaries)**: three structured report formats (implementation summary before commit, worker handoff to orchestrator, closeout after completion). Hard rules against using the summary to mask incomplete work.
 - **[cross-agent-review](skills/cross-agent-review)**: workflow for routine cross-vendor agent peer review (Claude reviews Codex's work; Codex reviews Claude's). The handoff package with self-assessment redacted, the cold-review discipline, the disagreement protocol.
 - **[multi-agent-git-workflow](skills/multi-agent-git-workflow)**: git discipline for multi-agent work. Worktree-per-agent topology, orchestrator/worker roles, merge authority, acceptance/rejection rules, plus universal commit discipline (Conventional Commits, mandatory task ID, co-author line, UAT gate, no silent amends).
+- **[branch-promotion-discipline](skills/branch-promotion-discipline)**: the layer above multi-agent-git-workflow. 3-tier `develop` to `uat` to `main` promotion, per-tier CI gate matrix, source-ref enforcement, hotfix flow with forward-merge, branch protection ruleset, pre-commit hook setup.
 
 The full catalog lives at **[Skills](skills)**.
 

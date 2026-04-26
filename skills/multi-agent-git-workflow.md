@@ -19,7 +19,7 @@ Two concerns covered in one skill because they're the same git-author moment: ho
 - **Local-by-default branches.** Worker `feature/*` branches stay local unless the orchestrator needs remote access, CI is required on that branch, or the user requires remote visibility. Protects a clean remote branch list and keeps "ready for review" meaning something.
 - **Conventional Commits + mandatory task ID + co-author line on every commit.** No exceptions besides merge commits. The task ID anchors the commit to the tracker; the co-author line acknowledges AI assistance.
 - **No silent amends.** A failed pre-commit hook means the commit didn't happen. The working tree is unchanged. `--amend` would modify the *previous* commit, which on an unpublished commit can lose work and on a published commit breaks anyone who fetched it. Fix the issue, re-stage, create a NEW commit.
-- **UAT gate is a per-commit ceremony, distinct from a UAT branch.** If a change affects externally visible behavior, ask the user about UAT before commit. This is separate from the long-lived `uat` branch (which is in the planned `branch-promotion-discipline` skill).
+- **UAT gate is a per-commit ceremony, distinct from a UAT branch.** If a change affects externally visible behavior, ask the user about UAT before commit. This is separate from the long-lived `uat` branch (which is in the `branch-promotion-discipline` skill).
 
 ## What it covers
 
@@ -51,7 +51,7 @@ For other tools, see [Install](../install).
 - **[task-handoff-summaries](task-handoff-summaries)**: the worker handoff and orchestrator close-out summaries reference this skill's role and branch vocabulary directly. The two are designed to be used together.
 - **[structured-code-review](structured-code-review)**: when an orchestrator reviews a worker's branch (or a PR is reviewed before a develop merge), the review uses that format. Same format for rejection notes.
 - **[cross-agent-review](cross-agent-review)**: high-stakes worker branches benefit from cross-vendor review before orchestrator acceptance.
-- **(planned)** `branch-promotion-discipline`: the layer above this one. 3-tier promotion (`develop` to `uat` to `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, pre-commit hook setup.
+- `branch-promotion-discipline`: the layer above this one. 3-tier promotion (`develop` to `uat` to `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, pre-commit hook setup.
 
 ## Tooling and dependencies
 
@@ -105,4 +105,4 @@ Other trackers work the same way: substitute their ID format and lifecycle comma
 
 ## What this skill explicitly does NOT cover
 
-The 3-tier promotion (`develop` to `uat` to `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, and pre-commit hook setup are deferred to the planned **branch-promotion-discipline** skill. Skills that need that vocabulary should compose with both rather than have multi-agent-git-workflow re-derive it.
+The 3-tier promotion (`develop` to `uat` to `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, and pre-commit hook setup are deferred to the **branch-promotion-discipline** skill. Skills that need that vocabulary should compose with both rather than have multi-agent-git-workflow re-derive it.
