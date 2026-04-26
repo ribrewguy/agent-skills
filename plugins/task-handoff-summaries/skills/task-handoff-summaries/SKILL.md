@@ -1,6 +1,6 @@
 ---
 name: task-handoff-summaries
-description: Use when finishing a task and reporting status — implementation complete, multi-agent worker handing off to orchestrator, task closeout feeding the PR description. Produces one of three structured formats: implementation summary (before commit), worker handoff summary (worker → orchestrator), closeout summary (after completion). Each has a fixed field set, hard rules against claiming completion that didn't happen, task-tracker-aware vocabulary. Symptoms — vague "I made some changes" reports, completion claims that hide failed gates, summaries implying commit/push happened when they didn't, no governance status.
+description: Use when finishing a task and reporting status, implementation complete, multi-agent worker handing off to orchestrator, task closeout feeding the PR description. Produces one of three structured formats: implementation summary (before commit), worker handoff summary (worker → orchestrator), closeout summary (after completion). Each has a fixed field set, hard rules against claiming completion that didn't happen, task-tracker-aware vocabulary. Symptoms, vague "I made some changes" reports, completion claims that hide failed gates, summaries implying commit/push happened when they didn't, no governance status.
 ---
 
 # Task Handoff Summaries
@@ -9,9 +9,9 @@ description: Use when finishing a task and reporting status — implementation c
 
 Three structured report formats for the moments when work transitions between phases:
 
-- **Implementation summary** — produced before commit, after implementation is complete. The author hands this to the reviewer (human or another agent) so the reviewer can understand what changed before reading the diff.
-- **Worker handoff summary** — concise variant for multi-agent worker work, handed to an orchestrator. The orchestrator reads it before accepting the worker's branch into the integration target.
-- **Closeout summary** — produced after completion, when the work has reached its integration target and any required cleanup is done. This is the final externally-visible record of what shipped.
+- **Implementation summary**, produced before commit, after implementation is complete. The author hands this to the reviewer (human or another agent) so the reviewer can understand what changed before reading the diff.
+- **Worker handoff summary**, concise variant for multi-agent worker work, handed to an orchestrator. The orchestrator reads it before accepting the worker's branch into the integration target.
+- **Closeout summary**, produced after completion, when the work has reached its integration target and any required cleanup is done. This is the final externally-visible record of what shipped.
 
 The formats share a discipline: every field is a commitment. "Quality Gates: passed" without numbers is a smell; "Bead Scope: proj-42" without confirming the bead actually exists is a smell. The reader should be able to verify every claim from the summary alone, or know exactly what's still unverified.
 
@@ -23,19 +23,19 @@ Nothing. The formats are tool-neutral.
 
 ### Strongly recommended
 
-- **A task / issue tracker** — every format has a "Task Scope" / "Bead Scope" field. Without a tracker the field falls back to `No task was worked on.` Examples: [Beads](https://github.com/gastownhall/beads), GitHub Issues, Linear, Jira, Shortcut.
+- **A task / issue tracker**, every format has a "Task Scope" / "Bead Scope" field. Without a tracker the field falls back to `No task was worked on.` Examples: [Beads](https://github.com/gastownhall/beads), GitHub Issues, Linear, Jira, Shortcut.
 - **A version-controlled workflow** with explicit branches and integration targets. The "Integration Target" / "Branch" / "Governance Status" fields assume a branch model where work flows through stages (e.g., `feature/*` → `develop` → `uat` → `main`).
-- **`structured-code-review`** — when the summary's reader is *another agent doing a review*, the reviewer's output uses that format. Format consistency between summary input and review output makes hand-off → review → next-step legible at a glance.
+- **`structured-code-review`**, when the summary's reader is *another agent doing a review*, the reviewer's output uses that format. Format consistency between summary input and review output makes hand-off → review → next-step legible at a glance.
 
 ### Optional adapters
 
-- [Beads](https://github.com/gastownhall/beads) for tracking — see the **Adapter: Beads** section for the literal mapping.
+- [Beads](https://github.com/gastownhall/beads) for tracking, see the **Adapter: Beads** section for the literal mapping.
 
 ### Composes with
 
-- [`structured-code-review`](../../../structured-code-review/skills/structured-code-review/SKILL.md) — the implementation summary is *input* to the reviewer; the reviewer's findings are output in the structured-code-review format.
-- *(planned)* `multi-agent-git-workflow` — provides the branch hierarchy and orchestrator/worker role vocabulary referenced in `Process Used`, `Branch`, `Integration Target`, `Governance Status` fields.
-- *(planned)* `cross-agent-adversarial-review` — when a second agent (different vendor) reviews the first agent's work, the handoff summary is the input package. With a critical caveat: the implementing agent's self-assessment ("LGTM", "all tests pass") should be **redacted** before the package goes to the reviewing agent, so the reviewer doesn't anchor on the implementer's confidence.
+- [`structured-code-review`](../../../structured-code-review/skills/structured-code-review/SKILL.md), the implementation summary is *input* to the reviewer; the reviewer's findings are output in the structured-code-review format.
+- *(planned)* `multi-agent-git-workflow`, provides the branch hierarchy and orchestrator/worker role vocabulary referenced in `Process Used`, `Branch`, `Integration Target`, `Governance Status` fields.
+- *(planned)* `cross-agent-adversarial-review`, when a second agent (different vendor) reviews the first agent's work, the handoff summary is the input package. With a critical caveat: the implementing agent's self-assessment ("LGTM", "all tests pass") should be **redacted** before the package goes to the reviewing agent, so the reviewer doesn't anchor on the implementer's confidence.
 
 ## When to use
 
@@ -76,7 +76,7 @@ Risks / Gaps:
   <or "No known implementation gaps at handoff.">
 
 File Reference Summary:
-  <primary files changed; not a full changelog — just the files most relevant to review>
+  <primary files changed; not a full changelog, just the files most relevant to review>
 
 Governance Status:
   <which completion steps are still pending>
@@ -104,13 +104,13 @@ Implementation Outcome:
   Intended integration target: <branch name>
 
 Quality Gates:
-  <gates run, pass/fail status — concrete numbers/names, not "all passed">
+  <gates run, pass/fail status, concrete numbers/names, not "all passed">
 
 Risks / Gaps:
   <known issues, follow-ups, unresolved concerns for integration>
 
 Review Notes:
-  <anything the orchestrator should pay attention to during integration —
+  <anything the orchestrator should pay attention to during integration , 
    non-obvious decisions, areas where the worker is uncertain, hot spots>
 ```
 
@@ -118,7 +118,7 @@ A user-facing implementation summary is **not required** for worker work by defa
 
 ## Format 3: Closeout summary
 
-Produced after completion — when the work has reached its integration target and any required cleanup is done. This is the final externally-visible record. It does **not** replace governance steps, evidence blocks, quality gates, UAT gates, commit/push requirements, or task state transitions; it summarizes them.
+Produced after completion, when the work has reached its integration target and any required cleanup is done. This is the final externally-visible record. It does **not** replace governance steps, evidence blocks, quality gates, UAT gates, commit/push requirements, or task state transitions; it summarizes them.
 
 ```
 ## Closeout Summary
@@ -167,13 +167,13 @@ If a step required by the project's process didn't happen, say so plainly in the
 
 ## Don't cite this skill in the output
 
-The summary is a report for the reader (human reviewer, orchestrator agent, future-you reading the closeout record). The skill is the reference for the *author*. Don't write "Per task-handoff-summaries..." or "This skill requires..." — just produce the report. The format speaks for itself.
+The summary is a report for the reader (human reviewer, orchestrator agent, future-you reading the closeout record). The skill is the reference for the *author*. Don't write "Per task-handoff-summaries..." or "This skill requires...", just produce the report. The format speaks for itself.
 
 ## Adapter: Beads
 
 If the project uses [Beads](https://github.com/gastownhall/beads) as its task tracker, the literal mappings:
 
-- `Task Scope:` → `Bead Scope:` (e.g., `Bead Scope: proj-42 — Add staging branch and 3-tier deploy flow`)
+- `Task Scope:` → `Bead Scope:` (e.g., `Bead Scope: proj-42, Add staging branch and 3-tier deploy flow`)
 - `Task:` (in Format 2) → `Bead:` (e.g., `Bead: proj-42-w2`)
 - "task design" / "task scope" in prose → "bead design" / "bead scope"
 - The Beads CLI gives you the data the summary needs:
@@ -182,9 +182,9 @@ If the project uses [Beads](https://github.com/gastownhall/beads) as its task tr
   bd children <parent>  # for orchestrator close-out across worker beads
   ```
 
-Beads also has a `bd close` flow that's required *after* the closeout summary is delivered (the summary documents that closeout is happening; `bd close` is the actual state transition). Don't conflate the two — the summary precedes the close.
+Beads also has a `bd close` flow that's required *after* the closeout summary is delivered (the summary documents that closeout is happening; `bd close` is the actual state transition). Don't conflate the two, the summary precedes the close.
 
-Other trackers work the same way — substitute the issue ID format and adjust the field labels per your team's vocabulary:
+Other trackers work the same way, substitute the issue ID format and adjust the field labels per your team's vocabulary:
 
 - **GitHub Issues:** `Task Scope: Issue #123` (or `Closeout Outcome: closes #123`)
 - **Linear:** `Task Scope: ENG-123`
@@ -193,13 +193,13 @@ Other trackers work the same way — substitute the issue ID format and adjust t
 ## Invocation examples
 
 - "Write the implementation summary for the changes I just made."
-- "I'm handing this branch to the orchestrator — produce a worker handoff summary."
+- "I'm handing this branch to the orchestrator, produce a worker handoff summary."
 - "Close out task proj-42. Include all the gate results and the commit SHA."
 - "Summarize what was done in this PR using task-handoff-summaries' implementation format."
 - "What's the closeout summary for this work?"
 
 ## See also
 
-- [`structured-code-review`](../../../structured-code-review/skills/structured-code-review/SKILL.md) — the reviewer reads this skill's output and produces structured-code-review format. Format consistency on both sides of the handoff makes the work-→-review-→-next-step flow legible.
-- *(planned)* `cross-agent-adversarial-review` — uses the implementation summary as input to a second agent's review (with self-assessment redacted to prevent anchoring).
-- *(planned)* `multi-agent-git-workflow` — provides the branch hierarchy and orchestrator/worker role vocabulary referenced in the format fields.
+- [`structured-code-review`](../../../structured-code-review/skills/structured-code-review/SKILL.md), the reviewer reads this skill's output and produces structured-code-review format. Format consistency on both sides of the handoff makes the work-→-review-→-next-step flow legible.
+- *(planned)* `cross-agent-adversarial-review`, uses the implementation summary as input to a second agent's review (with self-assessment redacted to prevent anchoring).
+- *(planned)* `multi-agent-git-workflow`, provides the branch hierarchy and orchestrator/worker role vocabulary referenced in the format fields.

@@ -1,5 +1,5 @@
 title: RI Brew Guy's AI Agent Skills
-description: A growing collection of skills for AI coding tools — Claude Code, Gemini CLI, OpenAI Codex, GitHub Copilot CLI, Cline, and others. The SKILL.md format works across all of them.
+description: A collection of skills for AI coding tools (Claude Code, Gemini CLI, OpenAI Codex, GitHub Copilot CLI, Cline, and others). The SKILL.md format works across all of them.
 
 remote_theme: just-the-docs/just-the-docs@v0.10.1
 
@@ -14,7 +14,7 @@ color_scheme: light
 # Just-the-docs nav and jekyll-relative-links both respect this setting.
 permalink: pretty
 
-# Search is one of the main reasons we switched themes — turn it on with sane defaults.
+# Search is one of the main reasons we switched themes. Turn it on with sane defaults.
 search_enabled: true
 search:
   heading_level: 3
@@ -73,7 +73,38 @@ callouts:
     title: Tip
     color: green
 
-# Ordered top-level pages — index.md doesn't show in the sidebar (just-the-docs default).
+# Ordered top-level pages. index.md doesn't show in the sidebar (just-the-docs default).
 heading_anchors: true
 back_to_top: true
 back_to_top_text: "Back to top"
+
+# Per-path defaults. Eval workspace markdown (raw model outputs) ships in the
+# repo for transparency but must NOT pollute the sidebar nav or search results.
+# The interactive review.html viewers under skills/*-workspace/ remain reachable
+# at their direct URLs.
+defaults:
+  - scope:
+      path: "skills/cross-agent-review-workspace"
+    values:
+      nav_exclude: true
+      search_exclude: true
+  - scope:
+      path: "skills/multi-agent-git-workflow-workspace"
+    values:
+      nav_exclude: true
+      search_exclude: true
+  - scope:
+      path: "skills/rest-api-design-workspace"
+    values:
+      nav_exclude: true
+      search_exclude: true
+  - scope:
+      path: "skills/structured-code-review-workspace"
+    values:
+      nav_exclude: true
+      search_exclude: true
+  - scope:
+      path: "skills/task-handoff-summaries-workspace"
+    values:
+      nav_exclude: true
+      search_exclude: true
