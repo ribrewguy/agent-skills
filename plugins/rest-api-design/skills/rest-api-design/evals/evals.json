@@ -1,0 +1,68 @@
+{
+  "skill_name": "rest-api-design",
+  "evals": [
+    {
+      "id": 0,
+      "name": "design-task-api-from-scratch",
+      "prompt": "I'm building a task-management backend for a small team app. Design the HTTP contract for the following operations and write the TypeScript request/response types for each:\n\n1. List tasks — supports free-text search, filter by assignee and status, sort by priority and created-at. Could grow unbounded.\n2. Create a task.\n3. Get a single task.\n4. Mark a task complete (a distinct operation — emails sent, audit rows written).\n5. Add a comment to a task.\n\nGive me URL, method, status codes, params, request body, response body, TypeScript types, and edge cases.",
+      "expectations": [
+        "List endpoint is GET /api/tasks (plural, resource-oriented, no verbs)",
+        "List response wraps rows in an envelope with `data` and a pagination sub-object (not a bare array, not a bespoke envelope like {tasks, total, limit, offset}, not a differently-named sub-object like pageInfo)",
+        "Pagination uses cursor-based pagination with default limit 20 and max limit 100 clamped server-side",
+        "Search uses a single `q` query param",
+        "Sort uses field:direction syntax on a single `sort` query param (e.g., `sort=priority:desc,createdAt:asc`) — not leading-minus syntax",
+        "The 'complete' operation is expressed as a state transition via PATCH on the task resource (PATCH /api/tasks/:id with { status: 'COMPLETED' }) — NOT as a sub-resource action verb like POST /api/tasks/:id/complete",
+        "Side effects of completion (emails, audit rows) are described as service-layer responsibilities keyed to the state transition itself, not as a reason to invent a dedicated URL",
+        "POST /api/tasks returns 201 Created with a Location header pointing at the new resource",
+        "Wire format is camelCase for body/query fields (assigneeId, createdAt, etc.), not snake_case",
+        "TypeScript types separate input (CreateTaskInput) from output (Task) — output includes server-generated fields like id, createdAt",
+        "Error envelope is FLAT at the top level — { code, message, details?, requestId } — NOT nested under an `error:` key",
+        "Error `code` values are domain-expressive (e.g., TaskNotFound, TaskAlreadyCompleted, InvalidRequestBody) and do NOT merely echo the HTTP status (not NOT_FOUND, not VALIDATION_ERROR, not CONFLICT as a generic code)"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "pr-audit-multiple-violations",
+      "prompt": "Review the PR diff (creating GET /api/users returning raw array, POST /api/createUser returning 200 with snake_case, GET /api/users/:id/delete for destructive, bespoke {events,total,limit,offset} envelope). List every violation, why it matters, and the correct alternative.",
+      "expectations": [
+        "Catches snake_case on the wire (user_id, created_at, password_hash) and prescribes camelCase at the boundary",
+        "Catches verb in URL (/api/createUser) and proposes POST /api/users",
+        "Catches GET used for destructive action (/api/users/:id/delete) and proposes DELETE /api/users/:id",
+        "Catches the raw-array response from getUsers and proposes a paginated envelope",
+        "Catches the bespoke listEvents envelope ({events,total,limit,offset}) and proposes the canonical shape",
+        "Catches validation reporting one field at a time and prescribes returning all fields at once in details[]",
+        "Catches POST returning 200 and prescribes 201 Created + Location header",
+        "Notes lack of X-Request-ID on responses (or absence of the correlating requestId in error bodies)",
+        "The proposed error envelope is FLAT with domain-expressive codes — does not wrap contents in { error: {...} }, does not echo HTTP status as the code",
+        "Does NOT recommend introducing a `/v1/` URL prefix — follows the One-Version Rule's 'no default version segment'",
+        "Does NOT recommend returning `total` on an unbounded list (no COUNT(*) recommendation) — recognizes the skill's 'never return total on unbounded sets' rule",
+        "Flags the URL exposing DB implementation (user_table_v2 referenced / DB naming leaking)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "payments-post-idempotency-trap",
+      "prompt": "POST /api/payments draft lacks an Idempotency-Key. User asks 'is anything missing?' for a money-moving POST with retry semantics. Catch the idempotency gap.",
+      "expectations": [
+        "Identifies the missing Idempotency-Key header as the primary gap",
+        "Describes retry semantics: same key + same payload returns the original response exactly",
+        "Describes 409 CONFLICT when the same key is reused with a different payload",
+        "Recommends persisting the idempotency key alongside the payload hash + response for a retention window (mentions 24h or longer for financial writes)",
+        "Does not mistakenly green-light the draft without flagging the idempotency gap",
+        "Error envelope in the revised contract is flat (top-level { code, message, details?, requestId }) with domain-expressive codes like `IdempotencyKeyReused` — not wrapped in `error:`, not `CONFLICT` as the code"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "bounded-notifications-not-a-list",
+      "prompt": "Endpoint returns the 5 most recent notifications for the current user; always 5, no client pagination. What URL and response shape?",
+      "expectations": [
+        "Does NOT add cursor/offset/page pagination (recognizes this as bounded-by-policy, not a growing list)",
+        "Returns the canonical `{ data: [...] }` envelope — NOT a bespoke envelope with a resource-named key like `{ notifications: [...] }`, and does not invent extra top-level fields like unreadCount or fetchedAt unless explicitly requested",
+        "URL contains no verbs (no /getNotifications, /fetchRecent, /latest)",
+        "Explicitly notes the bound is server-enforced (client cannot request more than 5)",
+        "Notes that broadening the bound later would be a breaking change (Hyrum's Law / contract discipline) — OR explicitly warns against exposing a `limit` query param"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "ribrewguy-skills",
+  "owner": {
+    "name": "ribrewguy",
+    "url": "https://github.com/ribrewguy"
+  },
+  "description": "Claude Code skills authored and maintained by ribrewguy. Each skill is designed, evaluated, and iterated with the skill-creator workflow.",
+  "plugins": [
+    {
+      "name": "rest-api-design",
+      "source": "./plugins/rest-api-design",
+      "description": "HTTP REST API design and review skill with a 4-case eval set covering design-from-scratch, PR audit with severity tags, payments idempotency traps, and bounded-list discipline."
+    },
+    {
+      "name": "structured-code-review",
+      "source": "./plugins/structured-code-review",
+      "description": "Rigorous, review-only code review output: source-of-truth-aware preamble, severity-tagged findings (High/Medium/Low), file:line citations, no-findings-still-formal. Composes with domain-review skills like rest-api-design."
+    },
+    {
+      "name": "task-handoff-summaries",
+      "source": "./plugins/task-handoff-summaries",
+      "description": "Three rigorous structured report formats: implementation summary (before commit, single-agent or orchestrator), worker handoff summary (multi-agent worker → orchestrator), closeout summary (after completion). Hard rules against using the summary to mask incomplete work."
+    },
+    {
+      "name": "cross-agent-review",
+      "source": "./plugins/cross-agent-review",
+      "description": "Workflow for routine cross-vendor AI agent peer review (Claude reviews Codex's work, Codex reviews Claude's). Defines the handoff package with self-assessment redacted, the cold-review discipline, the disagreement protocol, the bounded iteration loop. Composes with task-handoff-summaries and structured-code-review."
+    },
+    {
+      "name": "multi-agent-git-workflow",
+      "source": "./plugins/multi-agent-git-workflow",
+      "description": "Git workflow discipline for multi-agent work — worktree-per-agent topology, orchestrator vs. worker roles, branch hierarchy (main / develop / integration/* / feature/*), merge authority (workers don't merge their own branches), acceptance/rejection rules — plus universal commit discipline (Conventional Commits, task ID required, co-author line, UAT gate ceremony, no silent amends). Composes with task-handoff-summaries."
+    }
+  ]
+}

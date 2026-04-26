@@ -1,0 +1,67 @@
+{
+  "skill_name": "multi-agent-git-workflow",
+  "evals": [
+    {
+      "id": 0,
+      "name": "set-up-multi-agent-topology",
+      "prompt": "I'm starting an epic that needs to be split across 3 implementation agents in parallel. The parent task is proj-42 (Add staging branch and 3-tier deploy flow). The three slices are: (1) policy doc updates and renames, (2) CI workflow YAML files for ci-develop / ci-staging / ci-main, (3) source-ref enforcement workflow + pre-commit hook config. I'll be the orchestrator. Set up the multi-agent topology — name the beads, the branches, the worktrees, the integration target. Tell me what each worker is responsible for and what they MUST NOT do. Tell me what I'm responsible for as orchestrator and what I MUST NOT do.",
+      "expectations": [
+        "Names a parent bead (proj-42) and 3 child beads (one per slice) — does not propose reusing a single bead for multiple slices",
+        "Names 3 worker feature branches in the format `feature/<bead_id>_<short_name>` — one per worker bead",
+        "Names an integration branch in the format `integration/<parent_bead_id>_<short_name>` — for the coordinated work",
+        "Names the integration target as `develop` (single-agent close-out is to develop; the 3-tier promotion to staging/main is out of scope)",
+        "Specifies that EACH worker uses a dedicated git worktree (multi-agent MUST use worktrees)",
+        "Lists worker responsibilities AND explicit MUST NOTs — workers MUST NOT merge their own branches; MUST NOT fix things outside their slice",
+        "Lists orchestrator responsibilities AND explicit MUST NOTs — orchestrator MUST NOT implement worker-scoped functionality on the integration branch; MUST NOT silently fix worker defects (must reject explicitly)",
+        "Specifies that worker branches stay local by default and only publish when CI/orchestrator-remote-access/recovery requires it",
+        "Output does not cite this skill by name (no 'multi-agent-git-workflow', 'this skill', 'as required')"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "worker-finished-close-out",
+      "prompt": "I'm a worker. I finished my slice (proj-42-w2 — CI workflow YAMLs). All gates pass: lint clean, typecheck clean, 142/142 unit tests pass. Branch is feature/proj-42-w2_ci-workflows, currently local-only, commit SHA at handoff is 7a3f9b1. The intended integration target is integration/proj-42_staging-bringup. What do I do now to close out this slice?",
+      "expectations": [
+        "Tells the worker to hand off the branch to the orchestrator — NOT to merge the branch themselves",
+        "Explicitly states that workers MUST NOT merge their own feature branches into the integration branch, develop, or main",
+        "Tells the worker to produce a worker handoff summary (referencing task-handoff-summaries skill or its format)",
+        "Addresses whether the branch should be published — local by default unless orchestrator needs remote access, CI required, or auditability needed",
+        "States that the worker's bead remains in_progress until the orchestrator accepts the branch into the integration target — the worker does NOT close their own bead",
+        "Does not tell the worker to merge to develop or main",
+        "Does not tell the worker to delete their branch (cleanup is the orchestrator's responsibility after acceptance)",
+        "Output does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "write-commit-message-with-task-id-and-coauthor",
+      "prompt": "Write the commit message for this change. The change implements task-100: 'Add idempotent retry on transient processor failures.' The diff: api/services/payments.ts (new retryWithBackoff helper that retries 5xx/timeout up to 3 times with 250/500/1000ms backoff), api/db/idempotency_keys.ts (new persistence module so the Idempotency-Key survives in-process state loss between retries), api/services/payments.test.ts (8 new tests covering retry success, exhaustion, 4xx-no-retry, key-survives-restart). I (Claude Opus 4.7, 1M context) wrote this. The change does NOT affect externally visible behavior beyond what the spec already documents.",
+      "expectations": [
+        "Subject line uses Conventional Commits format: `<type>[optional scope]: <description>`",
+        "Subject line type is appropriate (feat for the new functionality, possibly with scope `payments` or `api`)",
+        "Body is multi-paragraph and explains BOTH what changed AND why (not just a description of the diff)",
+        "Body or subject references the task ID `task-100` (e.g., `Refs: task-100` line in body, or task ID inline in subject)",
+        "Includes a `Co-authored-by:` trailer naming the model: `Claude Opus 4.7 (1M context) <noreply@anthropic.com>` (or equivalent)",
+        "Does not include a UAT gate prompt — the change is described as not affecting externally-visible behavior beyond the documented spec, so no UAT-gate-before-commit is needed (or, if the model asks, the asking is appropriate)",
+        "Does not propose using `git commit --amend` (no amends discipline)",
+        "Output does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "orchestrator-rejection-with-explicit-notes",
+      "prompt": "I'm the orchestrator on epic proj-42. Worker proj-42-w3 (source-ref enforcement workflow + pre-commit hook config) handed me their branch. When I try to integrate it: lint passes, typecheck FAILS with 4 errors in `.github/workflows/ci-staging.yml.types.ts` (the worker added a typed wrapper but the types don't compile), unit tests pass for the rest of the suite but the worker added 2 new tests that FAIL because they assume `process.env.NODE_VERSION` is set (it isn't in CI). The branch also adds an `.husky/` directory but the team's pre-commit hook policy says simple-git-hooks, not husky — that's a divergence from the bead design. Write the rejection notes for the worker. Do NOT silently fix the issues.",
+      "expectations": [
+        "Output is rejection notes addressed to the worker, NOT a fix-it-yourself plan",
+        "Explicitly states the branch is being REJECTED (not 'requesting changes' or 'small concerns') and the worker's bead remains in_progress",
+        "Names each specific failure with concrete details: 4 typecheck errors in the named file, 2 unit test failures with the NODE_VERSION cause, the husky-vs-simple-git-hooks design divergence",
+        "Tags failures by category — gates failing (typecheck, unit tests) vs. design divergence (husky vs. simple-git-hooks)",
+        "Does NOT propose that the orchestrator fix any of the issues themselves",
+        "Does NOT minimize the failures or offer to 'just patch them up on the integration branch'",
+        "Tells the worker to fix and re-hand-off — implies a re-handoff loop, not a fork of the work",
+        "Optionally notes that the rejection should be recorded in the worker's bead notes",
+        "Output does not cite this skill by name"
+      ]
+    }
+  ]
+}

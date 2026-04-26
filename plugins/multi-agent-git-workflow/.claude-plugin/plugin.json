@@ -1,0 +1,9 @@
+{
+  "name": "multi-agent-git-workflow",
+  "description": "Git workflow discipline for multi-agent work — worktree-per-agent topology, orchestrator vs. worker roles, branch hierarchy, merge authority, acceptance/rejection rules, branch publication policy, close-out rules — plus universal commit discipline (Conventional Commits, task ID required, co-author line, UAT gate ceremony, no-amend rule). Composes with task-handoff-summaries (the handoff format uses this skill's role vocabulary) and the planned branch-promotion-discipline skill (which handles the 3-tier develop → uat → main promotion).",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}

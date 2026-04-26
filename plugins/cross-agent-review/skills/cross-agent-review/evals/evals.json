@@ -1,0 +1,68 @@
+{
+  "skill_name": "cross-agent-review",
+  "evals": [
+    {
+      "id": 0,
+      "name": "build-handoff-package-with-redaction",
+      "prompt": "I just finished implementing a payments retry mechanism in our orders service. Task: task-100 (Add idempotent retry on transient processor failures). Design: 'When the payment processor returns 5xx or times out, retry up to 3 times with exponential backoff (250ms, 500ms, 1000ms). Persist the Idempotency-Key with the request so retries don't double-charge. Return the original 5xx if all retries exhaust.' I think the implementation is solid — all 18 unit tests pass including the retry-exhaustion case, lint clean, typecheck clean. The tricky part was making sure the Idempotency-Key persists across retries even when the local in-memory state is lost mid-retry; I solved this by writing the key to the DB before the first attempt. The diff is in api/services/payments.ts (added retryWithBackoff helper), api/services/payments.test.ts (new test cases), and api/db/idempotency_keys.ts (new persistence module).\n\nI want to send this to Codex for a cross-agent review. Build the handoff package I should give Codex. Apply cross-agent-review's redaction discipline.",
+      "expectations": [
+        "Output is a handoff package directed at the reviewing agent (Codex), not a summary directed at a human",
+        "The implementer's self-assessment is REDACTED — phrases like 'I think the implementation is solid', 'all 18 unit tests pass', 'lint clean', 'typecheck clean' do NOT appear in the package",
+        "The implementer's framing language is REDACTED — 'the tricky part was X', 'I solved this by Y', 'the obvious approach didn't work' do NOT appear",
+        "The reasoning trace is REDACTED — the package does NOT include the implementer's explanation of WHY they chose particular approaches",
+        "The package INCLUDES the design / acceptance criteria (the original retry spec) so the reviewer can check work against source of truth",
+        "The package INCLUDES the changed files / diff (or names them with locations) so the reviewer knows what to review",
+        "The package INCLUDES adversarial framing — instructs Codex to 'find what's wrong' or 'find what was missed', not to 'review' or 'evaluate quality'",
+        "The package may suggest specific risk classes Codex should look for (e.g., race conditions, idempotency edge cases, retry storm risk) given the domain — these target the second-pass beyond open-ended review",
+        "Output does not cite this skill by name (no 'cross-agent-review', 'this skill', 'per the protocol')",
+        "Output is in a format that could be pasted into a `codex exec` invocation or sent as a prompt — not an internal-monologue analysis"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "perform-cold-review-no-anchoring",
+      "prompt": "You are the second-pass reviewer (Codex playing reviewer for Claude's work). You receive this handoff package — review the work cold, treating it as if you have NO information about the implementer's confidence.\n\n=== HANDOFF PACKAGE ===\n\nWork to review: a refactor of how the auth middleware reads the session cookie.\n\nDesign / acceptance criteria:\n- Auth middleware should read the session token from the `session` cookie.\n- If the cookie is missing, malformed, or expired, the middleware should return 401 with our standard error envelope (`{ code: \"SessionExpired\", ... }`).\n- The session token verification must be timing-safe (use a constant-time comparison).\n- After successful verification, attach the user object to `req.user` for downstream handlers.\n\nFiles changed (final state):\n\n```ts\n// api/middleware/auth.ts\nexport const requireAuth = async (req, res, next) => {\n  const token = req.cookies.session\n  if (!token) return res.status(401).json({ code: 'SessionExpired', message: 'No session', requestId: req.id })\n  const expected = process.env.SESSION_SIGNING_KEY\n  if (token === expected) {\n    req.user = await db.users.findOne({ id: decode(token).userId })\n    return next()\n  }\n  return res.status(401).json({ code: 'SessionExpired', message: 'Invalid session', requestId: req.id })\n}\n```\n\nFind what's wrong. Apply structured-code-review's format. Look specifically for: timing attacks, session token validation gaps, error envelope correctness, anything that violates the design.",
+      "expectations": [
+        "Output uses structured-code-review's format (begins with `Findings:`, has 8-field preamble, severity-tagged findings)",
+        "Identifies the timing-attack vulnerability: `token === expected` is NOT constant-time, violating the design's 'timing-safe' requirement (severity: High or Critical)",
+        "Identifies that comparing the user-supplied token directly to SESSION_SIGNING_KEY is fundamentally wrong — the token should be cryptographically verified (HMAC, JWT signature, etc.), not compared directly to a signing key (severity: High or Critical)",
+        "Identifies the missing 'malformed' and 'expired' validation paths — the design says expired tokens should return 401, but the code only checks presence and equality, no expiration check",
+        "Identifies that `decode(token).userId` is called only AFTER the equality check passes, but if the token equals SESSION_SIGNING_KEY (which it shouldn't), decode() is being called on a signing key string — undefined behavior",
+        "Does NOT include phrases that suggest the reviewer is anchoring on the implementer's confidence (no 'the implementer was careful but missed X', no 'as expected, the work mostly looks good')",
+        "Findings are framed as 'found problems', not as 'minor improvements' — the framing matches the adversarial-review intent",
+        "Output does not cite either skill by name"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "write-disagreement-summary",
+      "prompt": "Two agents reviewed the same work and disagree on a real design choice. Write the disagreement summary for human escalation.\n\nWork: a database query helper that decides whether to use a read replica or the primary DB based on a freshness requirement.\n\nImplementing agent's choice: route ALL writes and any read marked 'requires_fresh: true' to the primary; route everything else to the read replica.\n\nImplementing agent's reasoning: 'Replica lag is typically <100ms in our setup. The vast majority of reads are tolerant of <100ms lag. Sending non-fresh reads to the primary defeats the purpose of having a replica — primary load is the constraint we added the replica to relieve. Stripe and similar production systems use this pattern routinely.'\n\nReviewing agent's pushback: 'This is correct ONLY if every caller correctly tags reads with `requires_fresh`. In practice many callers are AI-generated handlers that won't reliably tag freshness needs. A new endpoint added six months from now that reads order status, doesn't tag fresh, and reads stale data after a customer just modified an order is going to look like a bug to the customer. The safer default is route ALL reads to primary by default, and let callers OPT INTO replica reads with an explicit `prefer_replica: true`. Yes this loses some of the replica's load-relief value, but the failure mode of the alternative is silent data inconsistency that's hard to catch in testing.'\n\nBoth agree: replica lag exists and is roughly <100ms; the question is which side the default should land on for non-tagged reads.\n\nWrite the disagreement summary.",
+      "expectations": [
+        "Output uses the disagreement summary format (Topic / Implementing agent's position / Reviewing agent's position / What both agree on / What's at stake / Recommended escalation)",
+        "Topic is one sentence describing the contested decision (default for non-tagged reads: replica vs. primary)",
+        "Implementing agent's position section captures what they did and the tradeoff they accepted (replica-by-default → relieves primary load, but relies on caller correctness)",
+        "Reviewing agent's position section captures what they recommend and the tradeoff they propose (primary-by-default → loses replica load relief, but eliminates silent-stale-data class of bugs)",
+        "What both agree on section names the shared facts (replica lag exists and is <100ms-ish)",
+        "What's at stake section names the consequence of the choice — silent data inconsistency vs. primary load",
+        "Recommended escalation suggests a specific human and a specific question",
+        "The summary is even-handed — does NOT advocate for either side, does NOT add the writer's own analysis on top",
+        "Does NOT escalate to a third agent (the skill specifically says don't recurse to another agent)",
+        "Output does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "skip-cross-agent-for-trivial-work",
+      "prompt": "Should I get a cross-agent review for these changes? My team's policy is to apply cross-agent review when the cost of review pays back the catch-rate; trivial mechanical changes don't justify it.\n\nChange 1: a typo fix in a button label (`'pubish'` → `'publish'`), 1-line change, covered by no tests because it's a string literal.\n\nChange 2: a bump of `axios` from 1.7.0 to 1.7.1 (minor patch release, no breaking changes per their changelog), updates only the lockfile.\n\nChange 3: a new endpoint `POST /api/transfers` that initiates a money transfer between accounts. Includes idempotency, validation, side-effect emails, audit row. 8 unit tests pass, integration test against the staging payment processor passes.\n\nChange 4: a refactor of how we batch-render emails — was sending one HTTP call per recipient (100 calls per batch); now batches into a single multi-recipient call. Behavior should be identical from the user's perspective. 12 unit tests pass.\n\nFor each change, recommend whether cross-agent review applies and why. Be honest about the tradeoff.",
+      "expectations": [
+        "Recommendation for change 1 (typo fix): SKIP cross-agent review (trivial mechanical change, no risk)",
+        "Recommendation for change 2 (axios patch bump): SKIP cross-agent review (low-risk dependency bump, deterministic gates / lockfile diff is the right level of review)",
+        "Recommendation for change 3 (POST /api/transfers — money-touching): APPLY cross-agent review (money-touching path, security-sensitive, side effects — the canonical case for cross-agent)",
+        "Recommendation for change 4 (email batching refactor): APPLY cross-agent review (load-bearing refactor of integration code; potential for missed edge cases the implementing agent's framing might foreclose)",
+        "Reasoning for each recommendation cites the actual triggers (security/money/concurrency/refactor depth/etc.) — not boilerplate",
+        "Output is honest about the tradeoff — doesn't recommend cross-agent for everything (which would be cheap-talk safety-theater) and doesn't recommend it for nothing",
+        "Output does not cite this skill by name"
+      ]
+    }
+  ]
+}

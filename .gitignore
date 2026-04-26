@@ -1,0 +1,21 @@
+# Skill development workspaces — iteration outputs, grading, benchmarks, review HTML
+skills/*-workspace/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Python (for any scripts that may ship alongside skills)
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Node (same rationale)
+node_modules/
+npm-debug.log
+yarn-error.log

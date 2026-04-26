@@ -1,0 +1,75 @@
+{
+  "skill_name": "task-handoff-summaries",
+  "evals": [
+    {
+      "id": 0,
+      "name": "single-agent-implementation-summary",
+      "prompt": "I just finished implementing the changes for task-101. The work added a paginated admin user listing endpoint at GET /api/admin/users (replacing a previous draft that had verbs in the URL and SQL injection issues — fixed both). I wrote 8 unit tests, all passing. typecheck and lint are clean. The endpoint requires admin permission via a require_admin dependency. Write the implementation summary I should hand to the reviewer before I commit. The work was single-agent, full process, on branch feature/task-101-admin-users targeting develop. No migrations, no config changes. Files changed: api/routes/admin.py, api/auth.py (added require_admin), api/schemas/user_out.py (new DTO), tests/api/test_admin_users.py.",
+      "expectations": [
+        "Output uses the implementation summary format (not the worker handoff or closeout format)",
+        "All 7 fields appear in order: Process Used, Execution Context, Task Scope, Implementation Outcome, Behavioral Impact, Risks/Gaps, File Reference Summary, Governance Status",
+        "Process Used: Full process",
+        "Execution Context: Single-agent",
+        "Task Scope names task-101 explicitly",
+        "Implementation Outcome includes the active branch (feature/task-101-admin-users) and the integration target (develop)",
+        "Quality gate results are concrete (8 unit tests passing, typecheck clean, lint clean) — not vague claims like 'all gates passed'",
+        "Governance Status indicates the work is awaiting code review (pre-commit; commit/push haven't happened yet)",
+        "File Reference Summary names the 4 files changed without dumping a full changelog",
+        "Output does not cite this skill by name (no 'task-handoff-summaries', 'this skill', 'as required')",
+        "Output does not falsely claim commit, push, or merge happened (those steps haven't run yet)"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "multi-agent-worker-handoff",
+      "prompt": "I'm a multi-agent worker. I finished my slice of bead proj-42-w2 (staging-branch source-ref enforcement workflow). Branch is feature/proj-42-w2_staging-source-ref. The branch is published to remote. Commit SHA at handoff: 7a3f9b1. Quality gates: lint passed (0 errors), typecheck passed, unit tests 142/142 passing. The intended integration target is the parent integration branch integration/proj-42_staging-bringup. One area to watch in integration: the source-ref check job uses `${{ github.head_ref }}` which works for PR events but not for direct branch pushes — the parent epic doesn't allow direct pushes to staging/main so this should be fine, but the orchestrator should confirm. No known issues otherwise. Write the worker handoff summary for the orchestrator.",
+      "expectations": [
+        "Output uses the worker handoff summary format (not the implementation or closeout format)",
+        "All 6 fields appear: Task (or Bead), Branch with Published+Commit, Implementation Outcome with integration target, Quality Gates, Risks/Gaps, Review Notes",
+        "Task identifier names proj-42-w2 explicitly",
+        "Branch field names feature/proj-42-w2_staging-source-ref, marks Published as yes, includes commit SHA 7a3f9b1",
+        "Quality Gates section reports concrete results (142/142 unit tests, 0 lint errors, typecheck passed) — not vague",
+        "Intended integration target is named (integration/proj-42_staging-bringup)",
+        "Review Notes call out the github.head_ref consideration the worker wants the orchestrator to verify",
+        "Output is concise (worker handoff is shorter than the user-facing implementation summary; no Behavioral Impact / File Reference Summary unless explicitly relevant)",
+        "Output does not falsely claim the branch was accepted, merged, or that closeout happened — handoff is pre-acceptance",
+        "Output does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "closeout-summary-with-evidence",
+      "prompt": "Closeout time. Bead proj-42 (Add staging branch and 3-tier deploy flow) is done. Single-agent work using the full bead process. Active branch was feature/proj-42_staging-branch in the example repo. Integration target reached: develop (merged successfully). Quality gate results: lint 0 errors, typecheck 0 errors, unit tests 142/142 passing, build succeeded, e2e tests deferred (no CI secrets at adoption — documented in §13 of the policy doc). UAT was not requested for this work (infrastructure-only change, no user-facing behavior). Commit SHA: 9a2b3c4. Pushed: yes. Branch cleanup: merged to develop, local feature/proj-42_staging-branch deleted, remote deleted. Behavioral impact: develops new branch hierarchy (main/staging/develop), introduces source-ref enforcement, adds CI workflows for ci-develop/ci-staging/ci-main, adds simple-git-hooks pre-commit lint. Files: docs/development/staging-branch.md (new), docs/development/branches.md (amended §1, §8), docs/development/commits.md (amended UAT Gate section), docs/development/testing.md (amended), .github/workflows/ci-develop.yml (new), .github/workflows/ci-staging.yml (new), .github/workflows/ci-main.yml (new), .nvmrc (new), package.json (added simple-git-hooks). Risks: GitHub branch protection / rulesets are NOT applied (the GitHub plan tier in use doesn't support rulesets on private repos) — policies binding by review discipline only until plan upgrade. e2e/integration test secrets not provisioned, those gates won't pass on day one. Lint/typecheck/unit baseline at adoption: 200 lint errors, 80 typecheck errors, 12 failing unit tests on develop tip — making those required gates would freeze the repo. Promotion to develop reached; no PR open to uat or main yet. Write the closeout summary.",
+      "expectations": [
+        "Output uses the closeout summary format (not implementation or worker handoff)",
+        "All 7 sections appear: Process Used, Execution Context, Task Scope, Closeout Outcome, Evidence, Behavioral Impact, Risks/Gaps, File Reference Summary",
+        "Process Used: Full process (or Full bead process)",
+        "Execution Context: Single-agent",
+        "Task Scope names proj-42 with the bead title",
+        "Closeout Outcome names the active branch and the integration target reached (develop)",
+        "Evidence section is concrete: lint/typecheck/unit/build with numbers, e2e deferred with reason, UAT status, commit SHA 9a2b3c4, push yes, branch cleanup status, promotion stopped at develop",
+        "Risks/Gaps captures the concrete unresolved items: branch protection not applied (with reason), e2e/integration secrets not provisioned, baseline error counts on develop, promotion not yet to uat or main",
+        "File Reference Summary names the relevant files without dumping a full changelog (docs amendments and new workflow files)",
+        "Output does not falsely claim the work reached uat or main when it stopped at develop",
+        "Output does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "lightweight-no-task-closeout",
+      "prompt": "Quick one — I just merged a 1-line typo fix (changed 'pubish' to 'publish' in a button label in our admin UI). No bead. No PRD. Single-agent. Branch fix/typo-publish-button merged to main directly (allowed for trivial typo fixes per team convention). Commit SHA: 4d5e6f7. Pushed. Branch deleted. lint passed, typecheck passed, unit tests still pass (no test impact). Write a closeout summary.",
+      "expectations": [
+        "Output uses the closeout summary format",
+        "Process Used: Lightweight process",
+        "Execution Context: Single-agent",
+        "Task Scope explicitly states 'No task was worked on.' (or equivalent — 'No bead was worked on.')",
+        "Output does NOT invent a task ID, ticket number, or fictional bead reference",
+        "Closeout Outcome describes the typo fix and that it merged directly to main",
+        "Evidence section is concrete (lint passed, typecheck passed, unit tests passing, commit 4d5e6f7, pushed, branch deleted)",
+        "Behavioral Impact notes the user-visible button label change (pubish → publish)",
+        "Risks/Gaps states there are no known remaining gaps (or equivalent)",
+        "Output does not cite this skill by name"
+      ]
+    }
+  ]
+}

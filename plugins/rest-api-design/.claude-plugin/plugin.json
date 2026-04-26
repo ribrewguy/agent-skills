@@ -1,0 +1,9 @@
+{
+  "name": "rest-api-design",
+  "description": "Design and review HTTP REST APIs — resource-oriented URLs, PATCH for state transitions (not sub-resource verbs), domain-expressive error codes, flat error envelopes, cursor/offset pagination, idempotency keys on side-effectful POSTs, content-type negotiation including NDJSON/SSE/vendor types, patch format selection (plain JSON / merge-patch / json-patch), typed contracts across TypeScript/Python/Go/Rust, and reviewer-grade output conventions with severity tagging.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}

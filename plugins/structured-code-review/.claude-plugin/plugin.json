@@ -1,0 +1,9 @@
+{
+  "name": "structured-code-review",
+  "description": "Produce rigorous, review-only code review output. Names source of truth (task / design / architecture / feature spec / PRD), tags every finding with severity (High / Medium / Low), cites file paths with line numbers, proposes concrete fixes, and emits a structured no-findings preamble even when nothing is wrong. Composes with domain-review skills (like rest-api-design) — they bring the what-to-flag, this skill brings the how-to-present-it.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}
