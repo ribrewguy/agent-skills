@@ -1,0 +1,9 @@
+{
+  "name": "branch-promotion-discipline",
+  "description": "3-tier long-lived branch hierarchy (develop / uat / main), one-way promotion (develop to uat to main), per-tier CI gate matrix, source-ref enforcement (no skipping tiers, no backflow), hotfix flow (hotfix to uat with forward-merge to develop), branch protection ruleset, pre-commit hook setup. Layer above multi-agent-git-workflow: that skill ends at develop; this one starts there. Common failure modes covered: develop merged direct to main (skipping uat), main hotfix not forward-merged (causing drift), uat receiving direct pushes that bypass develop, gate matrix collapsed to one set across all tiers.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}
