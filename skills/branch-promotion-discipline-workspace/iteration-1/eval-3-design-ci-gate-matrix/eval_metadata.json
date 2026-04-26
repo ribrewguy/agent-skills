@@ -1,0 +1,16 @@
+{
+  "eval_id": 3,
+  "eval_name": "design-ci-gate-matrix",
+  "prompt": "Design the CI gate matrix for a 3-tier flow (develop / uat / main). For each tier, list the required gates and explain WHY each gate runs at that tier (or doesn't). Cover at least: lint, typecheck, unit tests, build artifact, integration tests, end-to-end tests, environment smoke tests. Assume the team has all of these gates available; the question is which ones gate which tier.",
+  "assertions": [
+    "Each tier has at least one gate the previous tier doesn't (uat strictly stricter than develop, main strictly stricter than uat)",
+    "Lint, typecheck, unit tests, build artifact are required at all three tiers",
+    "Integration tests and end-to-end tests are required at uat and main (optional or deferred on develop)",
+    "Environment smoke tests at uat run against the UAT deployed environment; environment smoke tests at main run against production",
+    "Justification given for why slower gates (e2e) are gated at uat rather than per-merge on develop (cost-benefit: develop has many merges per day, e2e cost would be high and signal usually low-pre-promotion)",
+    "Source-ref check is required at uat and main (optional on develop)",
+    "Source-ref check, if mentioned at develop, accepts feature/* and integration/* but rejects uat or main as source refs",
+    "Output reads as a matrix (table or per-tier list), not as a flat list of all gates",
+    "Output does not cite this skill by name"
+  ]
+}

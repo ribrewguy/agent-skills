@@ -1,0 +1,15 @@
+{
+  "eval_id": 2,
+  "eval_name": "reject-pr-skipping-uat",
+  "prompt": "A PR is open from `develop` directly to `main` with the description 'urgent feature for client demo tomorrow, please merge'. Should this PR be merged? Why or why not, and what should happen instead? The repo's flow is develop / uat / main with one-way promotion. The team is on Pacific time and the demo is at 9am Pacific tomorrow.",
+  "assertions": [
+    "Rejects the PR in its current form (does NOT merge develop directly to main, regardless of urgency)",
+    "Explains why: skipping uat defeats the stakeholder-acceptance tier; main is supposed to mean 'passed acceptance', not 'whatever was on develop'",
+    "Proposes the correct path: promote develop to uat first, then uat to main",
+    "Estimates the time cost of the correct path realistically (uat smoke + acceptance can be done in tens of minutes if the gate matrix is tight, hours if e2e is slow)",
+    "Acknowledges the demo deadline as a real constraint without using it as a reason to bypass the tier",
+    "If the demo can be served from the uat environment instead of waiting for production, suggests that as a workaround (uat is deployed, stakeholders accept there)",
+    "Does NOT recommend disabling branch protection or going around the source-ref check",
+    "Output does not cite this skill by name"
+  ]
+}

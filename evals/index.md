@@ -26,6 +26,7 @@ A small delta on a strong baseline still matters if it's catching a specific fai
 | [structured-code-review](structured-code-review) | 100% | 45% | **+55pp** | "No findings, still formal" eval is the strongest delta (+78pp). Untrained models drop to "LGTM" the moment there's nothing wrong. |
 | [cross-agent-review](cross-agent-review) | 100% | 84% | **+16pp** | The redaction-discipline eval (+50pp) is the load-bearing one; baseline does fine on the other three. |
 | [task-handoff-summaries](task-handoff-summaries) | 100% | 88% | **+12pp** | Three of four evals had a strong baseline because the format is intuitive. The implementation-summary eval (+27pp) is the discriminator. |
+| [branch-promotion-discipline](branch-promotion-discipline) | 100% | 84% | **+15pp** | The hotfix-with-forward-merge eval (+62pp) is the discriminator. Three other evals non-discriminating in iteration-1 because the prompts give away the framing; flagged for sharpening. |
 
 Numbers are pass rate across four evals, one run per configuration.
 
@@ -53,6 +54,7 @@ Each per-skill page below has:
 - [task-handoff-summaries evaluations](task-handoff-summaries)
 - [cross-agent-review evaluations](cross-agent-review)
 - [multi-agent-git-workflow evaluations](multi-agent-git-workflow)
+- [branch-promotion-discipline evaluations](branch-promotion-discipline)
 
 ## Why republish so much detail
 

@@ -1,0 +1,14 @@
+{
+  "expectations": [
+    {"text": "Each tier has at least one gate the previous tier doesn't (uat strictly stricter than develop, main strictly stricter than uat)", "passed": true, "evidence": "Matrix shows uat adds integration/e2e/UAT smoke/security/source-ref vs. develop; main adds production smoke vs. uat."},
+    {"text": "Lint, typecheck, unit tests, build artifact are required at all three tiers", "passed": true, "evidence": "All four rows: required/required/required."},
+    {"text": "Integration tests and end-to-end tests are required at uat and main (optional or deferred on develop)", "passed": true, "evidence": "Integration tests row: 'optional / advisory'/required/required. E2e row: same."},
+    {"text": "Environment smoke tests at uat run against the UAT deployed environment; environment smoke tests at main run against production", "passed": true, "evidence": "Separate rows: 'Smoke tests against UAT env' and 'Smoke tests against prod env'; body says 'run against the actual UAT environment URL' and 'run a smoke suite against production URLs'."},
+    {"text": "Justification given for why slower gates (e2e) are gated at uat rather than per-merge on develop (cost-benefit)", "passed": true, "evidence": "'Why slower gates live at the higher tiers' section: 'Develop sees many merges per day. Running 20 minutes of e2e per merge is real money in CI minutes... signal-to-noise ratio is poor pre-promotion'."},
+    {"text": "Source-ref check is required at uat and main (optional on develop)", "passed": true, "evidence": "Source-ref check row: optional/required/required."},
+    {"text": "Source-ref check, if mentioned at develop, accepts feature/* and integration/* but rejects uat or main as source refs", "passed": true, "evidence": "'PRs to develop: head must match feature/* or integration/* (rejects uat, main, anything else)'."},
+    {"text": "Output reads as a matrix (table or per-tier list), not as a flat list of all gates", "passed": true, "evidence": "Output uses both a matrix table and per-tier rationale sections."},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}
+  ],
+  "summary": {"passed": 9, "failed": 0, "total": 9, "pass_rate": 1.0}
+}

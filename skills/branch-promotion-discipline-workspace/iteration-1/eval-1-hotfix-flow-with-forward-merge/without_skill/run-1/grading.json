@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Branches the hotfix from `uat` (NOT directly from `main`) so the fix passes through stakeholder acceptance", "passed": false, "evidence": "Step 1 explicitly says 'Branch from main' and the 'Why branch from main, not develop?' section justifies branching from main. Skips uat acceptance entirely."},
+    {"text": "PR sequence is hotfix to uat, then uat to main (not hotfix directly to main)", "passed": false, "evidence": "Step 3 says 'Open hotfix/null-payload-fix -> main directly. This is the difference vs. a normal feature: hotfixes go straight to main'."},
+    {"text": "Source-ref check on uat accepts hotfix/* as a valid source", "passed": false, "evidence": "Source-ref check on uat is not mentioned at all; the flow bypasses uat in the PR sequence."},
+    {"text": "After the hotfix reaches main, instructs forward-merge from uat back to develop to keep them in sync", "passed": false, "evidence": "Step 5 back-merges main into uat and develop, but the framing is wrong (forward-merge should be from uat to develop after uat received the hotfix; here uat itself is being patched after-the-fact). The skill's specific 'forward-merge uat -> develop' pattern is not followed."},
+    {"text": "Explicitly explains why the forward-merge matters", "passed": true, "evidence": "Step 5 says 'If you skip this step, develop and uat still have the bug. The next normal release cycle (develop -> uat -> main) will re-introduce the null pointer'."},
+    {"text": "Notes the regression-only exception", "passed": false, "evidence": "No mention of a regression-only exception conditioned on the bug existing only on main; the output uses main-branching as the default rather than as an exception."},
+    {"text": "CI gates on the hotfix PRs are the same as a normal promotion at each tier (no skipping gates because of urgency)", "passed": true, "evidence": "Step 3 lists full gate requirements and says 'Don't shortcut this; the urgency makes mistakes more likely, not less'."},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}
+  ],
+  "summary": {"passed": 3, "failed": 5, "total": 8, "pass_rate": 0.375}
+}

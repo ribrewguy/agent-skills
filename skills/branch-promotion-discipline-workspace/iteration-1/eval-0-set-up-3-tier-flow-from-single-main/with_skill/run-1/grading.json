@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Names exactly three long-lived branches: develop, uat (or staging), main", "passed": true, "evidence": "'Long-lived branches' section lists develop, uat, main."},
+    {"text": "Specifies one-way promotion: develop to uat to main; explicitly forbids skipping a tier", "passed": true, "evidence": "'How code moves' section shows feature/* --> develop --> uat --> main and explicitly lists 'develop to main (skipping uat)' as forbidden."},
+    {"text": "Forbids backflow (main to uat as a normal flow); only post-hotfix forward-merge is allowed", "passed": true, "evidence": "Forbids 'main to uat as a normal flow (backflow)' and notes 'single exception is the post-hotfix forward-merge from uat to develop'."},
+    {"text": "Includes a CI gate matrix where each tier has at least one gate the previous tier doesn't", "passed": true, "evidence": "Matrix table shows integration/e2e optional on develop but required on uat; UAT smoke required on uat/main only; production smoke required on main only."},
+    {"text": "Branch protection rules escalate with tier", "passed": true, "evidence": "Branch protection table: required approvers go from 1 (develop) to 1 (uat) to 2 (main); admins-only push only on main."},
+    {"text": "Source-ref enforcement is mentioned: PRs to uat must come from develop (or hotfix), PRs to main must come from uat", "passed": true, "evidence": "'Source-ref enforcement' subsection states 'PR targeting uat MUST have source ref develop or hotfix/*' and 'PR targeting main MUST have source ref uat'."},
+    {"text": "Adoption sequence acknowledges this is a culture change and includes a transition step", "passed": true, "evidence": "'Adoption sequence' opens with 'This is a culture change, not just a config change' and includes creating develop and uat from main tip, updating CI, and team communication."},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill' anywhere in the output."}
+  ],
+  "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}
+}
