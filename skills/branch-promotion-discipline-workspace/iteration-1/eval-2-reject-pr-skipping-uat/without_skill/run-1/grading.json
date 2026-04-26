@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Rejects the PR in its current form (does NOT merge develop directly to main, regardless of urgency)", "passed": true, "evidence": "Opening: 'Short answer: no, not in its current form. Don't merge develop directly to main'."},
+    {"text": "Explains why: skipping uat defeats the stakeholder-acceptance tier; main is supposed to mean 'passed acceptance'", "passed": true, "evidence": "'Why not' section: 'uat is your acceptance environment. Code that hasn't passed through it hasn't been validated by stakeholders'."},
+    {"text": "Proposes the correct path: promote develop to uat first, then uat to main", "passed": true, "evidence": "'What should happen instead' section enumerates develop -> uat, acceptance, then uat -> main."},
+    {"text": "Estimates the time cost of the correct path realistically", "passed": true, "evidence": "'Realistic timing': '45-90 minutes of wall-clock time' if fast, '3-5 hours' on the pessimistic end."},
+    {"text": "Acknowledges the demo deadline as a real constraint without using it as a reason to bypass the tier", "passed": true, "evidence": "'The demo is at 9am Pacific tomorrow. Even on the pessimistic end, you have most of a workday plus an evening before then. The proper flow fits, easily.'"},
+    {"text": "If the demo can be served from the uat environment instead of waiting for production, suggests that as a workaround", "passed": true, "evidence": "Option B: 'Demo from UAT, not prod. If the demo doesn't strictly need to be on the production URL/data, do the demo against the UAT environment'."},
+    {"text": "Does NOT recommend disabling branch protection or going around the source-ref check", "passed": true, "evidence": "'Things to NOT do' lists 'Don't disable branch protection on main', 'Don't have an admin override the source-branch check', etc."},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}
+  ],
+  "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}
+}

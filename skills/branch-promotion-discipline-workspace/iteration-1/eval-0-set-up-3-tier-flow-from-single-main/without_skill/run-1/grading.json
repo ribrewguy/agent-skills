@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Names exactly three long-lived branches: develop, uat (or staging), main", "passed": true, "evidence": "'Long-lived branches' lists develop, staging, main (staging is acceptable substitute)."},
+    {"text": "Specifies one-way promotion: develop to uat to main; explicitly forbids skipping a tier", "passed": true, "evidence": "Section 2 'No skipping' says 'a feature should never go directly from develop to main'."},
+    {"text": "Forbids backflow (main to uat as a normal flow); only post-hotfix forward-merge is allowed", "passed": true, "evidence": "'No backflow: changes don't move from main back into staging or develop as a normal pattern. The only sanctioned reverse motion is the post-hotfix forward-merge'."},
+    {"text": "Includes a CI gate matrix where each tier has at least one gate the previous tier doesn't", "passed": true, "evidence": "Matrix shows integration/e2e optional on develop but required on staging; smoke tests in staging env required only at staging/main; smoke in prod env only at main."},
+    {"text": "Branch protection rules escalate with tier", "passed": true, "evidence": "Branch protection table: required approvers 1/1/2; restrict to admins only on main; linear history optional/yes/yes."},
+    {"text": "Source-ref enforcement is mentioned: PRs to uat must come from develop (or hotfix), PRs to main must come from uat", "passed": true, "evidence": "'Restrict source branches' row: 'from develop or hotfix/* only' for staging, 'from staging only' for main; also mentions source-branch check CI gate."},
+    {"text": "Adoption sequence acknowledges this is a culture change and includes a transition step", "passed": true, "evidence": "Section 5 explicitly says 'This is a culture change, not just a config change' and lays out Week 0 through Week 4+ with branch creation from main tip and team communication."},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill' anywhere."}
+  ],
+  "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}
+}

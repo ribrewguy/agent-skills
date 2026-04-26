@@ -1,0 +1,15 @@
+{
+  "eval_id": 1,
+  "eval_name": "hotfix-flow-with-forward-merge",
+  "prompt": "Production has a bug. Customer-facing API endpoint returns 500 because of a null-pointer when an optional field is missing in the request payload. Fix is roughly 5 lines. Our flow is develop / uat / main with one-way promotion. What's the hotfix path? Be specific about which branch to fork from, the PR target sequence, gate requirements at each step, and what happens after the fix lands in main.",
+  "assertions": [
+    "Branches the hotfix from `uat` (NOT directly from `main`) so the fix passes through stakeholder acceptance",
+    "PR sequence is hotfix to uat, then uat to main (not hotfix directly to main)",
+    "Source-ref check on uat accepts hotfix/* as a valid source",
+    "After the hotfix reaches main, instructs forward-merge from uat back to develop to keep them in sync",
+    "Explicitly explains why the forward-merge matters (without it, develop reintroduces the bug at next promotion)",
+    "Notes the regression-only exception: if the bug exists only on main (introduced in the most recent uat-to-main promotion), branching from main is acceptable with explicit approval",
+    "CI gates on the hotfix PRs are the same as a normal promotion at each tier (no skipping gates because of urgency)",
+    "Output does not cite this skill by name"
+  ]
+}

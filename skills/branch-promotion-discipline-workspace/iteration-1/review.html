@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "branch-promotion-discipline", "runs": [{"id": "eval-0-set-up-3-tier-flow-from-single-main-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# 3-Tier Branch Flow Design\n\n## Long-lived branches\n\nThree, in promotion order:\n\n1. **`develop`** \u2014 integration of accepted feature work. Updated by feature-branch merges.\n2. **`uat`** \u2014 long-lived stakeholder acceptance environment. Deployed to a UAT environment that mirrors production. Updated only by promotion from `develop` (or by `hotfix/*` from main-direction emergencies).\n3. **`main`** \u2014 production. Updated only by promotion from `uat`.\n\n`uat` and `main` are *long-lived environment branches* \u2014 each maps 1:1 to a deployed environment that lives indefinitely. They are not periodic release branches.\n\n## How code moves\n\n```\nfeature/* --> develop --> uat --> main\n```\n\nOne-way only. The following are forbidden:\n\n- **`develop` to `main`** (skipping `uat`). The whole point of `uat` is stakeholder acceptance; bypassing it defeats the tier.\n- **`main` to `uat`** as a normal flow (backflow). `main` only flows back to other branches via the post-hotfix forward-merge, never as a promotion direction.\n- **`uat` to `develop`** as a normal flow. The single exception is the **post-hotfix forward-merge** from `uat` to `develop` to keep them in sync after a hotfix lands.\n- **`feature/*` directly to `uat` or `main`**. Feature branches always go to `develop` first.\n\n### Source-ref enforcement\n\nEach long-lived branch's CI runs a source-ref check on incoming PRs. This is enforcement, not just documentation:\n\n- A PR targeting `uat` MUST have source ref `develop` or `hotfix/*`.\n- A PR targeting `main` MUST have source ref `uat`.\n- A PR targeting `develop` MUST have source ref `feature/*` or `integration/*` (never `uat`, never `main`).\n\nA wrong source ref fails the source-ref check and cannot be merged regardless of the rest of the gates.\n\n## Per-tier CI gate matrix\n\nEach tier has its own workflow. Adding a gate to an upper tier does not automatically add it to a lower tier.\n\n| Gate | develop | uat | main |\n|---|---|---|---|\n| Lint | required | required | required |\n| Typecheck | required | required | required |\n| Unit tests | required | required | required |\n| Build artifact | required | required | required |\n| Integration tests | optional | required | required |\n| End-to-end tests | optional | required | required |\n| UAT environment smoke tests | n/a | required | required |\n| Production environment smoke tests | n/a | n/a | required |\n| Source-ref check | required | required | required |\n| Change-management metadata | n/a | n/a | required |\n\n### Why integration / e2e are optional on develop\n\nA typical develop tip sees many merges per day. Running a slow e2e suite on every merge is expensive and usually low-signal because most regressions don't reach a deployable state until promotion. Gating e2e at the `uat` boundary is where the cost-benefit lands. If e2e is fast (under ~5 min) and budget allows, promote it to required on develop too.\n\n### Why the matrix differentiates\n\nEach tier requires at least one gate the previous tier doesn't. Otherwise promotion becomes a rubber stamp \u2014 the tiers wouldn't *mean* anything different.\n\n## Branch protection rules\n\nStrict on top, lenient on bottom. The cost of a mistake escalates with each tier.\n\n| Setting | develop | uat | main |\n|---|---|---|---|\n| Require PR before merge | yes | yes | yes |\n| Require status checks to pass | yes | yes | yes |\n| Require source-ref check | yes | yes | yes |\n| Required approvers | 1 | 1 | 2 |\n| Dismiss stale approvals on push | optional | yes | yes |\n| Require linear history | optional | yes | yes |\n| Restrict push to admins | no | no | yes |\n| Disallow force pushes | yes | yes | yes |\n| Disallow deletions | yes | yes | yes |\n\nIf the host's plan tier doesn't expose all of these (e.g., GitHub free on private repos), document the gaps and treat them as discipline-binding until the plan is upgraded.\n\n## Adoption sequence (team of ~6)\n\nThis is a culture change, not just a config change. Sequence it:\n\n1. **Create the branches.** From current `main` tip, branch `develop` and `uat`. They start identical to `main` \u2014 no history backfill.\n2. **Update branch protection.** Configure the rule rows above on all three branches. `main` accepts PRs only from `uat`; `uat` accepts only from `develop` or `hotfix/*`; `develop` accepts only from `feature/*` or `integration/*`.\n3. **Wire source-ref enforcement.** Add the source-ref check workflow on PRs to `uat` and `main`. Optionally on `develop` to catch malformed feature branches early.\n4. **Split the CI workflows per tier** so each branch runs its own gate set per the matrix above. The most common mistake is one workflow firing on all three; the matrix has to differentiate.\n5. **Provision the UAT environment.** `uat` only earns the name if there's a real deployed environment for stakeholders to look at. Wire the deploy step on every push to `uat`.\n6. **Communicate with the team.** A 6-person team needs a 30-minute walkthrough: what each branch means, where to open PRs, why a feature branch can't go straight to main anymore, what to do for a hotfix. The first cycle (feature to develop to uat to main) will feel slow because nobody has muscle memory yet \u2014 that's expected.\n7. **First production release through the new flow.** Pick a low-risk piece of work to push through develop -> uat -> main as the proof. Take notes on friction and tighten the docs.\n8. **Don't backfill history.** Everything before the cutover lives in `main`'s history as-is. The new flow starts at the cutover.\n\n## Hotfix flow (for completeness)\n\nWhen a production bug needs fixing faster than develop -> uat -> main cadence:\n\n1. Branch from `uat`: `git checkout -b hotfix/<id>_<name> uat`. (Hotfixes still need stakeholder acceptance.) Exception: if the bug exists only on `main` because it was introduced by the most recent uat-to-main promotion, branching from `main` is acceptable with explicit stakeholder approval.\n2. Implement the fix.\n3. PR `hotfix/*` to `uat`. Source-ref check accepts `hotfix/*`.\n4. After acceptance, PR `uat` to `main`. Hotfix reaches production.\n5. **Forward-merge `uat` to `develop`**. Without this, `develop` still has the bug, and the next develop-to-uat-to-main cycle reintroduces it. The forward-merge is the load-bearing step of the hotfix flow.\n\n## Common failure modes to watch for\n\n- `develop` merged direct to `main`, skipping `uat`. The source-ref check rejects this.\n- A hotfix lands in `main` but the forward-merge to `develop` is skipped \u2014 next promotion cycle reintroduces the bug.\n- One CI gate set used for every tier; promotions become rubber stamps.\n- Pre-commit / CI gates so slow people start using `--no-verify`. Keep pre-commit fast (format, lint --cache, typecheck on changed files only).\n"}], "grading": {"expectations": [{"text": "Names exactly three long-lived branches: develop, uat (or staging), main", "passed": true, "evidence": "'Long-lived branches' section lists develop, uat, main."}, {"text": "Specifies one-way promotion: develop to uat to main; explicitly forbids skipping a tier", "passed": true, "evidence": "'How code moves' section shows feature/* --> develop --> uat --> main and explicitly lists 'develop to main (skipping uat)' as forbidden."}, {"text": "Forbids backflow (main to uat as a normal flow); only post-hotfix forward-merge is allowed", "passed": true, "evidence": "Forbids 'main to uat as a normal flow (backflow)' and notes 'single exception is the post-hotfix forward-merge from uat to develop'."}, {"text": "Includes a CI gate matrix where each tier has at least one gate the previous tier doesn't", "passed": true, "evidence": "Matrix table shows integration/e2e optional on develop but required on uat; UAT smoke required on uat/main only; production smoke required on main only."}, {"text": "Branch protection rules escalate with tier", "passed": true, "evidence": "Branch protection table: required approvers go from 1 (develop) to 1 (uat) to 2 (main); admins-only push only on main."}, {"text": "Source-ref enforcement is mentioned: PRs to uat must come from develop (or hotfix), PRs to main must come from uat", "passed": true, "evidence": "'Source-ref enforcement' subsection states 'PR targeting uat MUST have source ref develop or hotfix/*' and 'PR targeting main MUST have source ref uat'."}, {"text": "Adoption sequence acknowledges this is a culture change and includes a transition step", "passed": true, "evidence": "'Adoption sequence' opens with 'This is a culture change, not just a config change' and includes creating develop and uat from main tip, updating CI, and team communication."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill' anywhere in the output."}], "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}}}, {"id": "eval-0-set-up-3-tier-flow-from-single-main-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Moving from Single-Main to a 3-Tier Branch Flow\n\nHere's a workable design for the transition. It's modeled on the classic Git Flow / GitHub Flow hybrid that most teams settle on once they need a stakeholder acceptance step.\n\n## 1. Long-lived branches\n\nThree permanent branches:\n\n- **`develop`** \u2014 integration branch. All feature work merges here first.\n- **`staging`** \u2014 stakeholder/UAT environment. Deployed to a staging environment that mirrors prod.\n- **`main`** \u2014 production. What's live for customers.\n\nI'm using `staging` rather than `uat` only because it's a slightly more common name in modern repos; either works. Pick one and be consistent.\n\nShort-lived branches:\n- `feature/<ticket>-<slug>` \u2014 feature work, branched from and merged into `develop`.\n- `hotfix/<ticket>-<slug>` \u2014 emergency fixes (more on this below).\n- `release/<version>` \u2014 optional, used if you want a stabilization window before promoting to staging.\n\n## 2. How code moves\n\n```\nfeature/* \u2500\u2500\u25ba develop \u2500\u2500\u25ba staging \u2500\u2500\u25ba main\n```\n\nPromotion is one direction. A few rules:\n\n- Features always start from `develop` and merge back into `develop` via PR.\n- When `develop` is \"ready for stakeholder testing\", open a PR `develop -> staging`. Merge after CI passes.\n- Once stakeholders sign off in staging, open a PR `staging -> main` for production release.\n- **No skipping**: a feature should never go directly from `develop` to `main`, and definitely not from a feature branch straight into `main`. The whole point of the staging tier is that stakeholders see the change before customers do.\n- **No backflow**: changes don't move from `main` back into `staging` or `develop` as a normal pattern. The only sanctioned reverse motion is the post-hotfix forward-merge described below.\n\n### Hotfix flow\n\nWhen prod has a bug that can't wait for the next normal release cycle:\n\n1. Branch from `staging` (so the fix gets stakeholder validation): `git checkout -b hotfix/XYZ staging`.\n2. Implement the fix.\n3. PR `hotfix/XYZ -> staging`. Validate.\n4. PR `staging -> main`. Ship.\n5. **Forward-merge `staging` back into `develop`** so the fix doesn't get lost on the next promotion.\n\nThe forward-merge step is the one that gets skipped most often and causes pain \u2014 the same bug reappears on the next normal release because `develop` never received the fix.\n\n## 3. Per-tier CI gate matrix\n\nEach tier runs progressively more checks. Faster feedback at the bottom, more thorough validation at the top.\n\n| Gate | develop | staging | main |\n|------|---------|---------|------|\n| Lint | required | required | required |\n| Typecheck | required | required | required |\n| Unit tests | required | required | required |\n| Build artifact | required | required | required |\n| Integration tests | optional | required | required |\n| End-to-end tests | optional | required | required |\n| Smoke test in staging env | \u2014 | required | required |\n| Smoke test in prod env | \u2014 | \u2014 | required |\n| Security scan / SCA | optional | required | required |\n| Source-branch check (correct source ref) | optional | required | required |\n\nWhy this shape:\n\n- **Lint / typecheck / unit / build** are cheap and fast. Run everywhere. Devs get immediate feedback on a feature PR.\n- **Integration & e2e** are slower and flakier. Running them on every feature PR is expensive and noisy. Gate them at the staging boundary, where the cost-benefit is right: you only run them when you're actually trying to promote.\n- **Smoke tests against the deployed environment** can only run *after* the deploy, so they live at the staging->main and post-main steps.\n- **Source-branch check** validates that PRs to staging come from `develop` or `hotfix/*` and PRs to `main` come from `staging`. This is what enforces the one-way flow at the tooling level.\n\n## 4. Branch protection rules\n\nGet stricter as you go up.\n\n| Setting | develop | staging | main |\n|---------|---------|---------|------|\n| Require PR for merges | yes | yes | yes |\n| Require passing status checks | yes | yes | yes |\n| Required approvers | 1 | 1 | 2 |\n| Restrict who can merge | maintainers+ | maintainers+ | admins only |\n| Dismiss stale approvals on new commits | yes | yes | yes |\n| Require linear history | optional | yes | yes |\n| Forbid force pushes | yes | yes | yes |\n| Forbid branch deletion | yes | yes | yes |\n| Restrict source branches (via the source-ref CI check) | n/a | from `develop` or `hotfix/*` only | from `staging` only |\n\nThe escalation matters: a mistake on `develop` is an inconvenience; a mistake on `main` is a customer incident.\n\n## 5. Adoption sequence (team of 6)\n\nThis is a culture change, not just a config change. Sequence:\n\n### Week 0 \u2014 prep\n- Discuss and ratify the flow with the whole team. Show them this doc; collect objections.\n- Make sure a staging environment actually exists and is wired to deploy from a `staging` branch. If it doesn't, build that first \u2014 the tier means nothing without a real environment.\n\n### Week 1 \u2014 set up branches and CI\n- Cut `develop` from `main`'s tip.\n- Cut `staging` from `main`'s tip.\n- Don't try to backfill the existing `main` history into `develop` \u2014 start fresh from the cutover point.\n- Add the per-tier CI workflows. Most CI systems support per-branch workflow files; configure them according to the matrix above.\n- Add the source-ref check job for PRs to `staging` and `main`.\n\n### Week 2 \u2014 branch protection\n- Apply the protection rules. Start *strict*, not lenient \u2014 it's easier to relax than tighten.\n- Document the new flow in the repo's `CONTRIBUTING.md` with a diagram.\n\n### Week 3 \u2014 first cycle\n- Pick a small, low-risk feature and put it through the full feature -> develop -> staging -> main cycle as a learning exercise. Have the whole team observe at least one promotion.\n- Expect the first cycle to feel slow. Nobody has muscle memory yet.\n\n### Week 4+ \u2014 stabilize\n- Run a retro. What's friction? Are gates too slow? Is anyone using `--no-verify` on hooks? Are PRs getting stuck waiting for approvals?\n- Tune the gates based on what you observe. Don't tune them based on what feels nice in the abstract.\n\n### Things to communicate explicitly\n\n- \"Feature branches go to `develop`, not `main`.\" Repeat this. Several times.\n- \"If you need a hotfix, branch from `staging`, not `main`.\" Easy to forget.\n- \"After a hotfix lands in `main`, somebody owns the forward-merge to `develop`.\" Assign this; don't leave it to \"whoever notices.\"\n- \"Demo deadlines don't override the tier flow.\" If a demo is tomorrow, you ship through staging tonight, not through a develop->main shortcut.\n\n## 6. Common pitfalls to avoid\n\n- **One CI workflow used for all three branches.** Defeats the matrix; each tier has to mean something different.\n- **Hotfix forward-merge skipped.** Next release reintroduces the bug. Make this a checklist item on the hotfix PR template.\n- **Stale `develop`** if `staging`/`main` get hotfixes and nobody merges them back. Same as above.\n- **Direct pushes to `staging` or `main`.** Branch protection blocks this; verify it's actually configured, not just declared.\n- **\"Just this once\" exceptions.** The flow only works if the team treats it as load-bearing. Demo deadlines, exec asks, end-of-quarter pushes \u2014 none of those are reasons to skip a tier.\n"}], "grading": {"expectations": [{"text": "Names exactly three long-lived branches: develop, uat (or staging), main", "passed": true, "evidence": "'Long-lived branches' lists develop, staging, main (staging is acceptable substitute)."}, {"text": "Specifies one-way promotion: develop to uat to main; explicitly forbids skipping a tier", "passed": true, "evidence": "Section 2 'No skipping' says 'a feature should never go directly from develop to main'."}, {"text": "Forbids backflow (main to uat as a normal flow); only post-hotfix forward-merge is allowed", "passed": true, "evidence": "'No backflow: changes don't move from main back into staging or develop as a normal pattern. The only sanctioned reverse motion is the post-hotfix forward-merge'."}, {"text": "Includes a CI gate matrix where each tier has at least one gate the previous tier doesn't", "passed": true, "evidence": "Matrix shows integration/e2e optional on develop but required on staging; smoke tests in staging env required only at staging/main; smoke in prod env only at main."}, {"text": "Branch protection rules escalate with tier", "passed": true, "evidence": "Branch protection table: required approvers 1/1/2; restrict to admins only on main; linear history optional/yes/yes."}, {"text": "Source-ref enforcement is mentioned: PRs to uat must come from develop (or hotfix), PRs to main must come from uat", "passed": true, "evidence": "'Restrict source branches' row: 'from develop or hotfix/* only' for staging, 'from staging only' for main; also mentions source-branch check CI gate."}, {"text": "Adoption sequence acknowledges this is a culture change and includes a transition step", "passed": true, "evidence": "Section 5 explicitly says 'This is a culture change, not just a config change' and lays out Week 0 through Week 4+ with branch creation from main tip and team communication."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill' anywhere."}], "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}}}, {"id": "eval-1-hotfix-flow-with-forward-merge-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Hotfix path for the null-pointer 500\n\nA 5-line fix to a production endpoint. Run it through the hotfix flow \u2014 not a develop-to-main shortcut.\n\n## Step 1: Branch from `uat` (not `main`)\n\n```\ngit fetch origin\ngit checkout uat\ngit pull --ff-only\ngit checkout -b hotfix/<task_id>_null-payload-guard\n```\n\nWhy `uat`, not `main`:\n\n- The fix still needs to pass through stakeholder acceptance \u2014 that's what `uat` exists for. A hotfix isn't a license to bypass the tier.\n- Branching from `uat` ensures the fix is testable in the UAT environment before it touches prod.\n\n**Regression-only exception**: if the bug exists *only* on `main` (i.e., it was introduced by the most recent uat-to-main promotion and is not present on `uat`), branching from `main` is acceptable, but only with explicit user/stakeholder approval to skip the UAT acceptance step. In your case \u2014 a null-pointer on an optional field \u2014 the bug almost certainly predates the last release and exists on `uat` and `develop` too, so branch from `uat`.\n\n## Step 2: Implement the fix on the hotfix branch\n\n5 lines of null guard. Add a unit test that exercises the missing-field case so the regression has a fence around it. Commit, push.\n\n## Step 3: PR `hotfix/*` -> `uat`\n\nOpen the PR with `uat` as target. The source-ref check on `uat` accepts `hotfix/*` (alongside `develop`) as a valid source ref, so this PR is allowed.\n\n**Gate requirements at this step are the same as a normal develop -> uat promotion.** Urgency does not skip gates:\n\n- Lint \u2014 required\n- Typecheck \u2014 required\n- Unit tests \u2014 required (including the new regression test)\n- Build artifact \u2014 required\n- Integration tests \u2014 required\n- End-to-end tests \u2014 required\n- UAT environment smoke tests \u2014 required (after deploy)\n- Source-ref check \u2014 required\n\nOnce green, merge. UAT deploys. Stakeholders smoke the affected endpoint in the UAT environment.\n\n## Step 4: PR `uat` -> `main`\n\nAfter UAT acceptance, open the promotion PR `uat -> main`. Source-ref check on `main` requires source = `uat`; this PR satisfies that.\n\n**Gate requirements are the same as a normal uat -> main promotion**:\n\n- Lint, typecheck, unit, build artifact \u2014 required\n- Integration, e2e \u2014 required\n- UAT smoke + production smoke \u2014 required\n- Source-ref check \u2014 required\n- Change-management metadata (release notes, on-call awareness) \u2014 required\n\nRequired approvers on `main` is 2 (escalated vs. lower tiers because the cost of a `main` mistake is the highest). Get them. Merge. Deploy lands the fix on production.\n\n## Step 5: Forward-merge `uat` -> `develop`\n\nThis is the load-bearing step and the most commonly skipped one.\n\n```\ngit checkout develop\ngit pull --ff-only\ngit merge --no-ff uat\n# resolve any conflicts; usually trivial right after a hotfix\ngit push origin develop\n```\n\n(Alternatively, do this as a PR if branch protection on `develop` requires it \u2014 `uat -> develop` is the explicitly-permitted reverse motion in the post-hotfix case, so the source-ref check on `develop` should allow `uat` as a source for *this* one path. If your check is strict feature/integration-only, do the merge as a feature-style PR titled \"forward-merge hotfix `<id>` from uat\".)\n\n### Why the forward-merge matters\n\nWithout it: `main` is fixed, `uat` is fixed, but `develop` still has the bug. The next normal `develop -> uat -> main` promotion cycle will re-introduce the null pointer to `uat` and then to `main`. This is the single most common failure mode of 3-tier flows \u2014 the team thinks they're done after the hotfix lands in production, the fix gets quietly overwritten on the next release, and the bug appears to \"come back from the dead.\"\n\nThe hotfix flow ends at the forward-merge, not at the production deploy.\n\n## Summary of the path\n\n```\nhotfix/<id>  -->  uat  -->  main\n                          \\\n                           +--> (forward-merge) develop\n```\n\n- Branch from: `uat`\n- PR sequence: `hotfix/* -> uat`, then `uat -> main`\n- Gates: full per-tier matrix at each step, no shortcuts for urgency\n- After main: forward-merge `uat -> develop` to keep them in sync\n\n## What NOT to do\n\n- Don't branch from `main` directly (skips UAT acceptance) unless this is a regression introduced by the most recent uat-to-main promotion AND you have explicit approval.\n- Don't open a PR `hotfix/* -> main`. The source-ref check on `main` only accepts `uat` as a source.\n- Don't skip the forward-merge. Add it to the hotfix PR template as a checklist item if your team forgets it.\n- Don't drop gates because \"it's just 5 lines and we're in a hurry.\" The gate matrix exists to protect each tier; urgency makes mistakes more likely, not less.\n"}], "grading": {"expectations": [{"text": "Branches the hotfix from `uat` (NOT directly from `main`) so the fix passes through stakeholder acceptance", "passed": true, "evidence": "Step 1 'Branch from uat (not main)' explicitly checks out from uat with rationale about stakeholder acceptance."}, {"text": "PR sequence is hotfix to uat, then uat to main (not hotfix directly to main)", "passed": true, "evidence": "Step 3 'PR hotfix/* -> uat' and Step 4 'PR uat -> main'."}, {"text": "Source-ref check on uat accepts hotfix/* as a valid source", "passed": true, "evidence": "Step 3 says 'The source-ref check on uat accepts hotfix/* (alongside develop) as a valid source ref'."}, {"text": "After the hotfix reaches main, instructs forward-merge from uat back to develop to keep them in sync", "passed": true, "evidence": "Step 5 'Forward-merge uat -> develop' with explicit git commands."}, {"text": "Explicitly explains why the forward-merge matters", "passed": true, "evidence": "'Why the forward-merge matters' section: 'develop still has the bug. The next normal develop -> uat -> main promotion cycle will re-introduce the null pointer'."}, {"text": "Notes the regression-only exception", "passed": true, "evidence": "Step 1 'Regression-only exception': 'if the bug exists only on main (i.e., it was introduced by the most recent uat-to-main promotion)... branching from main is acceptable, but only with explicit user/stakeholder approval'."}, {"text": "CI gates on the hotfix PRs are the same as a normal promotion at each tier (no skipping gates because of urgency)", "passed": true, "evidence": "Step 3: 'Gate requirements at this step are the same as a normal develop -> uat promotion. Urgency does not skip gates'. Step 4 repeats for uat -> main."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}}}, {"id": "eval-1-hotfix-flow-with-forward-merge-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Hotfix Path for the Null-Pointer 500\n\nQuick fix, but you still want to push it through the proper flow so prod isn't a special case and so develop doesn't drift.\n\n## TL;DR\n\n```\nhotfix/null-payload-fix  \u2192  main  \u2192  back-merge to develop and uat\n```\n\nBranch from `main`, fix, PR to `main`, then back-merge so the lower tiers don't lose the fix.\n\n## Step-by-step\n\n### 1. Branch from `main`\n\nThe bug is in production code, so you want to fix it relative to what's currently in `main` \u2014 not relative to `develop`, which may have unrelated work in flight.\n\n```bash\ngit fetch origin\ngit checkout main\ngit pull --ff-only\ngit checkout -b hotfix/null-payload-fix\n```\n\nNaming convention: `hotfix/<short-description>` or `hotfix/<ticket-id>` if you have a ticketing system.\n\n### 2. Make the fix and add a test\n\n5-line fix is fine, but also add a unit test that hits the endpoint with the optional field omitted. The test prevents the bug coming back next quarter when someone refactors the handler.\n\nCommit:\n```bash\ngit add <files>\ngit commit -m \"fix: handle missing optional field in <endpoint> payload\"\ngit push origin hotfix/null-payload-fix\n```\n\n### 3. PR sequence\n\nOpen `hotfix/null-payload-fix` \u2192 `main` directly. This is the difference vs. a normal feature: hotfixes go straight to `main` because waiting for the develop \u2192 uat \u2192 main cycle is what we're trying to avoid.\n\nGate requirements on this PR:\n- Lint, typecheck, unit tests, build \u2014 all required (same as any PR to `main`).\n- Integration tests \u2014 required.\n- E2E tests \u2014 required.\n- Smoke tests against the prod-like environment \u2014 required.\n- Required reviewers \u2014 same as any merge to `main` (typically 2). Don't shortcut this; the urgency makes mistakes more likely, not less.\n\nMerge once green. Production deploy goes out automatically (or via your normal deploy pipeline).\n\n### 4. Verify in production\n\nAfter deploy, hit the endpoint with the offending payload and confirm it no longer 500s. Watch error rates for ~15 minutes.\n\n### 5. Back-merge to `uat` and `develop`\n\nThis is the step that gets forgotten and causes the same bug to reappear two weeks later.\n\n```bash\n# back-merge into uat\ngit checkout uat\ngit pull --ff-only\ngit merge --no-ff main\ngit push origin uat\n\n# back-merge into develop\ngit checkout develop\ngit pull --ff-only\ngit merge --no-ff main   # or merge uat into develop, equivalent here\ngit push origin develop\n```\n\nDo these as PRs if your branch protection requires it. The merges should be trivial \u2014 same commits, no conflicts unless someone else touched the same handler.\n\nIf you skip this step, develop and uat still have the bug. The next normal release cycle (develop \u2192 uat \u2192 main) will re-introduce the null pointer because develop's version of the handler hasn't been updated.\n\n## Why branch from `main`, not `develop`?\n\n`develop` may have other unmerged or in-progress work that's not ready for production. If you branch from `develop`, you'd have to cherry-pick or hold those changes back when promoting. Branching from `main` keeps the hotfix surgical: only the fix goes out.\n\n## Things to put on the team's hotfix checklist\n\n- [ ] Branch from `main`\n- [ ] Add a regression test\n- [ ] Same CI gates as a normal `main` PR \u2014 no skipping\n- [ ] Required reviewers for `main` are met\n- [ ] After deploy, verify in prod\n- [ ] Back-merge `main` into `uat`\n- [ ] Back-merge `main` into `develop`\n- [ ] Update the incident log / changelog\n"}], "grading": {"expectations": [{"text": "Branches the hotfix from `uat` (NOT directly from `main`) so the fix passes through stakeholder acceptance", "passed": false, "evidence": "Step 1 explicitly says 'Branch from main' and the 'Why branch from main, not develop?' section justifies branching from main. Skips uat acceptance entirely."}, {"text": "PR sequence is hotfix to uat, then uat to main (not hotfix directly to main)", "passed": false, "evidence": "Step 3 says 'Open hotfix/null-payload-fix -> main directly. This is the difference vs. a normal feature: hotfixes go straight to main'."}, {"text": "Source-ref check on uat accepts hotfix/* as a valid source", "passed": false, "evidence": "Source-ref check on uat is not mentioned at all; the flow bypasses uat in the PR sequence."}, {"text": "After the hotfix reaches main, instructs forward-merge from uat back to develop to keep them in sync", "passed": false, "evidence": "Step 5 back-merges main into uat and develop, but the framing is wrong (forward-merge should be from uat to develop after uat received the hotfix; here uat itself is being patched after-the-fact). The skill's specific 'forward-merge uat -> develop' pattern is not followed."}, {"text": "Explicitly explains why the forward-merge matters", "passed": true, "evidence": "Step 5 says 'If you skip this step, develop and uat still have the bug. The next normal release cycle (develop -> uat -> main) will re-introduce the null pointer'."}, {"text": "Notes the regression-only exception", "passed": false, "evidence": "No mention of a regression-only exception conditioned on the bug existing only on main; the output uses main-branching as the default rather than as an exception."}, {"text": "CI gates on the hotfix PRs are the same as a normal promotion at each tier (no skipping gates because of urgency)", "passed": true, "evidence": "Step 3 lists full gate requirements and says 'Don't shortcut this; the urgency makes mistakes more likely, not less'."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "summary": {"passed": 3, "failed": 5, "total": 8, "pass_rate": 0.375}}}, {"id": "eval-2-reject-pr-skipping-uat-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Should this PR be merged?\n\n**No.** Don't merge `develop -> main` directly. The demo is real, but it's not a reason to skip a tier.\n\n## Why not\n\nThe flow is `develop -> uat -> main` for a reason. `uat` exists so that what reaches `main` has been seen and accepted in a stakeholder-facing environment. If you merge `develop` straight to `main`:\n\n- You skip stakeholder acceptance entirely. `main` is supposed to mean \"passed UAT,\" not \"whatever happened to be on develop at 4pm yesterday.\"\n- You skip the gate set that's specific to the `uat` boundary (integration, e2e, UAT environment smoke). `develop` doesn't run those. Whatever lands in production has only had develop's lighter gates run on it.\n- You set a precedent. The next \"urgent\" thing \u2014 and there's always a next one \u2014 comes with the same argument.\n\nThe source-ref check on `main` is also configured to require source = `uat`. The PR as written should fail that check on its own; if it doesn't, the check is misconfigured and that's a separate bug to fix. **Do not disable branch protection or bypass the source-ref check to push this through.** Those rules are the only thing standing between this incident and the next one.\n\n## What to do instead\n\nRun the work through the correct path:\n\n1. **Promote `develop` to `uat`.** Open a PR `develop -> uat`. Run the uat gate set (lint, typecheck, unit, build, integration, e2e, source-ref check). On merge, `uat` deploys to the UAT environment.\n2. **Stakeholder acceptance in UAT.** This is the literal point of the tier. UAT environment smoke tests run; the demo person (or PM) can validate the feature actually works in a prod-like environment.\n3. **Promote `uat` to `main`.** Open a PR `uat -> main` once acceptance is done. Source-ref check passes (source = uat), gates run, two approvers sign off, merge, prod deploy.\n\n### Realistic time estimate\n\n- If your gate matrix is tight (fast unit/integration suites, e2e under ~15 minutes, smoke tests automated): the entire `develop -> uat -> main` cycle can be done in **30-60 minutes of wall-clock time**, most of which is CI runtime.\n- If e2e is slow (an hour or more) or stakeholder acceptance involves a human looking at a UI: **2-4 hours**, possibly more.\n- 9am Pacific tomorrow gives roughly 17 hours from now if you start tonight. That is plenty of time for the correct path even at the pessimistic end.\n\nIf the team is genuinely concerned about cutting it close, start the `develop -> uat` PR right now. The time pressure argues for *more* discipline, not less, because rushing through `main` directly is exactly when null-deploy disasters happen.\n\n## A workaround if main-deployment timing is the only blocker\n\nThe demo is at 9am tomorrow. **Does the demo have to be from production?**\n\nIf the answer is no \u2014 and for client demos, \"no\" is usually fine \u2014 the UAT environment is already deployed and stakeholders use it for acceptance every day. Run the demo against `uat`:\n\n- Promote `develop -> uat` tonight (gates + smoke).\n- Demo against the UAT URL tomorrow morning.\n- Promote `uat -> main` after the demo, on the normal cadence.\n\nThis gets the feature in front of the client on time, gets stakeholder acceptance in the loop the right way, and avoids a rushed prod push under demo pressure.\n\nIf the demo *must* be on the production URL (e.g., domain branding requirement, or the client is going to test purchase flows that only work against prod payment processing), then you still run the full `develop -> uat -> main` path \u2014 just start it now, not at 8:45am tomorrow. There's enough time.\n\n## What NOT to do\n\n- Don't merge `develop` directly to `main`.\n- Don't disable branch protection on `main` \"just for this merge.\"\n- Don't push directly to `main` to bypass the PR.\n- Don't bypass or temporarily delete the source-ref check.\n- Don't have an admin force-merge over failing checks.\n\nEach of those is the kind of decision that becomes a postmortem bullet point next week.\n\n## Recommended response on the PR\n\nClose the PR with a comment along the lines of:\n\n> Closing \u2014 `main` only accepts PRs sourced from `uat`. To get this in front of the client by 9am Pacific tomorrow, I'm opening `develop -> uat` now and we can promote `uat -> main` after acceptance. If demoing from the UAT environment works for the client, we can also do that and skip the prod push until our normal release window. I'll start the `develop -> uat` PR in the next 10 minutes.\n"}], "grading": {"expectations": [{"text": "Rejects the PR in its current form (does NOT merge develop directly to main, regardless of urgency)", "passed": true, "evidence": "Opening: 'No. Don't merge develop -> main directly. The demo is real, but it's not a reason to skip a tier'."}, {"text": "Explains why: skipping uat defeats the stakeholder-acceptance tier; main is supposed to mean 'passed acceptance'", "passed": true, "evidence": "'Why not' section: 'main is supposed to mean passed UAT, not whatever happened to be on develop at 4pm yesterday'."}, {"text": "Proposes the correct path: promote develop to uat first, then uat to main", "passed": true, "evidence": "'What to do instead' section steps 1-3 lay out develop -> uat, acceptance, then uat -> main."}, {"text": "Estimates the time cost of the correct path realistically", "passed": true, "evidence": "'Realistic time estimate': '30-60 minutes of wall-clock time' for tight matrix, '2-4 hours, possibly more' if e2e is slow."}, {"text": "Acknowledges the demo deadline as a real constraint without using it as a reason to bypass the tier", "passed": true, "evidence": "'The demo is real, but it's not a reason to skip a tier'; '17 hours from now if you start tonight. That is plenty of time for the correct path'."}, {"text": "If the demo can be served from the uat environment instead of waiting for production, suggests that as a workaround", "passed": true, "evidence": "'A workaround if main-deployment timing is the only blocker' section suggests demoing from UAT URL."}, {"text": "Does NOT recommend disabling branch protection or going around the source-ref check", "passed": true, "evidence": "'Do not disable branch protection or bypass the source-ref check to push this through'; 'What NOT to do' explicitly lists each."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}}}, {"id": "eval-2-reject-pr-skipping-uat-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Should this PR be merged?\n\nShort answer: **no, not in its current form**. Don't merge `develop` directly to `main`.\n\n## Why not\n\nYour team chose a 3-tier flow specifically so that `uat` sits between integration and production. Skipping `uat` for a demo defeats the purpose of having the tier:\n\n- `uat` is your acceptance environment. Code that hasn't passed through it hasn't been validated by stakeholders or against the closer-to-prod test suite.\n- \"Urgent for client demo\" is one of the most common reasons people cite for shortcuts, and shortcuts under deadline pressure are when bad bugs reach production. The features most people want to demo are also the ones most likely to surface integration issues that only show up in a prod-like environment.\n- Once you make the exception once, it becomes the precedent for the next \"urgent\" thing. The flow's value is in being non-negotiable.\n\n## What should happen instead\n\nRun it through the proper sequence:\n\n1. Open a PR `develop -> uat`. Make sure the develop->uat CI gates pass.\n2. Merge to `uat`. Wait for the UAT deploy to complete. Run smoke tests against the UAT environment.\n3. Have whoever owns acceptance (PM, tech lead, or whoever is doing the demo) sanity-check the feature in UAT.\n4. Open a PR `uat -> main`. Get the required reviews. Merge once green.\n5. Prod deploys.\n\n### Realistic timing\n\nHow long this takes depends on your CI:\n\n- If your suites are fast (lint + unit + integration in 5-10 min, e2e in 10-20 min, smoke tests a few minutes), the whole develop -> uat -> main path can be done in **roughly 45-90 minutes of wall-clock time**, including the human acceptance step.\n- If e2e is slow (an hour or more) or acceptance requires manual review by someone who's offline, you might be looking at **3-5 hours** end-to-end.\n\nThe demo is at 9am Pacific tomorrow. Even on the pessimistic end, you have most of a workday plus an evening before then. The proper flow fits, easily.\n\n## What I'd actually suggest\n\nA couple of practical options that get the demo done without breaking the flow:\n\n**Option A: Promote tonight.** Start the `develop -> uat` PR immediately. CI runs while people finish other work. UAT deploys, somebody validates. Open `uat -> main` before EOD or first thing in the morning. Hits 9am with margin.\n\n**Option B: Demo from UAT, not prod.** If the demo doesn't strictly need to be on the production URL/data, do the demo against the UAT environment. UAT is already deployed and the stakeholders have presumably seen it before. You can promote to main on the normal cadence afterward. This is the cleanest answer if the demo is just showing functionality, not transacting against prod systems.\n\n**Option C: Push `develop` to `uat` now and accept that production lags by a day.** The client demo can be on UAT; the prod push happens after the demo is over. No deadline pressure on the main push at all.\n\nOption B is usually best if the demo is feature-walkthrough rather than \"watch real users do real things in prod.\"\n\n## Things to NOT do\n\n- Don't disable branch protection on `main` to push the PR through.\n- Don't have an admin override the source-branch check.\n- Don't manually merge by deleting and re-creating the PR with a different base.\n- Don't push directly to `main`.\n\nAll of these defeat exactly the controls that the team set up to prevent this scenario. If the rules can be bypassed when there's deadline pressure, they don't work \u2014 deadline pressure is when you most need them to hold.\n\n## Suggested PR comment\n\nSomething like:\n\n> Closing this \u2014 `main` shouldn't take a PR from `develop` directly; we go through `uat` for stakeholder acceptance. I'll open `develop -> uat` now so the change is deployed to UAT well before tomorrow's demo. If the demo can run against UAT, that's the cleanest path; otherwise we promote `uat -> main` after acceptance tonight or first thing in the morning. Either way, 9am is comfortably in reach.\n"}], "grading": {"expectations": [{"text": "Rejects the PR in its current form (does NOT merge develop directly to main, regardless of urgency)", "passed": true, "evidence": "Opening: 'Short answer: no, not in its current form. Don't merge develop directly to main'."}, {"text": "Explains why: skipping uat defeats the stakeholder-acceptance tier; main is supposed to mean 'passed acceptance'", "passed": true, "evidence": "'Why not' section: 'uat is your acceptance environment. Code that hasn't passed through it hasn't been validated by stakeholders'."}, {"text": "Proposes the correct path: promote develop to uat first, then uat to main", "passed": true, "evidence": "'What should happen instead' section enumerates develop -> uat, acceptance, then uat -> main."}, {"text": "Estimates the time cost of the correct path realistically", "passed": true, "evidence": "'Realistic timing': '45-90 minutes of wall-clock time' if fast, '3-5 hours' on the pessimistic end."}, {"text": "Acknowledges the demo deadline as a real constraint without using it as a reason to bypass the tier", "passed": true, "evidence": "'The demo is at 9am Pacific tomorrow. Even on the pessimistic end, you have most of a workday plus an evening before then. The proper flow fits, easily.'"}, {"text": "If the demo can be served from the uat environment instead of waiting for production, suggests that as a workaround", "passed": true, "evidence": "Option B: 'Demo from UAT, not prod. If the demo doesn't strictly need to be on the production URL/data, do the demo against the UAT environment'."}, {"text": "Does NOT recommend disabling branch protection or going around the source-ref check", "passed": true, "evidence": "'Things to NOT do' lists 'Don't disable branch protection on main', 'Don't have an admin override the source-branch check', etc."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}}}, {"id": "eval-3-design-ci-gate-matrix-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# CI Gate Matrix for develop / uat / main\n\nThe shape: each tier requires at least one gate the tier below doesn't. Promotion has to *mean* something different at each step, otherwise it's just a rubber stamp.\n\n## The matrix\n\n| Gate | develop | uat | main |\n|---|---|---|---|\n| Lint | required | required | required |\n| Typecheck | required | required | required |\n| Unit tests | required | required | required |\n| Build artifact | required | required | required |\n| Integration tests | optional | required | required |\n| End-to-end tests | optional | required | required |\n| UAT environment smoke tests | n/a | required | required |\n| Production environment smoke tests | n/a | n/a | required |\n| Source-ref check | optional | required | required |\n| Change-management metadata | n/a | n/a | required |\n\n## Why each gate runs where it runs\n\n### Lint \u2014 required at all three tiers\n\nCheap, fast, deterministic. The cost of running it everywhere is negligible and a lint failure on `main` would be embarrassing. No reason to skip at any tier.\n\n### Typecheck \u2014 required at all three tiers\n\nSame reasoning. Runs in seconds-to-minutes, catches real bugs, and the cost of letting an untyped change through to a higher tier is much greater than the marginal CI cost of running it again. Type errors on `main` are silly.\n\n### Unit tests \u2014 required at all three tiers\n\nFast, isolated, and the safety net that should always have caught the obvious regressions. Required everywhere. If unit tests are slow enough that you'd want to skip them at `develop`, fix the unit tests \u2014 they're not actually unit tests anymore.\n\n### Build artifact \u2014 required at all three tiers\n\nThe build has to succeed everywhere. The artifact is what actually gets deployed; you don't want to discover at the `uat` boundary that something on `develop` doesn't build. Also: the build cache often makes downstream builds nearly free.\n\n### Integration tests \u2014 optional on develop, required at uat and main\n\nThis is where the matrix starts to differentiate.\n\n- A typical `develop` tip sees many merges per day. Running the integration suite per-merge is expensive and noisy \u2014 most failures get fixed by the next merge anyway, and the genuinely-broken merges usually have unit-test failures too.\n- At the `uat` boundary you're saying \"we think this is ready to show stakeholders.\" Integration tests *must* pass before you make that claim.\n- Required at `main` for the same reason any uat-required gate is required at main: main is strictly stricter than uat.\n\nIf your team has fast integration tests (under a few minutes total) and budget to run them per-merge, promote it to required on develop. The matrix accommodates that. The reason for \"optional\" rather than \"required\" on develop is the cost-benefit, not the principle.\n\n### End-to-end tests \u2014 optional on develop, required at uat and main\n\nSame reasoning, more so. E2e tests are slow (often 15+ minutes), historically the flakiest in the suite, and the cost of running them per-develop-merge is high while the signal at that point is usually low. Most e2e failures on a develop tip get fixed by an unrelated subsequent merge before anyone investigates.\n\nGating e2e at the `uat` boundary is where the cost-benefit lands for most teams: you only pay the e2e cost when you're actually trying to promote, and you only block promotions that have a real risk of regressing user-visible flows.\n\nIf your e2e suite is fast (under 5 minutes) and stable, promote it to required on develop. Otherwise leave it at the uat boundary.\n\n### UAT environment smoke tests \u2014 required at uat and main, n/a on develop\n\nSmoke tests against the deployed UAT environment can only run *after* the deploy has happened. They live at the uat boundary by definition. They run again as a gate on the uat -> main promotion to confirm nothing has drifted between when the uat PR merged and when the main PR is opened.\n\n`develop` doesn't have a deployed environment to smoke against (there's no \"develop environment\" in this flow \u2014 develop is integration, not a deployment target).\n\n### Production environment smoke tests \u2014 required at main only\n\nSame shape, but against production. They run after the main deploy. The reason this row is `n/a` for the lower tiers is obvious: there's no production environment for develop or uat to smoke against, by definition.\n\n### Source-ref check \u2014 optional on develop, required at uat and main\n\nThis is the gate that enforces one-way promotion at the tooling level rather than just policy.\n\n- A PR targeting `uat` MUST have source ref `develop` or `hotfix/*`.\n- A PR targeting `main` MUST have source ref `uat`.\n\nIf you mention source-ref enforcement on `develop` at all, it should accept `feature/*` and `integration/*` as valid sources and reject `uat` or `main`. (Feature work can't legally come from upstream tiers.) On many repos the `develop` source-ref check is left optional because the lower tiers' protection rules already prevent direct push and feature branches naturally have correct prefixes. The strict enforcement matters most where the cost of a wrong-direction merge is highest, i.e., at `uat` and `main`.\n\nA wrong source-ref fails the check and cannot be merged regardless of the rest of the gates.\n\n### Change-management metadata \u2014 required at main only\n\nRelease notes, on-call notification, link to a change ticket if your org has one. Lower tiers don't need this overhead; production deploys do.\n\n## Per-tier list (alternate view)\n\nIf you prefer a per-tier reading rather than the table:\n\n**develop**\n- Required: lint, typecheck, unit, build\n- Optional: integration, e2e\n- Optional but recommended: source-ref check (rejects `uat`/`main` as sources)\n\n**uat** (everything in develop, plus:)\n- Required: integration, e2e, source-ref check\n- Required after deploy: UAT environment smoke tests\n- Source-ref check accepts `develop` and `hotfix/*`\n\n**main** (everything in uat, plus:)\n- Required after deploy: production environment smoke tests\n- Required: change-management metadata\n- Source-ref check accepts only `uat`\n- (Branch protection adds: 2 approvers, admins-only push, etc., though that's protection rather than CI gates)\n\n## The principle\n\nEach tier strictly stricter than the last. Each promotion crosses a gate the prior tier didn't have. This is what makes \"promoted to uat\" and \"released to main\" mean different things in a verifiable, tooling-enforced way \u2014 not just a label in the team chat.\n"}], "grading": {"expectations": [{"text": "Each tier has at least one gate the previous tier doesn't (uat strictly stricter than develop, main strictly stricter than uat)", "passed": true, "evidence": "Matrix shows uat adds integration/e2e/UAT smoke required vs. develop; main adds production smoke and change-management metadata vs. uat."}, {"text": "Lint, typecheck, unit tests, build artifact are required at all three tiers", "passed": true, "evidence": "All four rows show 'required' across develop, uat, main columns."}, {"text": "Integration tests and end-to-end tests are required at uat and main (optional or deferred on develop)", "passed": true, "evidence": "Integration tests row: optional/required/required. E2E row: optional/required/required."}, {"text": "Environment smoke tests at uat run against the UAT deployed environment; environment smoke tests at main run against production", "passed": true, "evidence": "Separate rows: 'UAT environment smoke tests' (n/a/required/required) and 'Production environment smoke tests' (n/a/n/a/required); body explicitly says smoke tests run against the deployed UAT and production environments."}, {"text": "Justification given for why slower gates (e2e) are gated at uat rather than per-merge on develop (cost-benefit)", "passed": true, "evidence": "'Why integration / e2e are optional on develop' and the e2e section: 'develop tip sees many merges per day. Running the integration suite per-merge is expensive and noisy... cost-benefit'."}, {"text": "Source-ref check is required at uat and main (optional on develop)", "passed": true, "evidence": "Source-ref check row: optional/required/required."}, {"text": "Source-ref check, if mentioned at develop, accepts feature/* and integration/* but rejects uat or main as source refs", "passed": true, "evidence": "'If you mention source-ref enforcement on develop... it should accept feature/* and integration/* as valid sources and reject uat or main'."}, {"text": "Output reads as a matrix (table or per-tier list), not as a flat list of all gates", "passed": true, "evidence": "Top of output is a matrix table; 'Per-tier list (alternate view)' provides per-tier reading as well."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "summary": {"passed": 9, "failed": 0, "total": 9, "pass_rate": 1.0}}}, {"id": "eval-3-design-ci-gate-matrix-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# CI Gate Matrix for a 3-Tier Flow\n\nThe general principle: faster, cheaper checks run everywhere; slower or more expensive checks gate promotion to the next tier. Each tier should add at least one new check that the tier below didn't run, otherwise the tier isn't really doing anything.\n\n## Matrix\n\n| Gate | develop | uat | main |\n|---|---|---|---|\n| Lint | required | required | required |\n| Typecheck | required | required | required |\n| Unit tests | required | required | required |\n| Build artifact | required | required | required |\n| Integration tests | optional / advisory | required | required |\n| End-to-end tests | optional / advisory | required | required |\n| Smoke tests against UAT env | \u2014 | required (post-deploy) | required (regression check) |\n| Smoke tests against prod env | \u2014 | \u2014 | required (post-deploy) |\n| Security / dependency scan | optional | required | required |\n| Source-ref check | optional | required | required |\n\n## Per-tier rationale\n\n### develop \u2014 fast feedback, low cost per merge\n\nDevelop is the integration branch. Many merges per day, often small. Devs need feedback in minutes, not hours.\n\n- **Lint** \u2014 required. Trivially cheap, catches the silliest mistakes, and you don't want lint debt accumulating on develop.\n- **Typecheck** \u2014 required. Same logic. A type error reaching uat would be embarrassing and the check is cheap.\n- **Unit tests** \u2014 required. They're supposed to be fast, isolated, and reliable. If they're not, fix the tests, don't skip them. Required everywhere.\n- **Build artifact** \u2014 required. If the code doesn't build, nothing else matters. Catch this at the lowest tier.\n- **Integration tests** \u2014 optional. This is the first tradeoff. Integration tests are slower and flakier. Running them on every develop merge produces a lot of CI cost and a lot of \"rerun the flaky test\" noise. Recommend running them on a schedule (every push, or every N minutes) rather than as a hard gate per merge.\n- **End-to-end tests** \u2014 optional, similar reasoning. E2e is the slowest, flakiest tier. Gating develop merges on e2e turns \"ship a small fix\" into a 30-minute wait. Most teams settle on running e2e nightly or pre-promotion, not per-merge.\n- **Source-ref check** \u2014 optional, but if you do enforce one on develop, it should accept feature/* and integration/* as sources and reject any source from a higher tier (uat, main) since feature work shouldn't be flowing backward.\n\n### uat \u2014 pre-prod confidence\n\nUat is where you say \"we believe this is ready to be seen by stakeholders.\" The gate set should produce that confidence.\n\n- Everything from develop is still required.\n- **Integration tests** \u2014 required. The whole point of integration tests is to catch the things unit tests can't. Promotion to uat is the latest reasonable point to require them.\n- **End-to-end tests** \u2014 required. Stakeholders are about to look at this. If a critical user flow is broken, you want to know now, not when the PM hits it during acceptance.\n- **Smoke tests against UAT environment** \u2014 required, post-deploy. After the merge to uat triggers a deploy, run a small set of smoke tests against the actual UAT environment URL. This is the first time you're testing the *deployment*, not just the artifact.\n- **Security / dependency scan** \u2014 required. SCA, secret scanning, license check. These are slow enough to be annoying on every develop merge but cheap enough to require at the uat boundary.\n- **Source-ref check** \u2014 required. A PR to uat should have a source ref of `develop` or `hotfix/*` and nothing else. Enforce this in CI; it's the one-way-flow guardrail.\n\n### main \u2014 production guarantees\n\nMain is what's live. Be paranoid.\n\n- Everything from uat is still required.\n- **Smoke tests against UAT environment** \u2014 required as a *regression* check before promotion (to catch drift between the uat-merge time and the main-merge time).\n- **Smoke tests against production environment** \u2014 required, post-deploy. After the main merge triggers the prod deploy, run a smoke suite against production URLs. If it fails, page on-call and roll back.\n- **Source-ref check** \u2014 required, and stricter: a PR to main should have source ref of `uat` only. No `develop -> main` shortcuts, no `hotfix/* -> main`.\n- **Change management metadata** \u2014 depending on your org: release notes, change ticket link, on-call notified, version tag. Make these part of the PR template and require them.\n\n## Why slower gates live at the higher tiers\n\nThe big tradeoff is e2e (and to a lesser extent integration tests). Some teams want to run them on every develop merge to \"fail fast.\" It usually doesn't work out for a few reasons:\n\n- Develop sees many merges per day. Running 20 minutes of e2e per merge is real money in CI minutes.\n- Most e2e failures on develop are caused by unrelated, recently-merged changes, not by the PR being tested. The signal-to-noise ratio is poor pre-promotion.\n- Slow gates trained on develop pressure people into \"rerun the flaky test until it passes\" rather than fixing root causes \u2014 a worse outcome than not running them per-merge.\n\nBy gating e2e at the uat boundary instead, you only pay the e2e cost when promotion is actually being attempted, and you have a clear \"this is the point where everything has to be green\" expectation.\n\nIf the team has a *fast* e2e suite (under 5 minutes, low flake rate), promoting it to required on develop is fine \u2014 the matrix is a default, not a law.\n\n## Source-ref check details\n\nThe source-ref check is a small CI job that inspects the PR's head ref against an allowlist for the target branch:\n\n- PRs to `develop`: head must match `feature/*` or `integration/*` (rejects `uat`, `main`, anything else).\n- PRs to `uat`: head must be `develop` or `hotfix/*`.\n- PRs to `main`: head must be `uat`.\n\nThis is the difference between \"we have a 3-tier flow as a convention\" and \"we have a 3-tier flow as enforced policy.\" Without the check, somebody will eventually open a `develop -> main` PR under deadline pressure and merge it before anyone reviews the base branch.\n\n## Quick summary\n\n```\ndevelop:  fast checks (lint, typecheck, unit, build) \u2014 give devs sub-10-min feedback\nuat:      add slower checks (integration, e2e, env smoke, source-ref) \u2014 confidence for acceptance\nmain:     add prod-specific checks (prod smoke, change mgmt, source-ref strict) \u2014 confidence for release\n```\n\nEach step adds something the prior step didn't, so promotion is a real promotion.\n"}], "grading": {"expectations": [{"text": "Each tier has at least one gate the previous tier doesn't (uat strictly stricter than develop, main strictly stricter than uat)", "passed": true, "evidence": "Matrix shows uat adds integration/e2e/UAT smoke/security/source-ref vs. develop; main adds production smoke vs. uat."}, {"text": "Lint, typecheck, unit tests, build artifact are required at all three tiers", "passed": true, "evidence": "All four rows: required/required/required."}, {"text": "Integration tests and end-to-end tests are required at uat and main (optional or deferred on develop)", "passed": true, "evidence": "Integration tests row: 'optional / advisory'/required/required. E2e row: same."}, {"text": "Environment smoke tests at uat run against the UAT deployed environment; environment smoke tests at main run against production", "passed": true, "evidence": "Separate rows: 'Smoke tests against UAT env' and 'Smoke tests against prod env'; body says 'run against the actual UAT environment URL' and 'run a smoke suite against production URLs'."}, {"text": "Justification given for why slower gates (e2e) are gated at uat rather than per-merge on develop (cost-benefit)", "passed": true, "evidence": "'Why slower gates live at the higher tiers' section: 'Develop sees many merges per day. Running 20 minutes of e2e per merge is real money in CI minutes... signal-to-noise ratio is poor pre-promotion'."}, {"text": "Source-ref check is required at uat and main (optional on develop)", "passed": true, "evidence": "Source-ref check row: optional/required/required."}, {"text": "Source-ref check, if mentioned at develop, accepts feature/* and integration/* but rejects uat or main as source refs", "passed": true, "evidence": "'PRs to develop: head must match feature/* or integration/* (rejects uat, main, anything else)'."}, {"text": "Output reads as a matrix (table or per-tier list), not as a flat list of all gates", "passed": true, "evidence": "Output uses both a matrix table and per-tier rationale sections."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "summary": {"passed": 9, "failed": 0, "total": 9, "pass_rate": 1.0}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "branch-promotion-discipline", "skill_path": "/Users/torr/Projects/agent-skills/plugins/branch-promotion-discipline/skills/branch-promotion-discipline", "executor_model": "<model-name>", "analyzer_model": "<model-name>", "timestamp": "2026-04-26T15:40:01Z", "evals_run": [0, 1, 2, 3], "runs_per_configuration": 3}, "runs": [{"eval_id": 0, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 90, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Names exactly three long-lived branches: develop, uat (or staging), main", "passed": true, "evidence": "'Long-lived branches' section lists develop, uat, main."}, {"text": "Specifies one-way promotion: develop to uat to main; explicitly forbids skipping a tier", "passed": true, "evidence": "'How code moves' section shows feature/* --> develop --> uat --> main and explicitly lists 'develop to main (skipping uat)' as forbidden."}, {"text": "Forbids backflow (main to uat as a normal flow); only post-hotfix forward-merge is allowed", "passed": true, "evidence": "Forbids 'main to uat as a normal flow (backflow)' and notes 'single exception is the post-hotfix forward-merge from uat to develop'."}, {"text": "Includes a CI gate matrix where each tier has at least one gate the previous tier doesn't", "passed": true, "evidence": "Matrix table shows integration/e2e optional on develop but required on uat; UAT smoke required on uat/main only; production smoke required on main only."}, {"text": "Branch protection rules escalate with tier", "passed": true, "evidence": "Branch protection table: required approvers go from 1 (develop) to 1 (uat) to 2 (main); admins-only push only on main."}, {"text": "Source-ref enforcement is mentioned: PRs to uat must come from develop (or hotfix), PRs to main must come from uat", "passed": true, "evidence": "'Source-ref enforcement' subsection states 'PR targeting uat MUST have source ref develop or hotfix/*' and 'PR targeting main MUST have source ref uat'."}, {"text": "Adoption sequence acknowledges this is a culture change and includes a transition step", "passed": true, "evidence": "'Adoption sequence' opens with 'This is a culture change, not just a config change' and includes creating develop and uat from main tip, updating CI, and team communication."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill' anywhere in the output."}], "notes": []}, {"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 75, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Branches the hotfix from `uat` (NOT directly from `main`) so the fix passes through stakeholder acceptance", "passed": true, "evidence": "Step 1 'Branch from uat (not main)' explicitly checks out from uat with rationale about stakeholder acceptance."}, {"text": "PR sequence is hotfix to uat, then uat to main (not hotfix directly to main)", "passed": true, "evidence": "Step 3 'PR hotfix/* -> uat' and Step 4 'PR uat -> main'."}, {"text": "Source-ref check on uat accepts hotfix/* as a valid source", "passed": true, "evidence": "Step 3 says 'The source-ref check on uat accepts hotfix/* (alongside develop) as a valid source ref'."}, {"text": "After the hotfix reaches main, instructs forward-merge from uat back to develop to keep them in sync", "passed": true, "evidence": "Step 5 'Forward-merge uat -> develop' with explicit git commands."}, {"text": "Explicitly explains why the forward-merge matters", "passed": true, "evidence": "'Why the forward-merge matters' section: 'develop still has the bug. The next normal develop -> uat -> main promotion cycle will re-introduce the null pointer'."}, {"text": "Notes the regression-only exception", "passed": true, "evidence": "Step 1 'Regression-only exception': 'if the bug exists only on main (i.e., it was introduced by the most recent uat-to-main promotion)... branching from main is acceptable, but only with explicit user/stakeholder approval'."}, {"text": "CI gates on the hotfix PRs are the same as a normal promotion at each tier (no skipping gates because of urgency)", "passed": true, "evidence": "Step 3: 'Gate requirements at this step are the same as a normal develop -> uat promotion. Urgency does not skip gates'. Step 4 repeats for uat -> main."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "notes": []}, {"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 70, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Rejects the PR in its current form (does NOT merge develop directly to main, regardless of urgency)", "passed": true, "evidence": "Opening: 'No. Don't merge develop -> main directly. The demo is real, but it's not a reason to skip a tier'."}, {"text": "Explains why: skipping uat defeats the stakeholder-acceptance tier; main is supposed to mean 'passed acceptance'", "passed": true, "evidence": "'Why not' section: 'main is supposed to mean passed UAT, not whatever happened to be on develop at 4pm yesterday'."}, {"text": "Proposes the correct path: promote develop to uat first, then uat to main", "passed": true, "evidence": "'What to do instead' section steps 1-3 lay out develop -> uat, acceptance, then uat -> main."}, {"text": "Estimates the time cost of the correct path realistically", "passed": true, "evidence": "'Realistic time estimate': '30-60 minutes of wall-clock time' for tight matrix, '2-4 hours, possibly more' if e2e is slow."}, {"text": "Acknowledges the demo deadline as a real constraint without using it as a reason to bypass the tier", "passed": true, "evidence": "'The demo is real, but it's not a reason to skip a tier'; '17 hours from now if you start tonight. That is plenty of time for the correct path'."}, {"text": "If the demo can be served from the uat environment instead of waiting for production, suggests that as a workaround", "passed": true, "evidence": "'A workaround if main-deployment timing is the only blocker' section suggests demoing from UAT URL."}, {"text": "Does NOT recommend disabling branch protection or going around the source-ref check", "passed": true, "evidence": "'Do not disable branch protection or bypass the source-ref check to push this through'; 'What NOT to do' explicitly lists each."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "notes": []}, {"eval_id": 3, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 9, "failed": 0, "total": 9, "time_seconds": 80, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Each tier has at least one gate the previous tier doesn't (uat strictly stricter than develop, main strictly stricter than uat)", "passed": true, "evidence": "Matrix shows uat adds integration/e2e/UAT smoke required vs. develop; main adds production smoke and change-management metadata vs. uat."}, {"text": "Lint, typecheck, unit tests, build artifact are required at all three tiers", "passed": true, "evidence": "All four rows show 'required' across develop, uat, main columns."}, {"text": "Integration tests and end-to-end tests are required at uat and main (optional or deferred on develop)", "passed": true, "evidence": "Integration tests row: optional/required/required. E2E row: optional/required/required."}, {"text": "Environment smoke tests at uat run against the UAT deployed environment; environment smoke tests at main run against production", "passed": true, "evidence": "Separate rows: 'UAT environment smoke tests' (n/a/required/required) and 'Production environment smoke tests' (n/a/n/a/required); body explicitly says smoke tests run against the deployed UAT and production environments."}, {"text": "Justification given for why slower gates (e2e) are gated at uat rather than per-merge on develop (cost-benefit)", "passed": true, "evidence": "'Why integration / e2e are optional on develop' and the e2e section: 'develop tip sees many merges per day. Running the integration suite per-merge is expensive and noisy... cost-benefit'."}, {"text": "Source-ref check is required at uat and main (optional on develop)", "passed": true, "evidence": "Source-ref check row: optional/required/required."}, {"text": "Source-ref check, if mentioned at develop, accepts feature/* and integration/* but rejects uat or main as source refs", "passed": true, "evidence": "'If you mention source-ref enforcement on develop... it should accept feature/* and integration/* as valid sources and reject uat or main'."}, {"text": "Output reads as a matrix (table or per-tier list), not as a flat list of all gates", "passed": true, "evidence": "Top of output is a matrix table; 'Per-tier list (alternate view)' provides per-tier reading as well."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "notes": []}, {"eval_id": 0, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 90, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Names exactly three long-lived branches: develop, uat (or staging), main", "passed": true, "evidence": "'Long-lived branches' lists develop, staging, main (staging is acceptable substitute)."}, {"text": "Specifies one-way promotion: develop to uat to main; explicitly forbids skipping a tier", "passed": true, "evidence": "Section 2 'No skipping' says 'a feature should never go directly from develop to main'."}, {"text": "Forbids backflow (main to uat as a normal flow); only post-hotfix forward-merge is allowed", "passed": true, "evidence": "'No backflow: changes don't move from main back into staging or develop as a normal pattern. The only sanctioned reverse motion is the post-hotfix forward-merge'."}, {"text": "Includes a CI gate matrix where each tier has at least one gate the previous tier doesn't", "passed": true, "evidence": "Matrix shows integration/e2e optional on develop but required on staging; smoke tests in staging env required only at staging/main; smoke in prod env only at main."}, {"text": "Branch protection rules escalate with tier", "passed": true, "evidence": "Branch protection table: required approvers 1/1/2; restrict to admins only on main; linear history optional/yes/yes."}, {"text": "Source-ref enforcement is mentioned: PRs to uat must come from develop (or hotfix), PRs to main must come from uat", "passed": true, "evidence": "'Restrict source branches' row: 'from develop or hotfix/* only' for staging, 'from staging only' for main; also mentions source-branch check CI gate."}, {"text": "Adoption sequence acknowledges this is a culture change and includes a transition step", "passed": true, "evidence": "Section 5 explicitly says 'This is a culture change, not just a config change' and lays out Week 0 through Week 4+ with branch creation from main tip and team communication."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill' anywhere."}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.375, "passed": 3, "failed": 5, "total": 8, "time_seconds": 75, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Branches the hotfix from `uat` (NOT directly from `main`) so the fix passes through stakeholder acceptance", "passed": false, "evidence": "Step 1 explicitly says 'Branch from main' and the 'Why branch from main, not develop?' section justifies branching from main. Skips uat acceptance entirely."}, {"text": "PR sequence is hotfix to uat, then uat to main (not hotfix directly to main)", "passed": false, "evidence": "Step 3 says 'Open hotfix/null-payload-fix -> main directly. This is the difference vs. a normal feature: hotfixes go straight to main'."}, {"text": "Source-ref check on uat accepts hotfix/* as a valid source", "passed": false, "evidence": "Source-ref check on uat is not mentioned at all; the flow bypasses uat in the PR sequence."}, {"text": "After the hotfix reaches main, instructs forward-merge from uat back to develop to keep them in sync", "passed": false, "evidence": "Step 5 back-merges main into uat and develop, but the framing is wrong (forward-merge should be from uat to develop after uat received the hotfix; here uat itself is being patched after-the-fact). The skill's specific 'forward-merge uat -> develop' pattern is not followed."}, {"text": "Explicitly explains why the forward-merge matters", "passed": true, "evidence": "Step 5 says 'If you skip this step, develop and uat still have the bug. The next normal release cycle (develop -> uat -> main) will re-introduce the null pointer'."}, {"text": "Notes the regression-only exception", "passed": false, "evidence": "No mention of a regression-only exception conditioned on the bug existing only on main; the output uses main-branching as the default rather than as an exception."}, {"text": "CI gates on the hotfix PRs are the same as a normal promotion at each tier (no skipping gates because of urgency)", "passed": true, "evidence": "Step 3 lists full gate requirements and says 'Don't shortcut this; the urgency makes mistakes more likely, not less'."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 70, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Rejects the PR in its current form (does NOT merge develop directly to main, regardless of urgency)", "passed": true, "evidence": "Opening: 'Short answer: no, not in its current form. Don't merge develop directly to main'."}, {"text": "Explains why: skipping uat defeats the stakeholder-acceptance tier; main is supposed to mean 'passed acceptance'", "passed": true, "evidence": "'Why not' section: 'uat is your acceptance environment. Code that hasn't passed through it hasn't been validated by stakeholders'."}, {"text": "Proposes the correct path: promote develop to uat first, then uat to main", "passed": true, "evidence": "'What should happen instead' section enumerates develop -> uat, acceptance, then uat -> main."}, {"text": "Estimates the time cost of the correct path realistically", "passed": true, "evidence": "'Realistic timing': '45-90 minutes of wall-clock time' if fast, '3-5 hours' on the pessimistic end."}, {"text": "Acknowledges the demo deadline as a real constraint without using it as a reason to bypass the tier", "passed": true, "evidence": "'The demo is at 9am Pacific tomorrow. Even on the pessimistic end, you have most of a workday plus an evening before then. The proper flow fits, easily.'"}, {"text": "If the demo can be served from the uat environment instead of waiting for production, suggests that as a workaround", "passed": true, "evidence": "Option B: 'Demo from UAT, not prod. If the demo doesn't strictly need to be on the production URL/data, do the demo against the UAT environment'."}, {"text": "Does NOT recommend disabling branch protection or going around the source-ref check", "passed": true, "evidence": "'Things to NOT do' lists 'Don't disable branch protection on main', 'Don't have an admin override the source-branch check', etc."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "notes": []}, {"eval_id": 3, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 9, "failed": 0, "total": 9, "time_seconds": 80, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Each tier has at least one gate the previous tier doesn't (uat strictly stricter than develop, main strictly stricter than uat)", "passed": true, "evidence": "Matrix shows uat adds integration/e2e/UAT smoke/security/source-ref vs. develop; main adds production smoke vs. uat."}, {"text": "Lint, typecheck, unit tests, build artifact are required at all three tiers", "passed": true, "evidence": "All four rows: required/required/required."}, {"text": "Integration tests and end-to-end tests are required at uat and main (optional or deferred on develop)", "passed": true, "evidence": "Integration tests row: 'optional / advisory'/required/required. E2e row: same."}, {"text": "Environment smoke tests at uat run against the UAT deployed environment; environment smoke tests at main run against production", "passed": true, "evidence": "Separate rows: 'Smoke tests against UAT env' and 'Smoke tests against prod env'; body says 'run against the actual UAT environment URL' and 'run a smoke suite against production URLs'."}, {"text": "Justification given for why slower gates (e2e) are gated at uat rather than per-merge on develop (cost-benefit)", "passed": true, "evidence": "'Why slower gates live at the higher tiers' section: 'Develop sees many merges per day. Running 20 minutes of e2e per merge is real money in CI minutes... signal-to-noise ratio is poor pre-promotion'."}, {"text": "Source-ref check is required at uat and main (optional on develop)", "passed": true, "evidence": "Source-ref check row: optional/required/required."}, {"text": "Source-ref check, if mentioned at develop, accepts feature/* and integration/* but rejects uat or main as source refs", "passed": true, "evidence": "'PRs to develop: head must match feature/* or integration/* (rejects uat, main, anything else)'."}, {"text": "Output reads as a matrix (table or per-tier list), not as a flat list of all gates", "passed": true, "evidence": "Output uses both a matrix table and per-tier rationale sections."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 78.75, "stddev": 8.5391, "min": 70, "max": 90}, "tokens": {"mean": 0.0, "stddev": 0.0, "min": 0, "max": 0}}, "without_skill": {"pass_rate": {"mean": 0.8438, "stddev": 0.3125, "min": 0.375, "max": 1.0}, "time_seconds": {"mean": 78.75, "stddev": 8.5391, "min": 70, "max": 90}, "tokens": {"mean": 0.0, "stddev": 0.0, "min": 0, "max": 0}}, "delta": {"pass_rate": "+0.16", "time_seconds": "+0.0", "tokens": "+0"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

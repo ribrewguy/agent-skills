@@ -108,3 +108,8 @@ defaults:
     values:
       nav_exclude: true
       search_exclude: true
+  - scope:
+      path: "skills/branch-promotion-discipline-workspace"
+    values:
+      nav_exclude: true
+      search_exclude: true

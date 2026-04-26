@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Branches the hotfix from `uat` (NOT directly from `main`) so the fix passes through stakeholder acceptance", "passed": true, "evidence": "Step 1 'Branch from uat (not main)' explicitly checks out from uat with rationale about stakeholder acceptance."},
+    {"text": "PR sequence is hotfix to uat, then uat to main (not hotfix directly to main)", "passed": true, "evidence": "Step 3 'PR hotfix/* -> uat' and Step 4 'PR uat -> main'."},
+    {"text": "Source-ref check on uat accepts hotfix/* as a valid source", "passed": true, "evidence": "Step 3 says 'The source-ref check on uat accepts hotfix/* (alongside develop) as a valid source ref'."},
+    {"text": "After the hotfix reaches main, instructs forward-merge from uat back to develop to keep them in sync", "passed": true, "evidence": "Step 5 'Forward-merge uat -> develop' with explicit git commands."},
+    {"text": "Explicitly explains why the forward-merge matters", "passed": true, "evidence": "'Why the forward-merge matters' section: 'develop still has the bug. The next normal develop -> uat -> main promotion cycle will re-introduce the null pointer'."},
+    {"text": "Notes the regression-only exception", "passed": true, "evidence": "Step 1 'Regression-only exception': 'if the bug exists only on main (i.e., it was introduced by the most recent uat-to-main promotion)... branching from main is acceptable, but only with explicit user/stakeholder approval'."},
+    {"text": "CI gates on the hotfix PRs are the same as a normal promotion at each tier (no skipping gates because of urgency)", "passed": true, "evidence": "Step 3: 'Gate requirements at this step are the same as a normal develop -> uat promotion. Urgency does not skip gates'. Step 4 repeats for uat -> main."},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}
+  ],
+  "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}
+}

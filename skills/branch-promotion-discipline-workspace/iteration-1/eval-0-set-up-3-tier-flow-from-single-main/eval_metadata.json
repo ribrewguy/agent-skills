@@ -1,0 +1,15 @@
+{
+  "eval_id": 0,
+  "eval_name": "set-up-3-tier-flow-from-single-main",
+  "prompt": "We currently merge feature branches directly to `main` and deploy from there. We want to move to a 3-tier flow with a stakeholder acceptance environment between develop and main. Design the branch flow: name the long-lived branches, how code moves between them, the per-tier CI gate matrix, the branch protection rules, and the adoption sequence for a team of ~6 engineers who haven't worked with this before.",
+  "assertions": [
+    "Names exactly three long-lived branches: develop, uat (or staging), main",
+    "Specifies one-way promotion: develop to uat to main; explicitly forbids skipping a tier",
+    "Forbids backflow (main to uat as a normal flow); only post-hotfix forward-merge is allowed",
+    "Includes a CI gate matrix where each tier has at least one gate the previous tier doesn't (e.g., e2e or environment smoke tests at uat that aren't on develop)",
+    "Branch protection rules escalate with tier (e.g., more required approvers on main than develop)",
+    "Source-ref enforcement is mentioned: PRs to uat must come from develop (or hotfix), PRs to main must come from uat",
+    "Adoption sequence acknowledges this is a culture change and includes a transition step (e.g., create develop and uat from main tip, update CI, communicate the change)",
+    "Output does not cite this skill by name (no 'branch-promotion-discipline says', 'this skill', etc.)"
+  ]
+}

@@ -1,0 +1,540 @@
+{
+  "metadata": {
+    "skill_name": "branch-promotion-discipline",
+    "skill_path": "/Users/torr/Projects/agent-skills/plugins/branch-promotion-discipline/skills/branch-promotion-discipline",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-26T15:40:01Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 90,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Names exactly three long-lived branches: develop, uat (or staging), main",
+          "passed": true,
+          "evidence": "'Long-lived branches' section lists develop, uat, main."
+        },
+        {
+          "text": "Specifies one-way promotion: develop to uat to main; explicitly forbids skipping a tier",
+          "passed": true,
+          "evidence": "'How code moves' section shows feature/* --> develop --> uat --> main and explicitly lists 'develop to main (skipping uat)' as forbidden."
+        },
+        {
+          "text": "Forbids backflow (main to uat as a normal flow); only post-hotfix forward-merge is allowed",
+          "passed": true,
+          "evidence": "Forbids 'main to uat as a normal flow (backflow)' and notes 'single exception is the post-hotfix forward-merge from uat to develop'."
+        },
+        {
+          "text": "Includes a CI gate matrix where each tier has at least one gate the previous tier doesn't",
+          "passed": true,
+          "evidence": "Matrix table shows integration/e2e optional on develop but required on uat; UAT smoke required on uat/main only; production smoke required on main only."
+        },
+        {
+          "text": "Branch protection rules escalate with tier",
+          "passed": true,
+          "evidence": "Branch protection table: required approvers go from 1 (develop) to 1 (uat) to 2 (main); admins-only push only on main."
+        },
+        {
+          "text": "Source-ref enforcement is mentioned: PRs to uat must come from develop (or hotfix), PRs to main must come from uat",
+          "passed": true,
+          "evidence": "'Source-ref enforcement' subsection states 'PR targeting uat MUST have source ref develop or hotfix/*' and 'PR targeting main MUST have source ref uat'."
+        },
+        {
+          "text": "Adoption sequence acknowledges this is a culture change and includes a transition step",
+          "passed": true,
+          "evidence": "'Adoption sequence' opens with 'This is a culture change, not just a config change' and includes creating develop and uat from main tip, updating CI, and team communication."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'branch-promotion-discipline' or 'this skill' anywhere in the output."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 75,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Branches the hotfix from `uat` (NOT directly from `main`) so the fix passes through stakeholder acceptance",
+          "passed": true,
+          "evidence": "Step 1 'Branch from uat (not main)' explicitly checks out from uat with rationale about stakeholder acceptance."
+        },
+        {
+          "text": "PR sequence is hotfix to uat, then uat to main (not hotfix directly to main)",
+          "passed": true,
+          "evidence": "Step 3 'PR hotfix/* -> uat' and Step 4 'PR uat -> main'."
+        },
+        {
+          "text": "Source-ref check on uat accepts hotfix/* as a valid source",
+          "passed": true,
+          "evidence": "Step 3 says 'The source-ref check on uat accepts hotfix/* (alongside develop) as a valid source ref'."
+        },
+        {
+          "text": "After the hotfix reaches main, instructs forward-merge from uat back to develop to keep them in sync",
+          "passed": true,
+          "evidence": "Step 5 'Forward-merge uat -> develop' with explicit git commands."
+        },
+        {
+          "text": "Explicitly explains why the forward-merge matters",
+          "passed": true,
+          "evidence": "'Why the forward-merge matters' section: 'develop still has the bug. The next normal develop -> uat -> main promotion cycle will re-introduce the null pointer'."
+        },
+        {
+          "text": "Notes the regression-only exception",
+          "passed": true,
+          "evidence": "Step 1 'Regression-only exception': 'if the bug exists only on main (i.e., it was introduced by the most recent uat-to-main promotion)... branching from main is acceptable, but only with explicit user/stakeholder approval'."
+        },
+        {
+          "text": "CI gates on the hotfix PRs are the same as a normal promotion at each tier (no skipping gates because of urgency)",
+          "passed": true,
+          "evidence": "Step 3: 'Gate requirements at this step are the same as a normal develop -> uat promotion. Urgency does not skip gates'. Step 4 repeats for uat -> main."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 70,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects the PR in its current form (does NOT merge develop directly to main, regardless of urgency)",
+          "passed": true,
+          "evidence": "Opening: 'No. Don't merge develop -> main directly. The demo is real, but it's not a reason to skip a tier'."
+        },
+        {
+          "text": "Explains why: skipping uat defeats the stakeholder-acceptance tier; main is supposed to mean 'passed acceptance'",
+          "passed": true,
+          "evidence": "'Why not' section: 'main is supposed to mean passed UAT, not whatever happened to be on develop at 4pm yesterday'."
+        },
+        {
+          "text": "Proposes the correct path: promote develop to uat first, then uat to main",
+          "passed": true,
+          "evidence": "'What to do instead' section steps 1-3 lay out develop -> uat, acceptance, then uat -> main."
+        },
+        {
+          "text": "Estimates the time cost of the correct path realistically",
+          "passed": true,
+          "evidence": "'Realistic time estimate': '30-60 minutes of wall-clock time' for tight matrix, '2-4 hours, possibly more' if e2e is slow."
+        },
+        {
+          "text": "Acknowledges the demo deadline as a real constraint without using it as a reason to bypass the tier",
+          "passed": true,
+          "evidence": "'The demo is real, but it's not a reason to skip a tier'; '17 hours from now if you start tonight. That is plenty of time for the correct path'."
+        },
+        {
+          "text": "If the demo can be served from the uat environment instead of waiting for production, suggests that as a workaround",
+          "passed": true,
+          "evidence": "'A workaround if main-deployment timing is the only blocker' section suggests demoing from UAT URL."
+        },
+        {
+          "text": "Does NOT recommend disabling branch protection or going around the source-ref check",
+          "passed": true,
+          "evidence": "'Do not disable branch protection or bypass the source-ref check to push this through'; 'What NOT to do' explicitly lists each."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 80,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Each tier has at least one gate the previous tier doesn't (uat strictly stricter than develop, main strictly stricter than uat)",
+          "passed": true,
+          "evidence": "Matrix shows uat adds integration/e2e/UAT smoke required vs. develop; main adds production smoke and change-management metadata vs. uat."
+        },
+        {
+          "text": "Lint, typecheck, unit tests, build artifact are required at all three tiers",
+          "passed": true,
+          "evidence": "All four rows show 'required' across develop, uat, main columns."
+        },
+        {
+          "text": "Integration tests and end-to-end tests are required at uat and main (optional or deferred on develop)",
+          "passed": true,
+          "evidence": "Integration tests row: optional/required/required. E2E row: optional/required/required."
+        },
+        {
+          "text": "Environment smoke tests at uat run against the UAT deployed environment; environment smoke tests at main run against production",
+          "passed": true,
+          "evidence": "Separate rows: 'UAT environment smoke tests' (n/a/required/required) and 'Production environment smoke tests' (n/a/n/a/required); body explicitly says smoke tests run against the deployed UAT and production environments."
+        },
+        {
+          "text": "Justification given for why slower gates (e2e) are gated at uat rather than per-merge on develop (cost-benefit)",
+          "passed": true,
+          "evidence": "'Why integration / e2e are optional on develop' and the e2e section: 'develop tip sees many merges per day. Running the integration suite per-merge is expensive and noisy... cost-benefit'."
+        },
+        {
+          "text": "Source-ref check is required at uat and main (optional on develop)",
+          "passed": true,
+          "evidence": "Source-ref check row: optional/required/required."
+        },
+        {
+          "text": "Source-ref check, if mentioned at develop, accepts feature/* and integration/* but rejects uat or main as source refs",
+          "passed": true,
+          "evidence": "'If you mention source-ref enforcement on develop... it should accept feature/* and integration/* as valid sources and reject uat or main'."
+        },
+        {
+          "text": "Output reads as a matrix (table or per-tier list), not as a flat list of all gates",
+          "passed": true,
+          "evidence": "Top of output is a matrix table; 'Per-tier list (alternate view)' provides per-tier reading as well."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 90,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Names exactly three long-lived branches: develop, uat (or staging), main",
+          "passed": true,
+          "evidence": "'Long-lived branches' lists develop, staging, main (staging is acceptable substitute)."
+        },
+        {
+          "text": "Specifies one-way promotion: develop to uat to main; explicitly forbids skipping a tier",
+          "passed": true,
+          "evidence": "Section 2 'No skipping' says 'a feature should never go directly from develop to main'."
+        },
+        {
+          "text": "Forbids backflow (main to uat as a normal flow); only post-hotfix forward-merge is allowed",
+          "passed": true,
+          "evidence": "'No backflow: changes don't move from main back into staging or develop as a normal pattern. The only sanctioned reverse motion is the post-hotfix forward-merge'."
+        },
+        {
+          "text": "Includes a CI gate matrix where each tier has at least one gate the previous tier doesn't",
+          "passed": true,
+          "evidence": "Matrix shows integration/e2e optional on develop but required on staging; smoke tests in staging env required only at staging/main; smoke in prod env only at main."
+        },
+        {
+          "text": "Branch protection rules escalate with tier",
+          "passed": true,
+          "evidence": "Branch protection table: required approvers 1/1/2; restrict to admins only on main; linear history optional/yes/yes."
+        },
+        {
+          "text": "Source-ref enforcement is mentioned: PRs to uat must come from develop (or hotfix), PRs to main must come from uat",
+          "passed": true,
+          "evidence": "'Restrict source branches' row: 'from develop or hotfix/* only' for staging, 'from staging only' for main; also mentions source-branch check CI gate."
+        },
+        {
+          "text": "Adoption sequence acknowledges this is a culture change and includes a transition step",
+          "passed": true,
+          "evidence": "Section 5 explicitly says 'This is a culture change, not just a config change' and lays out Week 0 through Week 4+ with branch creation from main tip and team communication."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'branch-promotion-discipline' or 'this skill' anywhere."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.375,
+        "passed": 3,
+        "failed": 5,
+        "total": 8,
+        "time_seconds": 75,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Branches the hotfix from `uat` (NOT directly from `main`) so the fix passes through stakeholder acceptance",
+          "passed": false,
+          "evidence": "Step 1 explicitly says 'Branch from main' and the 'Why branch from main, not develop?' section justifies branching from main. Skips uat acceptance entirely."
+        },
+        {
+          "text": "PR sequence is hotfix to uat, then uat to main (not hotfix directly to main)",
+          "passed": false,
+          "evidence": "Step 3 says 'Open hotfix/null-payload-fix -> main directly. This is the difference vs. a normal feature: hotfixes go straight to main'."
+        },
+        {
+          "text": "Source-ref check on uat accepts hotfix/* as a valid source",
+          "passed": false,
+          "evidence": "Source-ref check on uat is not mentioned at all; the flow bypasses uat in the PR sequence."
+        },
+        {
+          "text": "After the hotfix reaches main, instructs forward-merge from uat back to develop to keep them in sync",
+          "passed": false,
+          "evidence": "Step 5 back-merges main into uat and develop, but the framing is wrong (forward-merge should be from uat to develop after uat received the hotfix; here uat itself is being patched after-the-fact). The skill's specific 'forward-merge uat -> develop' pattern is not followed."
+        },
+        {
+          "text": "Explicitly explains why the forward-merge matters",
+          "passed": true,
+          "evidence": "Step 5 says 'If you skip this step, develop and uat still have the bug. The next normal release cycle (develop -> uat -> main) will re-introduce the null pointer'."
+        },
+        {
+          "text": "Notes the regression-only exception",
+          "passed": false,
+          "evidence": "No mention of a regression-only exception conditioned on the bug existing only on main; the output uses main-branching as the default rather than as an exception."
+        },
+        {
+          "text": "CI gates on the hotfix PRs are the same as a normal promotion at each tier (no skipping gates because of urgency)",
+          "passed": true,
+          "evidence": "Step 3 lists full gate requirements and says 'Don't shortcut this; the urgency makes mistakes more likely, not less'."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 70,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Rejects the PR in its current form (does NOT merge develop directly to main, regardless of urgency)",
+          "passed": true,
+          "evidence": "Opening: 'Short answer: no, not in its current form. Don't merge develop directly to main'."
+        },
+        {
+          "text": "Explains why: skipping uat defeats the stakeholder-acceptance tier; main is supposed to mean 'passed acceptance'",
+          "passed": true,
+          "evidence": "'Why not' section: 'uat is your acceptance environment. Code that hasn't passed through it hasn't been validated by stakeholders'."
+        },
+        {
+          "text": "Proposes the correct path: promote develop to uat first, then uat to main",
+          "passed": true,
+          "evidence": "'What should happen instead' section enumerates develop -> uat, acceptance, then uat -> main."
+        },
+        {
+          "text": "Estimates the time cost of the correct path realistically",
+          "passed": true,
+          "evidence": "'Realistic timing': '45-90 minutes of wall-clock time' if fast, '3-5 hours' on the pessimistic end."
+        },
+        {
+          "text": "Acknowledges the demo deadline as a real constraint without using it as a reason to bypass the tier",
+          "passed": true,
+          "evidence": "'The demo is at 9am Pacific tomorrow. Even on the pessimistic end, you have most of a workday plus an evening before then. The proper flow fits, easily.'"
+        },
+        {
+          "text": "If the demo can be served from the uat environment instead of waiting for production, suggests that as a workaround",
+          "passed": true,
+          "evidence": "Option B: 'Demo from UAT, not prod. If the demo doesn't strictly need to be on the production URL/data, do the demo against the UAT environment'."
+        },
+        {
+          "text": "Does NOT recommend disabling branch protection or going around the source-ref check",
+          "passed": true,
+          "evidence": "'Things to NOT do' lists 'Don't disable branch protection on main', 'Don't have an admin override the source-branch check', etc."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 80,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Each tier has at least one gate the previous tier doesn't (uat strictly stricter than develop, main strictly stricter than uat)",
+          "passed": true,
+          "evidence": "Matrix shows uat adds integration/e2e/UAT smoke/security/source-ref vs. develop; main adds production smoke vs. uat."
+        },
+        {
+          "text": "Lint, typecheck, unit tests, build artifact are required at all three tiers",
+          "passed": true,
+          "evidence": "All four rows: required/required/required."
+        },
+        {
+          "text": "Integration tests and end-to-end tests are required at uat and main (optional or deferred on develop)",
+          "passed": true,
+          "evidence": "Integration tests row: 'optional / advisory'/required/required. E2e row: same."
+        },
+        {
+          "text": "Environment smoke tests at uat run against the UAT deployed environment; environment smoke tests at main run against production",
+          "passed": true,
+          "evidence": "Separate rows: 'Smoke tests against UAT env' and 'Smoke tests against prod env'; body says 'run against the actual UAT environment URL' and 'run a smoke suite against production URLs'."
+        },
+        {
+          "text": "Justification given for why slower gates (e2e) are gated at uat rather than per-merge on develop (cost-benefit)",
+          "passed": true,
+          "evidence": "'Why slower gates live at the higher tiers' section: 'Develop sees many merges per day. Running 20 minutes of e2e per merge is real money in CI minutes... signal-to-noise ratio is poor pre-promotion'."
+        },
+        {
+          "text": "Source-ref check is required at uat and main (optional on develop)",
+          "passed": true,
+          "evidence": "Source-ref check row: optional/required/required."
+        },
+        {
+          "text": "Source-ref check, if mentioned at develop, accepts feature/* and integration/* but rejects uat or main as source refs",
+          "passed": true,
+          "evidence": "'PRs to develop: head must match feature/* or integration/* (rejects uat, main, anything else)'."
+        },
+        {
+          "text": "Output reads as a matrix (table or per-tier list), not as a flat list of all gates",
+          "passed": true,
+          "evidence": "Output uses both a matrix table and per-tier rationale sections."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 78.75,
+        "stddev": 8.5391,
+        "min": 70,
+        "max": 90
+      },
+      "tokens": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.8438,
+        "stddev": 0.3125,
+        "min": 0.375,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 78.75,
+        "stddev": 8.5391,
+        "min": 70,
+        "max": 90
+      },
+      "tokens": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.16",
+      "time_seconds": "+0.0",
+      "tokens": "+0"
+    }
+  },
+  "notes": []
+}

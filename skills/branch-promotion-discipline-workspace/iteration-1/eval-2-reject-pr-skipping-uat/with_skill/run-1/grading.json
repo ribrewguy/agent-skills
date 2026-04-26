@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Rejects the PR in its current form (does NOT merge develop directly to main, regardless of urgency)", "passed": true, "evidence": "Opening: 'No. Don't merge develop -> main directly. The demo is real, but it's not a reason to skip a tier'."},
+    {"text": "Explains why: skipping uat defeats the stakeholder-acceptance tier; main is supposed to mean 'passed acceptance'", "passed": true, "evidence": "'Why not' section: 'main is supposed to mean passed UAT, not whatever happened to be on develop at 4pm yesterday'."},
+    {"text": "Proposes the correct path: promote develop to uat first, then uat to main", "passed": true, "evidence": "'What to do instead' section steps 1-3 lay out develop -> uat, acceptance, then uat -> main."},
+    {"text": "Estimates the time cost of the correct path realistically", "passed": true, "evidence": "'Realistic time estimate': '30-60 minutes of wall-clock time' for tight matrix, '2-4 hours, possibly more' if e2e is slow."},
+    {"text": "Acknowledges the demo deadline as a real constraint without using it as a reason to bypass the tier", "passed": true, "evidence": "'The demo is real, but it's not a reason to skip a tier'; '17 hours from now if you start tonight. That is plenty of time for the correct path'."},
+    {"text": "If the demo can be served from the uat environment instead of waiting for production, suggests that as a workaround", "passed": true, "evidence": "'A workaround if main-deployment timing is the only blocker' section suggests demoing from UAT URL."},
+    {"text": "Does NOT recommend disabling branch protection or going around the source-ref check", "passed": true, "evidence": "'Do not disable branch protection or bypass the source-ref check to push this through'; 'What NOT to do' explicitly lists each."},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'branch-promotion-discipline' or 'this skill'."}
+  ],
+  "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}
+}
