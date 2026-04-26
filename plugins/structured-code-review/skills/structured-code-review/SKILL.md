@@ -1,6 +1,6 @@
 ---
 name: structured-code-review
-description: Use when conducting code reviews, PRs, audits, evaluations against design. Produces rigorous review-only output: names source of truth per finding (task/design/architecture/feature spec/PRD/lightweight context), tags severity (High/Medium/Low), cites file:line, emits structured no-findings preamble. Composes with domain-review skills like rest-api-design. Symptoms, flat issue lists, severity terms used inconsistently (Critical/High/Major/P1 mixed), "looks good" responses not naming what was reviewed against, reviews drifting into applying fixes when only review was requested.
+description: "Use when conducting code reviews, PRs, audits, evaluations against design. Produces rigorous review-only output: names source of truth per finding (task/design/architecture/feature spec/PRD/lightweight context), tags severity (High/Medium/Low), cites file:line, emits structured no-findings preamble. Composes with domain-review skills like rest-api-design. Symptoms, flat issue lists, severity terms used inconsistently (Critical/High/Major/P1 mixed), \"looks good\" responses not naming what was reviewed against, reviews drifting into applying fixes when only review was requested."
 ---
 
 # Structured Code Review

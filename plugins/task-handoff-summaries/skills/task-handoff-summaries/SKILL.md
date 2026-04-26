@@ -1,6 +1,6 @@
 ---
 name: task-handoff-summaries
-description: Use when finishing a task and reporting status, implementation complete, multi-agent worker handing off to orchestrator, task closeout feeding the PR description. Produces one of three structured formats: implementation summary (before commit), worker handoff summary (worker → orchestrator), closeout summary (after completion). Each has a fixed field set, hard rules against claiming completion that didn't happen, task-tracker-aware vocabulary. Symptoms, vague "I made some changes" reports, completion claims that hide failed gates, summaries implying commit/push happened when they didn't, no governance status.
+description: "Use when finishing a task and reporting status, implementation complete, multi-agent worker handing off to orchestrator, task closeout feeding the PR description. Produces one of three structured formats: implementation summary (before commit), worker handoff summary (worker → orchestrator), closeout summary (after completion). Each has a fixed field set, hard rules against claiming completion that didn't happen, task-tracker-aware vocabulary. Symptoms, vague \"I made some changes\" reports, completion claims that hide failed gates, summaries implying commit/push happened when they didn't, no governance status."
 ---
 
 # Task Handoff Summaries

@@ -1,6 +1,6 @@
 ---
 name: cross-agent-review
-description: Use when high-stakes work needs a second-agent review, Claude reviewed by Codex (or vice versa), security-sensitive changes wanting two model families' blind spots covered, complex refactors where single-agent review feels like rubber-stamping. Defines the handoff package (implementer's self-assessment REDACTED so the reviewer doesn't anchor on confidence), cold-review discipline, disagreement protocol, bounded iteration loop. Reviewer's job is finding what was missed, not validating the work. Symptoms, single-agent reviews approving the agent's own work, "AI reviewed it" without naming WHICH AI, cross-agent reviews that are 90% agreement (anchored).
+description: "Use when high-stakes work needs a second-agent review, Claude reviewed by Codex (or vice versa), security-sensitive changes wanting two model families' blind spots covered, complex refactors where single-agent review feels like rubber-stamping. Defines the handoff package (implementer's self-assessment REDACTED so the reviewer doesn't anchor on confidence), cold-review discipline, disagreement protocol, bounded iteration loop. Reviewer's job is finding what was missed, not validating the work. Symptoms, single-agent reviews approving the agent's own work, \"AI reviewed it\" without naming WHICH AI, cross-agent reviews that are 90% agreement (anchored)."
 ---
 
 # Cross-Agent Review
