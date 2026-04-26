@@ -1,6 +1,6 @@
 ---
 name: multi-agent-git-workflow
-description: Use when coordinating git across multiple AI agents (orchestrator + N workers), or authoring commits in any context. Covers branch hierarchy (main/develop/integration/feature), worktree-per-agent topology (multi-agent MUST use worktrees), orchestrator-vs-worker roles, merge authority (workers MUST NOT merge their own branches), acceptance/rejection rules, plus commit discipline (Conventional Commits, mandatory task ID, co-author line, UAT gate, no silent amends). Symptoms, multiple agents in same worktree, workers self-merging, orchestrator silently fixing worker defects, commits without task IDs, silent amends, integration branches drifting from epic design.
+description: "Use when coordinating git across multiple AI agents (orchestrator + N workers), or authoring commits in any context. Covers branch hierarchy (main/develop/integration/feature), worktree-per-agent topology (multi-agent MUST use worktrees), orchestrator-vs-worker roles, merge authority (workers MUST NOT merge their own branches), acceptance/rejection rules, plus commit discipline (Conventional Commits, mandatory task ID, co-author line, UAT gate, no silent amends). Symptoms, multiple agents in same worktree, workers self-merging, orchestrator silently fixing worker defects, commits without task IDs, silent amends, integration branches drifting from epic design."
 
 ---
 # Multi-Agent Git Workflow

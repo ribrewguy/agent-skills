@@ -1,6 +1,6 @@
 ---
 name: rest-api-design
-description: Use when designing or reviewing HTTP REST APIs, endpoints, typed contracts (TS/Python/Go/Rust), pagination/error conventions, PRs at the network boundary. Covers resource-oriented URLs, PATCH for state transitions (not sub-resource verbs), domain-expressive error codes, flat error envelopes, idempotency, content negotiation. Symptoms, verbs in URLs, sub-resource action verbs (/complete) for state transitions, error codes echoing HTTP status, snake_case wire format, raw arrays from list endpoints, GET mutating state, missing idempotency on side-effectful POSTs.
+description: "Use when designing or reviewing HTTP REST APIs, endpoints, typed contracts (TS/Python/Go/Rust), pagination/error conventions, PRs at the network boundary. Covers resource-oriented URLs, PATCH for state transitions (not sub-resource verbs), domain-expressive error codes, flat error envelopes, idempotency, content negotiation. Symptoms, verbs in URLs, sub-resource action verbs (/complete) for state transitions, error codes echoing HTTP status, snake_case wire format, raw arrays from list endpoints, GET mutating state, missing idempotency on side-effectful POSTs."
 ---
 
 # REST API Design
