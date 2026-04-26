@@ -1,6 +1,6 @@
 ---
 name: multi-agent-git-workflow
-description: Use when coordinating git across multiple AI agents (orchestrator + N workers), or authoring commits in any context. Covers branch hierarchy (main/develop/integration/feature), worktree-per-agent topology (multi-agent MUST use worktrees), orchestrator-vs-worker roles, merge authority (workers MUST NOT merge their own branches), acceptance/rejection rules, plus commit discipline (Conventional Commits, mandatory task ID, co-author line, UAT gate, no silent amends). Symptoms — multiple agents in same worktree, workers self-merging, orchestrator silently fixing worker defects, commits without task IDs, silent amends, integration branches drifting from epic design.
+description: Use when coordinating git across multiple AI agents (orchestrator + N workers), or authoring commits in any context. Covers branch hierarchy (main/develop/integration/feature), worktree-per-agent topology (multi-agent MUST use worktrees), orchestrator-vs-worker roles, merge authority (workers MUST NOT merge their own branches), acceptance/rejection rules, plus commit discipline (Conventional Commits, mandatory task ID, co-author line, UAT gate, no silent amends). Symptoms, multiple agents in same worktree, workers self-merging, orchestrator silently fixing worker defects, commits without task IDs, silent amends, integration branches drifting from epic design.
 
 ---
 # Multi-Agent Git Workflow
@@ -11,10 +11,10 @@ Discipline for the git/branch/worktree layer when work is split across multiple 
 
 Two distinct concerns covered together because they're the same git-author moment:
 
-1. **Multi-agent topology** — how branches, worktrees, and roles are arranged so multiple agents don't trip over each other and so integration is auditable.
-2. **Commit discipline** — Conventional Commits, mandatory task ID, co-author line, UAT gate ceremony, no silent amends.
+1. **Multi-agent topology**, how branches, worktrees, and roles are arranged so multiple agents don't trip over each other and so integration is auditable.
+2. **Commit discipline**, Conventional Commits, mandatory task ID, co-author line, UAT gate ceremony, no silent amends.
 
-The 3-tier promotion (`develop` → `uat` → `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, and pre-commit hook setup are in the planned **branch-promotion-discipline** skill — this skill stays in the multi-agent + commit-format lane.
+The 3-tier promotion (`develop` → `uat` → `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, and pre-commit hook setup are in the planned **branch-promotion-discipline** skill, this skill stays in the multi-agent + commit-format lane.
 
 ## Tooling and dependencies
 
@@ -30,14 +30,14 @@ The 3-tier promotion (`develop` → `uat` → `main`), UAT branch as a long-live
 
 ### Optional
 
-- [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) tooling (`commitlint`, `cz-cli`, etc.) — the format is required either way, the tooling just helps enforce it.
+- [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) tooling (`commitlint`, `cz-cli`, etc.), the format is required either way, the tooling just helps enforce it.
 
 ### Composes with
 
-- [`task-handoff-summaries`](../../../task-handoff-summaries/skills/task-handoff-summaries/SKILL.md) — the worker handoff and orchestrator close-out summaries reference this skill's role and branch vocabulary directly. The two skills are designed to be used together.
-- [`structured-code-review`](../../../structured-code-review/skills/structured-code-review/SKILL.md) — when an orchestrator reviews a worker's branch (or a PR is reviewed before a develop merge), the review uses that format.
-- [`cross-agent-review`](../../../cross-agent-review/skills/cross-agent-review/SKILL.md) — high-stakes branches benefit from cross-vendor review before integration.
-- *(planned)* `branch-promotion-discipline` — the layer above this one: 3-tier promotion (`develop` → `uat` → `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement.
+- [`task-handoff-summaries`](../../../task-handoff-summaries/skills/task-handoff-summaries/SKILL.md), the worker handoff and orchestrator close-out summaries reference this skill's role and branch vocabulary directly. The two skills are designed to be used together.
+- [`structured-code-review`](../../../structured-code-review/skills/structured-code-review/SKILL.md), when an orchestrator reviews a worker's branch (or a PR is reviewed before a develop merge), the review uses that format.
+- [`cross-agent-review`](../../../cross-agent-review/skills/cross-agent-review/SKILL.md), high-stakes branches benefit from cross-vendor review before integration.
+- *(planned)* `branch-promotion-discipline`, the layer above this one: 3-tier promotion (`develop` → `uat` → `main`), UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement.
 
 ## When to use
 
@@ -50,15 +50,15 @@ The 3-tier promotion (`develop` → `uat` → `main`), UAT branch as a long-live
 
 Long-lived branches relevant to this skill:
 
-- **`main`** — production branch.
-- **`develop`** — long-lived integration branch. Internal review surface; the place implementation work lands before any further promotion.
+- **`main`**, production branch.
+- **`develop`**, long-lived integration branch. Internal review surface; the place implementation work lands before any further promotion.
 
 The 3-tier extension (`main` ← `uat` ← `develop`) is in `branch-promotion-discipline`. Skills that need the 3-tier vocabulary should compose with that skill rather than re-derive it here.
 
 Implementation branches:
 
-- **`feature/<task_id>_<short_name>`** — implementation branch for a single task. One task = one feature branch. Always mapped 1:1 — never reuse a feature branch for multiple unrelated tasks.
-- **`integration/<parent_task_id>_<short_name>`** — intermediate integration branch for a coordinated multi-agent parent task. Used only when work is split across multiple worker agents under a shared epic.
+- **`feature/<task_id>_<short_name>`**, implementation branch for a single task. One task = one feature branch. Always mapped 1:1, never reuse a feature branch for multiple unrelated tasks.
+- **`integration/<parent_task_id>_<short_name>`**, intermediate integration branch for a coordinated multi-agent parent task. Used only when work is split across multiple worker agents under a shared epic.
 
 `<short_name>` is a few-word slug describing the change. `<task_id>` is whatever the task tracker emits (`proj-42`, `ENG-123`, `#456`, etc.).
 
@@ -66,13 +66,13 @@ Implementation branches:
 
 **Multi-agent workloads MUST use Git worktrees.** Each implementation agent gets:
 
-- An assigned task (one-per-agent — never assign the same worker task to two agents)
+- An assigned task (one-per-agent, never assign the same worker task to two agents)
 - A dedicated `feature/*` branch for that task
 - A dedicated Git worktree checked out to that branch
 
 Do not run multiple implementation agents in the same worktree. Do not assign multiple worker tasks to the same `feature/*` branch.
 
-Single-agent work *may* use a standard checkout or a dedicated worktree — the choice is operational. Multi-agent work *must* use dedicated worktrees per agent.
+Single-agent work *may* use a standard checkout or a dedicated worktree, the choice is operational. Multi-agent work *must* use dedicated worktrees per agent.
 
 The skill doesn't mandate a specific filesystem location for worktrees. If the user or repo tooling doesn't specify a path convention, pick a location outside other worktrees and outside generated output (e.g., `../<repo>-<task_id>/` or a sibling `worktrees/` directory).
 
@@ -98,7 +98,7 @@ Every multi-agent workload has **exactly one orchestrator**.
 - Implements exactly one task slice on a dedicated `feature/*` branch in a dedicated worktree.
 - Hands off the branch to the orchestrator with a worker handoff summary (see `task-handoff-summaries`).
 - Does **NOT** merge their own branch into integration, develop, or main.
-- Stays in their lane — doesn't fix things outside their assigned slice unless the orchestrator explicitly delegates.
+- Stays in their lane, doesn't fix things outside their assigned slice unless the orchestrator explicitly delegates.
 
 ## Merge authority
 
@@ -171,7 +171,7 @@ Every commit follows this discipline, regardless of single-agent or multi-agent 
 
 ### Format
 
-[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) — `<type>[optional scope]: <description>` on the subject line, blank line, multi-paragraph body explaining what changed and why.
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), `<type>[optional scope]: <description>` on the subject line, blank line, multi-paragraph body explaining what changed and why.
 
 ```
 feat(payments): add idempotent retry on transient processor failures
@@ -192,7 +192,7 @@ Co-authored-by: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 ### Body requirements
 
 - **Multi-paragraph body that explains what changed AND why.** A short summary alone is insufficient. Future readers (including future-you) need the *why* to evaluate whether the change is still appropriate.
-- The *why* layer matters more than the *what* — `git diff` shows the *what* better than any prose can.
+- The *why* layer matters more than the *what*, `git diff` shows the *what* better than any prose can.
 
 ### Task ID required
 
@@ -200,7 +200,7 @@ Every commit MUST reference the task tracker ID it relates to.
 
 - The ID SHOULD appear in the commit subject (preferred) or body (`Refs: <id>`).
 - Commits without a task reference are invalid and must be corrected before pushing.
-- If no applicable task exists, **don't commit** — inform the user and ask how to proceed. Default: create a miscellaneous task describing the change and associate the commit with it.
+- If no applicable task exists, **don't commit**, inform the user and ask how to proceed. Default: create a miscellaneous task describing the change and associate the commit with it.
 
 ### Co-author line
 
@@ -227,7 +227,7 @@ Merge commits MAY use the default message Git produces. This is the only excepti
 
 If a pre-commit hook fails:
 
-- The commit did NOT happen — the working tree is unchanged.
+- The commit did NOT happen, the working tree is unchanged.
 - `--amend` would modify the *previous* commit, not the failed one.
 - Fix the issue, re-stage, and create a NEW commit.
 
@@ -237,13 +237,13 @@ The "UAT gate" is a per-change ceremony performed before commit when the change 
 
 - If changes affect externally visible behavior, **ask the user whether they want UAT before any commit**.
 - If UAT is requested, **don't commit or push until UAT approval**.
-- A passing UAT gate on a feature/integration branch is **not** equivalent to client acceptance on a UAT branch — those are two separate things even though both are sometimes called "UAT".
+- A passing UAT gate on a feature/integration branch is **not** equivalent to client acceptance on a UAT branch, those are two separate things even though both are sometimes called "UAT".
 
-If your project doesn't have a long-lived UAT environment, the UAT gate ceremony still applies for any externally-visible-behavior change — it just gates the commit, not a downstream branch promotion.
+If your project doesn't have a long-lived UAT environment, the UAT gate ceremony still applies for any externally-visible-behavior change, it just gates the commit, not a downstream branch promotion.
 
 ## Push/merge discipline
 
-- **Work is not complete until required pushes succeed.** Don't say "ready to push when you are" — if policy and approval allow a push, perform it.
+- **Work is not complete until required pushes succeed.** Don't say "ready to push when you are", if policy and approval allow a push, perform it.
 - If push fails, resolve the issue and retry until it succeeds.
 - After UAT approval, publish the working branch when remote visibility is required and verify parity for any published branch.
 - In multi-agent workloads, workers commit on their local `feature/*` branches for orchestrator review; they don't merge those branches forward themselves.
@@ -286,13 +286,13 @@ The orchestrator is responsible for deleting accepted worker `feature/*` branche
 - **Workers don't merge their own branches** into anything other than (in single-agent contexts) `develop`.
 - **Orchestrator doesn't implement on integration branches.** Reassign the task, create a new task, or return the branch to the worker.
 - **Conventional Commits, task ID reference, and co-author line on every commit.** No exceptions besides merge commits.
-- **No silent amends.** Hook failures mean the commit didn't happen — make a new commit, don't amend.
+- **No silent amends.** Hook failures mean the commit didn't happen, make a new commit, don't amend.
 - **No "ready to push when you are."** If push is policy-allowed and approved, perform it.
 - **No bypassing quality gates** on the integration target.
 
 ## Don't cite this skill in the output
 
-The skill is a reference for *you* (the agent or human running the workflow). The audience for branch names, commit messages, rejection notes, and close-out reports is the rest of the team — humans, future-you, and other agents reading the audit trail. Don't write "Per multi-agent-git-workflow's policy..." in a commit message or rejection note — write the reasoning directly.
+The skill is a reference for *you* (the agent or human running the workflow). The audience for branch names, commit messages, rejection notes, and close-out reports is the rest of the team, humans, future-you, and other agents reading the audit trail. Don't write "Per multi-agent-git-workflow's policy..." in a commit message or rejection note, write the reasoning directly.
 
 ## Adapter: Beads
 
@@ -300,8 +300,8 @@ If the project uses [Beads](https://github.com/gastownhall/beads) as its task tr
 
 ### Branch and task ID format
 
-- Feature branches: `feature/<bead_id>_<short_name>` — e.g., `feature/proj-42_staging-branch`
-- Integration branches: `integration/<parent_bead_id>_<short_name>` — e.g., `integration/proj-42_staging-bringup`
+- Feature branches: `feature/<bead_id>_<short_name>`, e.g., `feature/proj-42_staging-branch`
+- Integration branches: `integration/<parent_bead_id>_<short_name>`, e.g., `integration/proj-42_staging-bringup`
 - Commit subjects: `<type>(<scope>): <description>` with `Refs: <bead_id>` in the body, or the bead ID inline in the subject (`feat(auth): proj-42 add session expiry check`)
 
 ### Atomic claim flow
@@ -326,21 +326,21 @@ Use `bd update <id> --status in_progress` (instead of `--claim`) only when you e
 - The orchestrator closes accepted child beads after merging them into the integration target.
 - The parent bead remains `in_progress` until all required child beads are accepted, the integration branch reaches its target (typically `develop`), and the integration workflow is complete.
 
-Other trackers work the same way — substitute their issue ID format and adjust the lifecycle commands. The topology (parent task with N child tasks, one per worker) is the same shape regardless of tracker.
+Other trackers work the same way, substitute their issue ID format and adjust the lifecycle commands. The topology (parent task with N child tasks, one per worker) is the same shape regardless of tracker.
 
 ## Invocation examples
 
-- "Set up the multi-agent topology for this epic — 3 workers."
+- "Set up the multi-agent topology for this epic, 3 workers."
 - "I'm a worker, I just finished. What's the close-out flow?"
-- "The orchestrator should review my branch — what's the handoff?"
+- "The orchestrator should review my branch, what's the handoff?"
 - "Write the commit message for this change."
-- "Reject this worker branch — the gates are failing." (uses this skill's rejection discipline + structured-code-review for the format)
+- "Reject this worker branch, the gates are failing." (uses this skill's rejection discipline + structured-code-review for the format)
 - "Should this commit need a UAT gate before I push?"
 - "How do I clean up after merge?"
 
 ## See also
 
-- [`task-handoff-summaries`](../../../task-handoff-summaries/skills/task-handoff-summaries/SKILL.md) — the worker handoff format and orchestrator close-out summary reference this skill's role and branch vocabulary.
-- [`structured-code-review`](../../../structured-code-review/skills/structured-code-review/SKILL.md) — the format for orchestrator rejection notes and PR reviews.
-- [`cross-agent-review`](../../../cross-agent-review/skills/cross-agent-review/SKILL.md) — when a worker branch goes through cross-vendor review before orchestrator acceptance, this is the workflow.
-- *(planned)* `branch-promotion-discipline` — the next layer up: 3-tier `develop` → `uat` → `main` promotion, UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, pre-commit hook setup.
+- [`task-handoff-summaries`](../../../task-handoff-summaries/skills/task-handoff-summaries/SKILL.md), the worker handoff format and orchestrator close-out summary reference this skill's role and branch vocabulary.
+- [`structured-code-review`](../../../structured-code-review/skills/structured-code-review/SKILL.md), the format for orchestrator rejection notes and PR reviews.
+- [`cross-agent-review`](../../../cross-agent-review/skills/cross-agent-review/SKILL.md), when a worker branch goes through cross-vendor review before orchestrator acceptance, this is the workflow.
+- *(planned)* `branch-promotion-discipline`, the next layer up: 3-tier `develop` → `uat` → `main` promotion, UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, pre-commit hook setup.
