@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Does NOT add cursor/offset/page pagination (recognizes this as bounded-by-policy, not a growing list)",
+      "passed": true,
+      "evidence": "No cursor, offset, or page parameters in the design; opening line 'Since the requirement is fixed at 5 and there's no pagination, you can keep this very simple'"
+    },
+    {
+      "text": "Returns the canonical `{ data: [...] }` envelope — NOT a bespoke envelope with a resource-named key like `{ notifications: [...] }`, and does not invent extra top-level fields like unreadCount or fetchedAt unless explicitly requested",
+      "passed": false,
+      "evidence": "Response shape is bespoke: '{ notifications: [...], unreadCount: 3, fetchedAt: \"...\" }' — uses resource-named key 'notifications' and invents both unreadCount AND fetchedAt extras (the exact two fields the assertion warns against)"
+    },
+    {
+      "text": "URL contains no verbs (no /getNotifications, /fetchRecent, /latest)",
+      "passed": true,
+      "evidence": "Recommends 'GET /api/notifications/recent' — no verbs"
+    },
+    {
+      "text": "Explicitly notes the bound is server-enforced (client cannot request more than 5)",
+      "passed": true,
+      "evidence": "Closing line: 'Keep the array length capped at 5 server-side regardless of any client query params' — explicitly server-enforced"
+    },
+    {
+      "text": "Notes that broadening the bound later would be a breaking change (Hyrum's Law / contract discipline) — OR explicitly warns against exposing a `limit` query param",
+      "passed": false,
+      "evidence": "No mention that broadening would be a breaking change. Mentions 'or alternatively GET /api/notifications?limit=5' as an option (the opposite of warning against a limit param)"
+    }
+  ],
+  "summary": {"passed": 3, "failed": 2, "total": 5, "pass_rate": 0.60}
+}

@@ -1,0 +1,6 @@
+{
+  "id": 1,
+  "name": "worker-finished-close-out",
+  "skill": "multi-agent-git-workflow",
+  "prompt": "I'm a worker. I finished my slice (proj-42-w2 — CI workflow YAMLs). All gates pass: lint clean, typecheck clean, 142/142 unit tests pass. Branch is feature/proj-42-w2_ci-workflows, currently local-only, commit SHA at handoff is 7a3f9b1. The intended integration target is integration/proj-42_staging-bringup. What do I do now to close out this slice?"
+}

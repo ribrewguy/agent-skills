@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Subject line uses Conventional Commits format: `<type>[optional scope]: <description>`", "passed": false, "evidence": "Subject: 'Add idempotent retry on transient processor failures (task-100)' — no Conventional Commits type prefix"},
+    {"text": "Subject line type is appropriate (feat for the new functionality, possibly with scope `payments` or `api`)", "passed": false, "evidence": "No type prefix at all; offers 'conventional-commits-style with feat: prefix' only as a follow-up option"},
+    {"text": "Body is multi-paragraph and explains BOTH what changed AND why (not just a description of the diff)", "passed": false, "evidence": "Body is a bulleted list of what was added; no 'why' rationale (no explanation of why retry, why persistence module, why specific backoff schedule, why no 4xx retry)"},
+    {"text": "Body or subject references the task ID `task-100` (e.g., `Refs: task-100` line in body, or task ID inline in subject)", "passed": true, "evidence": "Subject contains '(task-100)'"},
+    {"text": "Includes a `Co-authored-by:` trailer naming the model: `Claude Opus 4.7 (1M context) <noreply@anthropic.com>` (or equivalent)", "passed": false, "evidence": "No Co-authored-by trailer of any kind"},
+    {"text": "Does not include a UAT gate prompt — the change is described as not affecting externally-visible behavior beyond the documented spec, so no UAT-gate-before-commit is needed (or, if the model asks, the asking is appropriate)", "passed": true, "evidence": "No UAT prompt included — appropriate given the constraint"},
+    {"text": "Does not propose using `git commit --amend` (no amends discipline)", "passed": true, "evidence": "No mention of amend"},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to the skill"}
+  ],
+  "summary": {"passed": 4, "failed": 4, "total": 8, "pass_rate": 0.5}
+}

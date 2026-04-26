@@ -68,6 +68,8 @@ For other tools, see [Install](../install).
 
 ## Eval results
 
+Full per-eval breakdown, interactive review viewer, and links to raw model outputs: **[multi-agent-git-workflow evaluations](../evals/multi-agent-git-workflow)**.
+
 Iteration-1 benchmark: **100% pass rate with-skill vs. 73% baseline** (+27pp delta) across four cases. Per-eval pattern: largest delta on the orchestrator-acceptance-flow eval (+50pp) and the conventional-commits eval (+25pp); smaller delta on the rejection-with-explicit-notes eval (the prompt's own scenario was specific enough that even baseline produced a structured rejection, a non-discriminating eval to revisit in iteration-2).
 
 | Eval | What it probes |

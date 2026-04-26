@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "multi-agent-git-workflow", "runs": [{"id": "eval-0-set-up-multi-agent-topology-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Multi-agent topology for proj-42 (staging branch + 3-tier deploy flow)\n\n## Beads\n\nOne parent bead, three child beads \u2014 one child per worker slice. Never reuse a single bead across slices.\n\n- **Parent (you, the orchestrator):** `proj-42` \u2014 Add staging branch and 3-tier deploy flow\n- **Child W1:** `proj-42-w1` \u2014 Policy doc updates and renames\n- **Child W2:** `proj-42-w2` \u2014 CI workflow YAMLs (ci-develop / ci-staging / ci-main)\n- **Child W3:** `proj-42-w3` \u2014 Source-ref enforcement workflow + pre-commit hook config\n\nAssign each child bead to exactly one worker. Don't fold two slices into the same bead \u2014 atomic claim and audit trail depend on 1:1.\n\n## Branches\n\n- **Integration branch (you own this):** `integration/proj-42_staging-bringup`\n- **Worker feature branches (one per child bead, one per worker):**\n  - W1 \u2192 `feature/proj-42-w1_policy-docs`\n  - W2 \u2192 `feature/proj-42-w2_ci-workflows`\n  - W3 \u2192 `feature/proj-42-w3_source-ref-enforcement`\n\nEach feature branch maps 1:1 to a single child bead. Don't reuse a feature branch for unrelated tasks.\n\n## Worktrees\n\nMulti-agent work mandates one Git worktree per agent. No agent runs in the same checkout as another. Suggested layout (sibling worktrees, outside the main checkout and outside generated output):\n\n- Orchestrator: main repo checkout, with `integration/proj-42_staging-bringup` checked out in its own worktree, e.g. `../<repo>-proj-42-integration/`\n- W1: `../<repo>-proj-42-w1/` checked out to `feature/proj-42-w1_policy-docs`\n- W2: `../<repo>-proj-42-w2/` checked out to `feature/proj-42-w2_ci-workflows`\n- W3: `../<repo>-proj-42-w3/` checked out to `feature/proj-42-w3_source-ref-enforcement`\n\nCreate them with:\n\n```bash\ngit worktree add ../<repo>-proj-42-integration -b integration/proj-42_staging-bringup develop\ngit worktree add ../<repo>-proj-42-w1 -b feature/proj-42-w1_policy-docs integration/proj-42_staging-bringup\ngit worktree add ../<repo>-proj-42-w2 -b feature/proj-42-w2_ci-workflows integration/proj-42_staging-bringup\ngit worktree add ../<repo>-proj-42-w3 -b feature/proj-42-w3_source-ref-enforcement integration/proj-42_staging-bringup\n```\n\n## Integration target\n\n- Worker feature branches \u2192 merge into `integration/proj-42_staging-bringup` (orchestrator-only).\n- After all workers are accepted and integrated gates pass on the integration branch \u2192 merge `integration/proj-42_staging-bringup` into **`develop`**.\n- The further promotion to a staging branch and main is out of scope for this skill \u2014 handled by branch-promotion-discipline.\n\n## Worker responsibilities and MUST NOTs\n\n### Each worker (W1, W2, W3) is responsible for\n\n- Implementing exactly the slice scoped to their child bead, on their dedicated `feature/*` branch in their dedicated worktree.\n- Keeping all gates green (lint, typecheck, unit tests, anything else the bead design requires) before handoff.\n- Producing a worker handoff summary for you when their slice is ready: what changed, what was tested, the branch name and head SHA, any deviations from the bead design with rationale.\n- Updating their child bead with progress notes; leaving the bead `in_progress` at handoff.\n\n### Each worker MUST NOT\n\n- **Merge their own `feature/*` branch** into another worker branch, into `integration/proj-42_staging-bringup`, into `develop`, or into `main`. Workers don't merge themselves; that's an orchestrator-coordinated decision.\n- **Fix things outside their slice.** If W2 notices something broken in the policy docs (W1's lane), they raise it to you, not patch it on their own branch.\n- **Close their own child bead.** The bead stays `in_progress` until you accept their branch into the integration target.\n- **Push the feature branch by default.** Worker `feature/*` branches stay local unless one of these applies: you need remote access, CI is required on the branch, the user explicitly wants it published, or a remote recovery point is needed before integration. Then publish, not before.\n- **Reuse the feature branch for follow-up work.** If a second slice emerges, that's a new bead and a new branch.\n\n## Orchestrator responsibilities and MUST NOTs\n\n### You (orchestrator on `proj-42`) are responsible for\n\n- Owning the parent bead `proj-42` and the integration branch `integration/proj-42_staging-bringup`.\n- Publishing `integration/proj-42_staging-bringup` to remote \u2014 it's the shared integration target across workers, so it must be published.\n- Reviewing each worker's handoff: attempting the merge, resolving integration order across the three workers, running required integrated gates on the integration branch, verifying alignment with the bead design and PRD scope.\n- Either **accepting** a worker branch (merging it into `integration/proj-42_staging-bringup`) or **rejecting** it back to the worker with explicit, structured notes.\n- Resolving conflicts that arise from integration order (true integration-only changes \u2014 not implementing worker-scoped functionality).\n- Closing each child bead after you merge it. Closing the parent bead `proj-42` after the integration branch is merged into `develop` and gates pass there.\n- Branch cleanup after acceptance: deleting accepted local feature branches (and remote copies if they were ever published), removing dead worktrees.\n\n### You MUST NOT\n\n- **Implement worker-scoped functionality on the integration branch.** If W2's CI YAMLs are wrong, the answer is to reject the branch back to W2 \u2014 not to patch the YAML on `integration/proj-42_staging-bringup`. Two valid alternatives if the worker is unavailable: explicitly reassign the slice to yourself (the bead now belongs to you), or create a new bead that you own for the fix. Either way, the audit trail stays clean.\n- **Silently fix worker defects.** Even small ones. The temptation (\"I could just fix this typo on integration\") is exactly when the orchestrator/worker boundary breaks down. Always: explicit reassignment, new bead, or rejection notes back to the worker.\n- **Skip mandatory rejection.** Reject a worker branch when integration fails on merge conflicts, failing required gates (typecheck, tests, lint, build), or divergence from the bead design / architecture / PRD. These are not negotiable.\n- **Merge the integration branch directly to `main`**, or merge any worker `feature/*` directly to `develop` or `main`. Worker branches go through the integration branch; the integration branch goes through `develop`.\n- **Merge to `develop` without all required integrated gates passing on the integration branch.**\n- **Bypass the UAT-gate ceremony** for any change that affects externally visible behavior \u2014 ask the user before any commit on the integration branch in that case.\n\n## Commit format reminder for everyone (workers and you)\n\nEvery commit on every branch:\n\n- Conventional Commits subject: `<type>(<scope>): <description>`\n- Multi-paragraph body explaining what changed and why\n- Task ID reference: bead ID inline in the subject or `Refs: <bead-id>` line in the body\n- `Co-authored-by: <Model name and version> <vendor-email>` trailer for AI-assisted commits\n- No silent amends \u2014 if a hook fails, the commit didn't happen; fix and create a new commit.\n- Merge commits MAY use the default Git message (only exception).\n\n## Suggested kickoff order\n\n1. Create the four beads (`proj-42`, `proj-42-w1/w2/w3`) with assignees and DESIGN sections that scope each slice precisely.\n2. Create `integration/proj-42_staging-bringup` from `develop` and publish it.\n3. For each worker, create their worktree branched from the integration branch.\n4. Hand each worker their bead ID, branch, and worktree path. Tell them: stay in your slice, gates green before handoff, handoff summary on completion, don't merge yourself, don't close your own bead.\n"}], "grading": {"expectations": [{"text": "Names a parent bead (proj-42) and 3 child beads (one per slice) \u2014 does not propose reusing a single bead for multiple slices", "passed": true, "evidence": "Parent: proj-42; Children: proj-42-w1, proj-42-w2, proj-42-w3 with note 'Don't fold two slices into the same bead'"}, {"text": "Names 3 worker feature branches in the format `feature/<bead_id>_<short_name>` \u2014 one per worker bead", "passed": true, "evidence": "feature/proj-42-w1_policy-docs, feature/proj-42-w2_ci-workflows, feature/proj-42-w3_source-ref-enforcement"}, {"text": "Names an integration branch in the format `integration/<parent_bead_id>_<short_name>` \u2014 for the coordinated work", "passed": true, "evidence": "integration/proj-42_staging-bringup"}, {"text": "Names the integration target as `develop` (single-agent close-out is to develop; the 3-tier promotion to staging/main is out of scope)", "passed": true, "evidence": "'merge integration/proj-42_staging-bringup into develop. The further promotion to a staging branch and main is out of scope...'"}, {"text": "Specifies that EACH worker uses a dedicated git worktree (multi-agent MUST use worktrees)", "passed": true, "evidence": "'Multi-agent work mandates one Git worktree per agent' with explicit ../<repo>-proj-42-w1/w2/w3 paths and git worktree add commands"}, {"text": "Lists worker responsibilities AND explicit MUST NOTs \u2014 workers MUST NOT merge their own branches; MUST NOT fix things outside their slice", "passed": true, "evidence": "'Each worker MUST NOT: Merge their own feature/* branch... Fix things outside their slice...'"}, {"text": "Lists orchestrator responsibilities AND explicit MUST NOTs \u2014 orchestrator MUST NOT implement worker-scoped functionality on the integration branch; MUST NOT silently fix worker defects (must reject explicitly)", "passed": true, "evidence": "'You MUST NOT: Implement worker-scoped functionality on the integration branch... Silently fix worker defects. Even small ones.'"}, {"text": "Specifies that worker branches stay local by default and only publish when CI/orchestrator-remote-access/recovery requires it", "passed": true, "evidence": "'Worker feature/* branches stay local unless one of these applies: you need remote access, CI is required... user explicitly wants it published, or a remote recovery point is needed'"}, {"text": "Output does not cite this skill by name (no 'multi-agent-git-workflow', 'this skill', 'as required')", "passed": true, "evidence": "No occurrences of 'multi-agent-git-workflow' or 'this skill' or 'as required' phrases"}], "summary": {"passed": 9, "failed": 0, "total": 9, "pass_rate": 1.0}}}, {"id": "eval-0-set-up-multi-agent-topology-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Multi-Agent Topology for proj-42\n\nHere's a setup for splitting proj-42 across 3 implementation agents.\n\n## Branches\n\nI'd recommend a branch-per-slice approach:\n\n- `proj-42/main` \u2014 the parent epic branch off of `main` or `develop`\n- `proj-42/policy-docs` \u2014 slice 1 (worker A)\n- `proj-42/ci-workflows` \u2014 slice 2 (worker B)\n- `proj-42/source-ref-enforcement` \u2014 slice 3 (worker C)\n\nThe parent `proj-42/main` branch is where all three slices integrate before the final merge to your target branch (likely `main` or `develop`).\n\n## Worktrees\n\nEach agent should work in a separate directory to avoid stepping on each other:\n\n```bash\ngit worktree add ../proj-42-policy-docs proj-42/policy-docs\ngit worktree add ../proj-42-ci-workflows proj-42/ci-workflows\ngit worktree add ../proj-42-source-ref proj-42/source-ref-enforcement\n```\n\nThis way each agent has its own checkout and they can work fully in parallel.\n\n## Tasks / Beads\n\n- Parent task: `proj-42` \u2014 Add staging branch and 3-tier deploy flow\n- Subtask A: `proj-42a` \u2014 policy doc updates\n- Subtask B: `proj-42b` \u2014 CI workflow YAMLs\n- Subtask C: `proj-42c` \u2014 source-ref enforcement + pre-commit\n\n## Worker A \u2014 Policy doc updates and renames\n\n**Responsibilities:**\n- Update existing policy documentation to reflect the staging branch and 3-tier flow\n- Rename anything that references the old 2-tier model\n- Make sure the docs are consistent across the repo\n\n**MUST NOT:**\n- Touch the CI workflow YAMLs (that's Worker B)\n- Touch the source-ref enforcement workflow (that's Worker C)\n- Push directly to main\n\n## Worker B \u2014 CI workflow YAMLs\n\n**Responsibilities:**\n- Create `ci-develop.yml`, `ci-staging.yml`, and `ci-main.yml`\n- Make sure each pipeline runs the right gates for that environment\n- Test the workflows locally with `act` or similar before opening a PR\n\n**MUST NOT:**\n- Modify policy docs (Worker A's lane)\n- Modify pre-commit hook config (Worker C's lane)\n\n## Worker C \u2014 Source-ref enforcement + pre-commit hook\n\n**Responsibilities:**\n- Build the source-ref enforcement workflow that validates branch sources\n- Set up the pre-commit hook configuration\n- Make sure both work locally and in CI\n\n**MUST NOT:**\n- Modify CI workflow YAMLs beyond what's needed to wire in source-ref enforcement\n- Edit policy docs\n\n## You (Orchestrator)\n\n**Responsibilities:**\n- Track progress across all three workers\n- Resolve merge conflicts when integrating their branches into `proj-42/main`\n- Run integration tests after each merge\n- Open the final PR from `proj-42/main` to your target branch\n- Communicate status to stakeholders\n\n**MUST NOT:**\n- Get bogged down implementing slices yourself \u2014 delegate to the workers\n- Merge a worker's branch without reviewing it first\n- Skip integration testing between merges\n\n## Suggested workflow\n\n1. Workers complete their slices on their branches.\n2. Each worker opens a PR into `proj-42/main`.\n3. You review and merge each PR, resolving any conflicts.\n4. After all three are merged, run the full integration test suite.\n5. Open the final PR from `proj-42/main` to your target branch.\n\nLet me know if you want help drafting the bead/task descriptions or the initial PR templates.\n"}], "grading": {"expectations": [{"text": "Names a parent bead (proj-42) and 3 child beads (one per slice) \u2014 does not propose reusing a single bead for multiple slices", "passed": true, "evidence": "Parent task proj-42; subtasks proj-42a, proj-42b, proj-42c"}, {"text": "Names 3 worker feature branches in the format `feature/<bead_id>_<short_name>` \u2014 one per worker bead", "passed": false, "evidence": "Uses 'proj-42/policy-docs', 'proj-42/ci-workflows', 'proj-42/source-ref-enforcement' \u2014 namespaced branch style, not feature/<bead_id>_<short_name>"}, {"text": "Names an integration branch in the format `integration/<parent_bead_id>_<short_name>` \u2014 for the coordinated work", "passed": false, "evidence": "Uses 'proj-42/main' as the parent epic branch, not integration/proj-42_<short_name>"}, {"text": "Names the integration target as `develop` (single-agent close-out is to develop; the 3-tier promotion to staging/main is out of scope)", "passed": false, "evidence": "'Open the final PR from proj-42/main to your target branch (likely main or develop)' \u2014 ambiguous, does not commit to develop"}, {"text": "Specifies that EACH worker uses a dedicated git worktree (multi-agent MUST use worktrees)", "passed": true, "evidence": "'Each agent should work in a separate directory' with three explicit git worktree add commands"}, {"text": "Lists worker responsibilities AND explicit MUST NOTs \u2014 workers MUST NOT merge their own branches; MUST NOT fix things outside their slice", "passed": false, "evidence": "Workers told 'open a PR' and 'You review and merge each PR' \u2014 workflow implies orchestrator merges, but never explicitly states workers MUST NOT merge their own branches; lane MUST NOTs do appear (don't touch other slices)"}, {"text": "Lists orchestrator responsibilities AND explicit MUST NOTs \u2014 orchestrator MUST NOT implement worker-scoped functionality on the integration branch; MUST NOT silently fix worker defects (must reject explicitly)", "passed": false, "evidence": "MUST NOTs are 'don't get bogged down implementing slices yourself', 'merge a worker's branch without reviewing it', 'skip integration testing' \u2014 does not address silent-fix-of-worker-defects discipline or rejection-with-notes"}, {"text": "Specifies that worker branches stay local by default and only publish when CI/orchestrator-remote-access/recovery requires it", "passed": false, "evidence": "Workflow tells workers to 'open a PR' from their branch \u2014 implicitly publishes; no local-by-default policy"}, {"text": "Output does not cite this skill by name (no 'multi-agent-git-workflow', 'this skill', 'as required')", "passed": true, "evidence": "No occurrences of skill name or 'this skill' phrasing"}], "summary": {"passed": 3, "failed": 6, "total": 9, "pass_rate": 0.33}}}, {"id": "eval-1-worker-finished-close-out-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Worker close-out for proj-42-w2 (CI workflow YAMLs)\n\nYou're at the right point. Gates green, branch ready. Here's what close-out looks like for you as a worker \u2014 and, importantly, what is **not** part of your close-out.\n\n## What you do\n\n### 1. Hand off to the orchestrator \u2014 do not merge yourself\n\nWorkers do not merge their own `feature/*` branches. That means you **MUST NOT**:\n\n- Merge `feature/proj-42-w2_ci-workflows` into `integration/proj-42_staging-bringup`\n- Merge it into `develop`\n- Merge it into `main`\n- Merge it into another worker's branch\n\nThe merge into `integration/proj-42_staging-bringup` is the orchestrator's call, not yours. They need to coordinate the merge order across workers, run integrated gates, and confirm alignment with the bead design and PRD before any of the three slices land.\n\n### 2. Decide whether to publish the branch\n\nWorker `feature/*` branches stay **local by default**. Publish `feature/proj-42-w2_ci-workflows` only if one of these applies:\n\n- The orchestrator can't access your local worktree and needs remote access to review/integrate\n- CI must run on the branch (branch-level gating) before acceptance\n- The user explicitly wants remote visibility / auditability for this slice\n- The team wants a remote recovery point before integration\n\nIf none of those apply, leave it local. If publishing, push with the explicit upstream:\n\n```bash\ngit push -u origin feature/proj-42-w2_ci-workflows\n```\n\n### 3. Write the worker handoff summary\n\nProduce a structured handoff summary for the orchestrator (the format from the worker handoff skill). At minimum:\n\n- **Bead:** `proj-42-w2 \u2014 CI workflow YAMLs`\n- **Branch:** `feature/proj-42-w2_ci-workflows` (local-only; publish status as decided above)\n- **Head SHA at handoff:** `7a3f9b1`\n- **Intended integration target:** `integration/proj-42_staging-bringup`\n- **Gates:** lint clean, typecheck clean, 142/142 unit tests pass\n- **What changed:** the three CI workflow YAMLs (ci-develop / ci-staging / ci-main), with a one-line summary of what each runs\n- **What was tested:** which gates were exercised, how, where\n- **Deviations from the bead design:** any (if none, say \"none\")\n- **Open questions / risks:** anything the orchestrator should know before merging\n- **Known follow-ups:** anything explicitly out of scope for this slice but worth tracking elsewhere\n\n### 4. Update your bead with progress notes \u2014 do not close it\n\nAdd a note on `proj-42-w2` recording:\n\n- Slice complete, gates green, branch ready for orchestrator review\n- Head SHA `7a3f9b1`\n- Reference to the handoff summary\n\nThe bead stays `in_progress`. **You do not close your own bead.** It closes when the orchestrator accepts the branch into `integration/proj-42_staging-bringup`. If the orchestrator rejects the branch instead, the bead stays open and you address the rejection notes and re-hand-off.\n\n## What is NOT part of your close-out\n\n- Merging anywhere \u2014 `integration/*`, `develop`, `main`. None of it. The orchestrator does that.\n- Deleting your branch or removing your worktree. Cleanup happens after the orchestrator accepts and merges. They are responsible for deleting accepted feature branches (locally and remotely if published).\n- Closing the parent bead `proj-42`. That's the orchestrator's call after the integration branch lands in `develop` and gates pass.\n- Touching anything outside your slice. If you noticed an issue in W1 or W3 territory, raise it to the orchestrator separately \u2014 don't fold it in.\n\n## Summary in one breath\n\nWrite the handoff summary, log a progress note on `proj-42-w2`, decide whether to publish the branch (local by default, publish only if the orchestrator-access / CI / user-asks / recovery-point conditions apply), hand off to the orchestrator, and wait. You're done at handoff; close-out for you ends at the orchestrator's acceptance, not before and not after.\n"}], "grading": {"expectations": [{"text": "Tells the worker to hand off the branch to the orchestrator \u2014 NOT to merge the branch themselves", "passed": true, "evidence": "'Hand off to the orchestrator \u2014 do not merge yourself' as a top-level instruction"}, {"text": "Explicitly states that workers MUST NOT merge their own feature branches into the integration branch, develop, or main", "passed": true, "evidence": "'Workers do not merge their own feature/* branches. That means you MUST NOT: Merge ... into integration/...; Merge it into develop; Merge it into main; Merge it into another worker's branch'"}, {"text": "Tells the worker to produce a worker handoff summary (referencing task-handoff-summaries skill or its format)", "passed": true, "evidence": "'Write the worker handoff summary' section with bead/branch/SHA/gates/changes/risks structure, referencing 'the format from the worker handoff skill'"}, {"text": "Addresses whether the branch should be published \u2014 local by default unless orchestrator needs remote access, CI required, or auditability needed", "passed": true, "evidence": "'Worker feature/* branches stay local by default' with explicit conditions: orchestrator can't access local worktree, CI required, user wants visibility, recovery point"}, {"text": "States that the worker's bead remains in_progress until the orchestrator accepts the branch into the integration target \u2014 the worker does NOT close their own bead", "passed": true, "evidence": "'The bead stays in_progress. You do not close your own bead. It closes when the orchestrator accepts the branch into integration/proj-42_staging-bringup.'"}, {"text": "Does not tell the worker to merge to develop or main", "passed": true, "evidence": "Explicitly forbids merging to develop or main"}, {"text": "Does not tell the worker to delete their branch (cleanup is the orchestrator's responsibility after acceptance)", "passed": true, "evidence": "'Deleting your branch or removing your worktree. Cleanup happens after the orchestrator accepts and merges. They are responsible for deleting accepted feature branches'"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No occurrences of 'multi-agent-git-workflow' or 'this skill'; mentions 'the worker handoff skill' generically"}], "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}}}, {"id": "eval-1-worker-finished-close-out-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Closing Out Your Slice\n\nNice \u2014 gates clean, tests passing, branch ready. Here's a sensible close-out flow.\n\n## 1. Push your branch\n\nRight now your branch is local-only. Push it so others (and CI) can see it:\n\n```bash\ngit push -u origin feature/proj-42-w2_ci-workflows\n```\n\n## 2. Verify CI passes on the remote\n\nOnce you push, CI should kick off. Confirm all checks go green there too \u2014 local-pass-but-remote-fail is a common gotcha (different env, secrets, etc.).\n\n## 3. Open a pull request into the integration target\n\nOpen a PR from `feature/proj-42-w2_ci-workflows` into `integration/proj-42_staging-bringup`.\n\nA solid PR description includes:\n\n- **Summary:** what this slice does (CI workflow YAMLs for the 3-tier flow)\n- **Scope:** what's in / what's deliberately out\n- **Test plan:** lint clean, typecheck clean, 142/142 unit tests, plus any manual verification\n- **Notes for review:** anything the reviewer should pay extra attention to\n- **Branch info:** local-only at handoff; head SHA was `7a3f9b1` when you opened the PR\n\nTag the PR with the parent epic (`proj-42`) and your slice ID (`proj-42-w2`) so it's easy to find.\n\n## 4. Request review\n\nTag the orchestrator and any other reviewers required by your team's process. Be ready to address feedback and rebase if the integration target moves.\n\n## 5. Merge once approved\n\nOnce your PR is approved and any conflicts with the integration branch are resolved, merge it. Squash-merge is usually preferred for feature slices unless your team prefers merge commits \u2014 follow the repo's convention.\n\n## 6. Clean up\n\nAfter merge:\n\n```bash\ngit branch -d feature/proj-42-w2_ci-workflows         # local\ngit push origin --delete feature/proj-42-w2_ci-workflows  # remote\n```\n\nIf you used a worktree, remove it too:\n\n```bash\ngit worktree remove ../<your-worktree-dir>\n```\n\n## 7. Update your task tracker\n\nMark the slice as done in your tracker (close `proj-42-w2`). Leave a note pointing to the merge commit so the audit trail is clear. Update the parent epic `proj-42` with a brief status if needed.\n\nThat's the full close-out. Let me know if you want help drafting the PR description.\n"}], "grading": {"expectations": [{"text": "Tells the worker to hand off the branch to the orchestrator \u2014 NOT to merge the branch themselves", "passed": false, "evidence": "Step 5: 'Merge once approved' \u2014 explicitly tells the worker to merge their own PR after approval"}, {"text": "Explicitly states that workers MUST NOT merge their own feature branches into the integration branch, develop, or main", "passed": false, "evidence": "No prohibition on self-merge appears; the workflow assumes the worker performs the merge"}, {"text": "Tells the worker to produce a worker handoff summary (referencing task-handoff-summaries skill or its format)", "passed": false, "evidence": "Tells the worker to write a PR description with summary/scope/test plan, but no separate handoff summary or reference to a handoff format"}, {"text": "Addresses whether the branch should be published \u2014 local by default unless orchestrator needs remote access, CI required, or auditability needed", "passed": false, "evidence": "Step 1: 'Push your branch' immediately and unconditionally \u2014 no local-by-default policy"}, {"text": "States that the worker's bead remains in_progress until the orchestrator accepts the branch into the integration target \u2014 the worker does NOT close their own bead", "passed": false, "evidence": "Step 7: 'Mark the slice as done in your tracker (close proj-42-w2)' \u2014 tells the worker to close their own bead"}, {"text": "Does not tell the worker to merge to develop or main", "passed": true, "evidence": "Merge target is the integration branch (integration/proj-42_staging-bringup), not develop or main"}, {"text": "Does not tell the worker to delete their branch (cleanup is the orchestrator's responsibility after acceptance)", "passed": false, "evidence": "Step 6: 'Clean up' with explicit `git branch -d` and `git push origin --delete` for the worker's branch"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to the skill"}], "summary": {"passed": 2, "failed": 6, "total": 8, "pass_rate": 0.25}}}, {"id": "eval-2-write-commit-message-with-task-id-and-coauthor-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "```\nfeat(payments): add idempotent retry on transient processor failures\n\nWraps processor calls in a new retryWithBackoff helper that retries\n5xx and timeout responses up to 3 times on a 250 / 500 / 1000 ms\nschedule. The schedule is fixed (not exponential-with-jitter) because\nthe processor's published guidance prescribes those intervals and we\nwant to stay inside the documented behavior \u2014 diverging from it could\ntrip the processor's own duplicate-suppression heuristics.\n\n4xx responses are surfaced immediately and never retried: a 4xx is the\nprocessor telling us the request itself is wrong, so retrying it is\nguaranteed waste at best and double-charge risk at worst.\n\nPersists the Idempotency-Key in a new idempotency_keys module before\nthe first attempt, so retries survive in-process state loss between\nattempts (process restart, container recycle, retry-after-reschedule).\nWithout persistence, a mid-retry restart would generate a fresh key\non the next attempt and the processor would treat it as a brand-new\ncharge instead of a retry of the same one \u2014 exactly the\ndouble-charge bug this task exists to prevent.\n\nTests cover the four critical paths: retry-then-success, retry-then-\nexhaustion (returning the original 5xx), 4xx-no-retry, and\nkey-survives-process-restart. 8 new tests, all passing alongside the\nexisting payments suite.\n\nNo externally visible behavior changes beyond what the spec already\ndocuments \u2014 the retry semantics described in the spec are now actually\nimplemented.\n\nRefs: task-100\n\nCo-authored-by: Claude Opus 4.7 (1M context) <noreply@anthropic.com>\n```\n\nA few notes on the surrounding ceremony, separate from the message itself:\n\n- **No UAT gate prompt needed.** You've stated the change does not affect externally visible behavior beyond what the spec already documents, so there's nothing for the user to acceptance-test before commit.\n- **Don't amend.** If a pre-commit hook fires and fails, the commit didn't happen \u2014 fix the issue, re-stage, create a new commit. Don't reach for `git commit --amend`.\n- **Stage explicitly.** Add `api/services/payments.ts`, `api/db/idempotency_keys.ts`, and `api/services/payments.test.ts` by name rather than `git add -A`, to avoid sweeping in anything unintended.\n- **Push when policy allows.** Once committed, if your branch policy and any required approvals allow it, perform the push \u2014 don't leave it as \"ready to push when you are.\"\n"}], "grading": {"expectations": [{"text": "Subject line uses Conventional Commits format: `<type>[optional scope]: <description>`", "passed": true, "evidence": "Subject: 'feat(payments): add idempotent retry on transient processor failures'"}, {"text": "Subject line type is appropriate (feat for the new functionality, possibly with scope `payments` or `api`)", "passed": true, "evidence": "Type 'feat' with scope 'payments' \u2014 matches new-feature change"}, {"text": "Body is multi-paragraph and explains BOTH what changed AND why (not just a description of the diff)", "passed": true, "evidence": "5+ paragraphs covering retry schedule (and why fixed not exponential), 4xx-no-retry rationale, idempotency-key persistence rationale (process-restart double-charge prevention), test coverage, externally-visible-behavior note"}, {"text": "Body or subject references the task ID `task-100` (e.g., `Refs: task-100` line in body, or task ID inline in subject)", "passed": true, "evidence": "'Refs: task-100' line in body trailers"}, {"text": "Includes a `Co-authored-by:` trailer naming the model: `Claude Opus 4.7 (1M context) <noreply@anthropic.com>` (or equivalent)", "passed": true, "evidence": "'Co-authored-by: Claude Opus 4.7 (1M context) <noreply@anthropic.com>'"}, {"text": "Does not include a UAT gate prompt \u2014 the change is described as not affecting externally-visible behavior beyond the documented spec, so no UAT-gate-before-commit is needed (or, if the model asks, the asking is appropriate)", "passed": true, "evidence": "Notes section says 'No UAT gate prompt needed. You've stated the change does not affect externally visible behavior beyond what the spec already documents'"}, {"text": "Does not propose using `git commit --amend` (no amends discipline)", "passed": true, "evidence": "Notes section explicitly says 'Don't amend... Don't reach for git commit --amend'"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to the skill"}], "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}}}, {"id": "eval-2-write-commit-message-with-task-id-and-coauthor-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "Here's a commit message for the change:\n\n```\nAdd idempotent retry on transient processor failures (task-100)\n\n- Add retryWithBackoff helper in api/services/payments.ts\n  - Retries 5xx and timeout errors up to 3 times\n  - Backoff schedule: 250ms, 500ms, 1000ms\n  - Does not retry 4xx responses\n- Add api/db/idempotency_keys.ts persistence module\n  - Stores Idempotency-Key so retries survive in-process state loss\n- Add 8 new tests in api/services/payments.test.ts\n  - retry success, retry exhaustion\n  - 4xx-no-retry behavior\n  - key-survives-restart scenarios\n```\n\nLet me know if you want a more concise version or a different style (e.g., conventional-commits-style with a `feat:` prefix).\n"}], "grading": {"expectations": [{"text": "Subject line uses Conventional Commits format: `<type>[optional scope]: <description>`", "passed": false, "evidence": "Subject: 'Add idempotent retry on transient processor failures (task-100)' \u2014 no Conventional Commits type prefix"}, {"text": "Subject line type is appropriate (feat for the new functionality, possibly with scope `payments` or `api`)", "passed": false, "evidence": "No type prefix at all; offers 'conventional-commits-style with feat: prefix' only as a follow-up option"}, {"text": "Body is multi-paragraph and explains BOTH what changed AND why (not just a description of the diff)", "passed": false, "evidence": "Body is a bulleted list of what was added; no 'why' rationale (no explanation of why retry, why persistence module, why specific backoff schedule, why no 4xx retry)"}, {"text": "Body or subject references the task ID `task-100` (e.g., `Refs: task-100` line in body, or task ID inline in subject)", "passed": true, "evidence": "Subject contains '(task-100)'"}, {"text": "Includes a `Co-authored-by:` trailer naming the model: `Claude Opus 4.7 (1M context) <noreply@anthropic.com>` (or equivalent)", "passed": false, "evidence": "No Co-authored-by trailer of any kind"}, {"text": "Does not include a UAT gate prompt \u2014 the change is described as not affecting externally-visible behavior beyond the documented spec, so no UAT-gate-before-commit is needed (or, if the model asks, the asking is appropriate)", "passed": true, "evidence": "No UAT prompt included \u2014 appropriate given the constraint"}, {"text": "Does not propose using `git commit --amend` (no amends discipline)", "passed": true, "evidence": "No mention of amend"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to the skill"}], "summary": {"passed": 4, "failed": 4, "total": 8, "pass_rate": 0.5}}}, {"id": "eval-3-orchestrator-rejection-with-explicit-notes-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Rejection notes \u2014 proj-42-w3 (source-ref enforcement + pre-commit hook)\n\n**Decision: REJECTED.** Branch `feature/proj-42-w3_source-ref-enforcement` is not being merged into `integration/proj-42_staging-bringup` at this time. Bead `proj-42-w3` remains `in_progress` and stays assigned to you. Please address the issues below and re-hand-off the same branch.\n\nThis is not \"requesting changes\" or \"small concerns.\" Two required gates fail and the implementation diverges from the bead design \u2014 those are mandatory rejection conditions. The branch goes back to you, not forward to integration.\n\n---\n\n## Failures\n\n### Category: failing required gates\n\n**1. Typecheck \u2014 4 errors in `.github/workflows/ci-staging.yml.types.ts`**\n\nThe typed wrapper you added doesn't compile. 4 typecheck errors in that single file when I run the integrated typecheck. The integration target requires typecheck-clean; this blocks merge.\n\n- File: `.github/workflows/ci-staging.yml.types.ts`\n- Action: fix the type definitions so the wrapper compiles cleanly under the same typecheck config that gated your local feature branch. If the gate passed locally for you and fails for me, we have a config drift to investigate \u2014 please confirm which `tsconfig` your local typecheck used, and reproduce against the integration-branch config.\n\n**2. Unit tests \u2014 2 new tests fail (NODE_VERSION not set in CI)**\n\nThe existing suite passes, but the 2 new tests you added fail because they assume `process.env.NODE_VERSION` is set. It isn't, in CI, and we shouldn't make that an implicit precondition.\n\n- Action: fix the tests, not the environment. Either (a) set `NODE_VERSION` explicitly in the test setup so the tests own their own preconditions, or (b) read it via a helper that has a sensible fallback for unset, and assert against the helper. Don't add a CI-side env mutation to paper over the test assumption.\n\n### Category: design divergence (bead design / architecture)\n\n**3. Pre-commit hook tooling: husky vs simple-git-hooks**\n\nThe branch adds an `.husky/` directory. The bead design (and the team's pre-commit hook policy) specifies **simple-git-hooks**, not husky. This is a design divergence, not a gate failure \u2014 and it's the load-bearing reason this can't be patched on the integration branch and waved through.\n\n- Action: remove the `.husky/` directory entirely (no leftover config, no fallback). Implement the pre-commit hook configuration via simple-git-hooks per the bead design. If you believe simple-git-hooks is the wrong choice, raise that as a design question on the bead before changing tooling \u2014 don't ship the alternative tool and force a decision at integration.\n\n---\n\n## What I am not doing\n\n- I am **not** fixing the typecheck errors on the integration branch. The wrapper is your slice \u2014 fix it on your branch.\n- I am **not** patching the failing tests on the integration branch. Same reason.\n- I am **not** swapping `.husky/` for simple-git-hooks myself. That would be silently absorbing a worker-owned design defect, which destroys the audit trail and erases your visibility into what was wrong.\n\nIf for any reason you can't pick this back up, the right move is explicit reassignment of `proj-42-w3` (so it formally becomes someone else's bead) or a new bead I own for the fix. Not a quiet edit on integration.\n\n---\n\n## What you do next\n\n1. Pull the rejection notes onto `feature/proj-42-w3_source-ref-enforcement`.\n2. Address the three items above on the same branch (don't fork the work into a new branch).\n3. Re-run all gates locally \u2014 lint, typecheck, full unit test suite \u2014 green before re-handoff.\n4. Update `proj-42-w3` with a progress note recording the rejection, what you changed, and the new head SHA.\n5. Re-hand-off with an updated worker handoff summary noting the changes since the previous handoff.\n\nThe bead stays `in_progress` and assigned to you throughout. I'll re-attempt integration when you're ready.\n\n---\n\n## Audit trail note\n\nI'll record this rejection on bead `proj-42-w3` with a pointer to these notes (gate failures + design divergence + re-handoff requested), so the bead history shows the round-trip rather than a silent re-merge.\n"}], "grading": {"expectations": [{"text": "Output is rejection notes addressed to the worker, NOT a fix-it-yourself plan", "passed": true, "evidence": "Document is titled 'Rejection notes \u2014 proj-42-w3' and addressed to worker with 'please address the issues below and re-hand-off the same branch'"}, {"text": "Explicitly states the branch is being REJECTED (not 'requesting changes' or 'small concerns') and the worker's bead remains in_progress", "passed": true, "evidence": "'Decision: REJECTED. Branch ... is not being merged ... Bead proj-42-w3 remains in_progress' \u2014 and explicitly contrasts: 'This is not requesting changes or small concerns'"}, {"text": "Names each specific failure with concrete details: 4 typecheck errors in the named file, 2 unit test failures with the NODE_VERSION cause, the husky-vs-simple-git-hooks design divergence", "passed": true, "evidence": "Item 1: '4 typecheck errors in .github/workflows/ci-staging.yml.types.ts'; Item 2: '2 new tests fail because they assume process.env.NODE_VERSION is set'; Item 3: 'adds an .husky/ directory. The bead design ... specifies simple-git-hooks, not husky'"}, {"text": "Tags failures by category \u2014 gates failing (typecheck, unit tests) vs. design divergence (husky vs. simple-git-hooks)", "passed": true, "evidence": "Explicit headings 'Category: failing required gates' (covers typecheck + unit tests) and 'Category: design divergence (bead design / architecture)' (covers husky)"}, {"text": "Does NOT propose that the orchestrator fix any of the issues themselves", "passed": true, "evidence": "'What I am not doing' section: 'I am not fixing the typecheck errors... not patching the failing tests... not swapping .husky/ for simple-git-hooks myself'"}, {"text": "Does NOT minimize the failures or offer to 'just patch them up on the integration branch'", "passed": true, "evidence": "Says explicitly silent integration-branch patching 'destroys the audit trail and erases your visibility into what was wrong'"}, {"text": "Tells the worker to fix and re-hand-off \u2014 implies a re-handoff loop, not a fork of the work", "passed": true, "evidence": "'What you do next' section: 'Address the three items above on the same branch (don't fork the work into a new branch)... Re-hand-off with an updated worker handoff summary'"}, {"text": "Optionally notes that the rejection should be recorded in the worker's bead notes", "passed": true, "evidence": "'Audit trail note: I'll record this rejection on bead proj-42-w3 with a pointer to these notes'"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to skill name; mentions 'mandatory rejection conditions' generically"}], "summary": {"passed": 9, "failed": 0, "total": 9, "pass_rate": 1.0}}}, {"id": "eval-3-orchestrator-rejection-with-explicit-notes-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Review feedback \u2014 proj-42-w3\n\nHey, thanks for putting this together. I tried to integrate it and ran into a few issues. Sending it back so we can get it sorted before merging.\n\n## Issues found\n\n### Typecheck failures (4 errors)\n\nThe new typed wrapper at `.github/workflows/ci-staging.yml.types.ts` doesn't compile. There are 4 typecheck errors in that file. Could you take a look and either fix the types or simplify the wrapper? Let me know if you'd like me to dig in with you.\n\n### Test failures (2 new tests)\n\nThe 2 new unit tests you added fail because they assume `process.env.NODE_VERSION` is set, but it isn't in CI. Couple of options:\n\n- Set `NODE_VERSION` explicitly in the test setup\n- Default it to a known version in the test if unset\n- Move the assertion to something that doesn't depend on the env var\n\nWhichever feels cleanest.\n\n### Husky vs simple-git-hooks\n\nI noticed you added an `.husky/` directory, but the team's policy is to use simple-git-hooks. Can you swap it out? It's a small change but it diverges from the bead design and we want the pre-commit tooling consistent across the repo.\n\n## Next steps\n\nCould you address the above and let me know when it's ready for another pass? I haven't merged anything yet \u2014 your branch is unchanged. If you want, I can pair on the typecheck errors since those tend to be the most fiddly.\n\nThanks!\n"}], "grading": {"expectations": [{"text": "Output is rejection notes addressed to the worker, NOT a fix-it-yourself plan", "passed": true, "evidence": "Document addressed to worker with 'Sending it back so we can get it sorted before merging'"}, {"text": "Explicitly states the branch is being REJECTED (not 'requesting changes' or 'small concerns') and the worker's bead remains in_progress", "passed": false, "evidence": "Title is 'Review feedback' and language is soft: 'ran into a few issues', 'sending it back', 'we can get it sorted'. Never uses the word REJECTED. Says 'small change' about husky divergence. No mention of bead status (in_progress)."}, {"text": "Names each specific failure with concrete details: 4 typecheck errors in the named file, 2 unit test failures with the NODE_VERSION cause, the husky-vs-simple-git-hooks design divergence", "passed": true, "evidence": "'4 typecheck errors' in '.github/workflows/ci-staging.yml.types.ts'; '2 new unit tests... assume process.env.NODE_VERSION is set, but it isn't in CI'; '.husky/ directory but the team's policy is to use simple-git-hooks'"}, {"text": "Tags failures by category \u2014 gates failing (typecheck, unit tests) vs. design divergence (husky vs. simple-git-hooks)", "passed": false, "evidence": "Issues listed as separate sections by symptom (Typecheck failures / Test failures / Husky vs simple-git-hooks) without an explicit gates-vs-design-divergence categorization"}, {"text": "Does NOT propose that the orchestrator fix any of the issues themselves", "passed": false, "evidence": "'Let me know if you'd like me to dig in with you' on typecheck and 'I can pair on the typecheck errors since those tend to be the most fiddly' \u2014 offers to do the fix-work jointly, blurring the boundary"}, {"text": "Does NOT minimize the failures or offer to 'just patch them up on the integration branch'", "passed": false, "evidence": "'It's a small change' about the husky-vs-simple-git-hooks divergence; soft framing throughout ('a few issues') minimizes the gate-failure severity"}, {"text": "Tells the worker to fix and re-hand-off \u2014 implies a re-handoff loop, not a fork of the work", "passed": true, "evidence": "'Could you address the above and let me know when it's ready for another pass?'"}, {"text": "Optionally notes that the rejection should be recorded in the worker's bead notes", "passed": false, "evidence": "No mention of recording the rejection in bead notes / task tracker"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No skill reference"}], "summary": {"passed": 4, "failed": 5, "total": 9, "pass_rate": 0.44}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "multi-agent-git-workflow", "skill_path": "/Users/torr/Projects/agent-skills/plugins/multi-agent-git-workflow/skills/multi-agent-git-workflow", "executor_model": "<model-name>", "analyzer_model": "<model-name>", "timestamp": "2026-04-26T14:52:14Z", "evals_run": [0, 1, 2, 3], "runs_per_configuration": 3}, "runs": [{"eval_id": 0, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 9, "failed": 0, "total": 9, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Names a parent bead (proj-42) and 3 child beads (one per slice) \u2014 does not propose reusing a single bead for multiple slices", "passed": true, "evidence": "Parent: proj-42; Children: proj-42-w1, proj-42-w2, proj-42-w3 with note 'Don't fold two slices into the same bead'"}, {"text": "Names 3 worker feature branches in the format `feature/<bead_id>_<short_name>` \u2014 one per worker bead", "passed": true, "evidence": "feature/proj-42-w1_policy-docs, feature/proj-42-w2_ci-workflows, feature/proj-42-w3_source-ref-enforcement"}, {"text": "Names an integration branch in the format `integration/<parent_bead_id>_<short_name>` \u2014 for the coordinated work", "passed": true, "evidence": "integration/proj-42_staging-bringup"}, {"text": "Names the integration target as `develop` (single-agent close-out is to develop; the 3-tier promotion to staging/main is out of scope)", "passed": true, "evidence": "'merge integration/proj-42_staging-bringup into develop. The further promotion to a staging branch and main is out of scope...'"}, {"text": "Specifies that EACH worker uses a dedicated git worktree (multi-agent MUST use worktrees)", "passed": true, "evidence": "'Multi-agent work mandates one Git worktree per agent' with explicit ../<repo>-proj-42-w1/w2/w3 paths and git worktree add commands"}, {"text": "Lists worker responsibilities AND explicit MUST NOTs \u2014 workers MUST NOT merge their own branches; MUST NOT fix things outside their slice", "passed": true, "evidence": "'Each worker MUST NOT: Merge their own feature/* branch... Fix things outside their slice...'"}, {"text": "Lists orchestrator responsibilities AND explicit MUST NOTs \u2014 orchestrator MUST NOT implement worker-scoped functionality on the integration branch; MUST NOT silently fix worker defects (must reject explicitly)", "passed": true, "evidence": "'You MUST NOT: Implement worker-scoped functionality on the integration branch... Silently fix worker defects. Even small ones.'"}, {"text": "Specifies that worker branches stay local by default and only publish when CI/orchestrator-remote-access/recovery requires it", "passed": true, "evidence": "'Worker feature/* branches stay local unless one of these applies: you need remote access, CI is required... user explicitly wants it published, or a remote recovery point is needed'"}, {"text": "Output does not cite this skill by name (no 'multi-agent-git-workflow', 'this skill', 'as required')", "passed": true, "evidence": "No occurrences of 'multi-agent-git-workflow' or 'this skill' or 'as required' phrases"}], "notes": []}, {"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Tells the worker to hand off the branch to the orchestrator \u2014 NOT to merge the branch themselves", "passed": true, "evidence": "'Hand off to the orchestrator \u2014 do not merge yourself' as a top-level instruction"}, {"text": "Explicitly states that workers MUST NOT merge their own feature branches into the integration branch, develop, or main", "passed": true, "evidence": "'Workers do not merge their own feature/* branches. That means you MUST NOT: Merge ... into integration/...; Merge it into develop; Merge it into main; Merge it into another worker's branch'"}, {"text": "Tells the worker to produce a worker handoff summary (referencing task-handoff-summaries skill or its format)", "passed": true, "evidence": "'Write the worker handoff summary' section with bead/branch/SHA/gates/changes/risks structure, referencing 'the format from the worker handoff skill'"}, {"text": "Addresses whether the branch should be published \u2014 local by default unless orchestrator needs remote access, CI required, or auditability needed", "passed": true, "evidence": "'Worker feature/* branches stay local by default' with explicit conditions: orchestrator can't access local worktree, CI required, user wants visibility, recovery point"}, {"text": "States that the worker's bead remains in_progress until the orchestrator accepts the branch into the integration target \u2014 the worker does NOT close their own bead", "passed": true, "evidence": "'The bead stays in_progress. You do not close your own bead. It closes when the orchestrator accepts the branch into integration/proj-42_staging-bringup.'"}, {"text": "Does not tell the worker to merge to develop or main", "passed": true, "evidence": "Explicitly forbids merging to develop or main"}, {"text": "Does not tell the worker to delete their branch (cleanup is the orchestrator's responsibility after acceptance)", "passed": true, "evidence": "'Deleting your branch or removing your worktree. Cleanup happens after the orchestrator accepts and merges. They are responsible for deleting accepted feature branches'"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No occurrences of 'multi-agent-git-workflow' or 'this skill'; mentions 'the worker handoff skill' generically"}], "notes": []}, {"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Subject line uses Conventional Commits format: `<type>[optional scope]: <description>`", "passed": true, "evidence": "Subject: 'feat(payments): add idempotent retry on transient processor failures'"}, {"text": "Subject line type is appropriate (feat for the new functionality, possibly with scope `payments` or `api`)", "passed": true, "evidence": "Type 'feat' with scope 'payments' \u2014 matches new-feature change"}, {"text": "Body is multi-paragraph and explains BOTH what changed AND why (not just a description of the diff)", "passed": true, "evidence": "5+ paragraphs covering retry schedule (and why fixed not exponential), 4xx-no-retry rationale, idempotency-key persistence rationale (process-restart double-charge prevention), test coverage, externally-visible-behavior note"}, {"text": "Body or subject references the task ID `task-100` (e.g., `Refs: task-100` line in body, or task ID inline in subject)", "passed": true, "evidence": "'Refs: task-100' line in body trailers"}, {"text": "Includes a `Co-authored-by:` trailer naming the model: `Claude Opus 4.7 (1M context) <noreply@anthropic.com>` (or equivalent)", "passed": true, "evidence": "'Co-authored-by: Claude Opus 4.7 (1M context) <noreply@anthropic.com>'"}, {"text": "Does not include a UAT gate prompt \u2014 the change is described as not affecting externally-visible behavior beyond the documented spec, so no UAT-gate-before-commit is needed (or, if the model asks, the asking is appropriate)", "passed": true, "evidence": "Notes section says 'No UAT gate prompt needed. You've stated the change does not affect externally visible behavior beyond what the spec already documents'"}, {"text": "Does not propose using `git commit --amend` (no amends discipline)", "passed": true, "evidence": "Notes section explicitly says 'Don't amend... Don't reach for git commit --amend'"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to the skill"}], "notes": []}, {"eval_id": 3, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 9, "failed": 0, "total": 9, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Output is rejection notes addressed to the worker, NOT a fix-it-yourself plan", "passed": true, "evidence": "Document is titled 'Rejection notes \u2014 proj-42-w3' and addressed to worker with 'please address the issues below and re-hand-off the same branch'"}, {"text": "Explicitly states the branch is being REJECTED (not 'requesting changes' or 'small concerns') and the worker's bead remains in_progress", "passed": true, "evidence": "'Decision: REJECTED. Branch ... is not being merged ... Bead proj-42-w3 remains in_progress' \u2014 and explicitly contrasts: 'This is not requesting changes or small concerns'"}, {"text": "Names each specific failure with concrete details: 4 typecheck errors in the named file, 2 unit test failures with the NODE_VERSION cause, the husky-vs-simple-git-hooks design divergence", "passed": true, "evidence": "Item 1: '4 typecheck errors in .github/workflows/ci-staging.yml.types.ts'; Item 2: '2 new tests fail because they assume process.env.NODE_VERSION is set'; Item 3: 'adds an .husky/ directory. The bead design ... specifies simple-git-hooks, not husky'"}, {"text": "Tags failures by category \u2014 gates failing (typecheck, unit tests) vs. design divergence (husky vs. simple-git-hooks)", "passed": true, "evidence": "Explicit headings 'Category: failing required gates' (covers typecheck + unit tests) and 'Category: design divergence (bead design / architecture)' (covers husky)"}, {"text": "Does NOT propose that the orchestrator fix any of the issues themselves", "passed": true, "evidence": "'What I am not doing' section: 'I am not fixing the typecheck errors... not patching the failing tests... not swapping .husky/ for simple-git-hooks myself'"}, {"text": "Does NOT minimize the failures or offer to 'just patch them up on the integration branch'", "passed": true, "evidence": "Says explicitly silent integration-branch patching 'destroys the audit trail and erases your visibility into what was wrong'"}, {"text": "Tells the worker to fix and re-hand-off \u2014 implies a re-handoff loop, not a fork of the work", "passed": true, "evidence": "'What you do next' section: 'Address the three items above on the same branch (don't fork the work into a new branch)... Re-hand-off with an updated worker handoff summary'"}, {"text": "Optionally notes that the rejection should be recorded in the worker's bead notes", "passed": true, "evidence": "'Audit trail note: I'll record this rejection on bead proj-42-w3 with a pointer to these notes'"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to skill name; mentions 'mandatory rejection conditions' generically"}], "notes": []}, {"eval_id": 0, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.33, "passed": 3, "failed": 6, "total": 9, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Names a parent bead (proj-42) and 3 child beads (one per slice) \u2014 does not propose reusing a single bead for multiple slices", "passed": true, "evidence": "Parent task proj-42; subtasks proj-42a, proj-42b, proj-42c"}, {"text": "Names 3 worker feature branches in the format `feature/<bead_id>_<short_name>` \u2014 one per worker bead", "passed": false, "evidence": "Uses 'proj-42/policy-docs', 'proj-42/ci-workflows', 'proj-42/source-ref-enforcement' \u2014 namespaced branch style, not feature/<bead_id>_<short_name>"}, {"text": "Names an integration branch in the format `integration/<parent_bead_id>_<short_name>` \u2014 for the coordinated work", "passed": false, "evidence": "Uses 'proj-42/main' as the parent epic branch, not integration/proj-42_<short_name>"}, {"text": "Names the integration target as `develop` (single-agent close-out is to develop; the 3-tier promotion to staging/main is out of scope)", "passed": false, "evidence": "'Open the final PR from proj-42/main to your target branch (likely main or develop)' \u2014 ambiguous, does not commit to develop"}, {"text": "Specifies that EACH worker uses a dedicated git worktree (multi-agent MUST use worktrees)", "passed": true, "evidence": "'Each agent should work in a separate directory' with three explicit git worktree add commands"}, {"text": "Lists worker responsibilities AND explicit MUST NOTs \u2014 workers MUST NOT merge their own branches; MUST NOT fix things outside their slice", "passed": false, "evidence": "Workers told 'open a PR' and 'You review and merge each PR' \u2014 workflow implies orchestrator merges, but never explicitly states workers MUST NOT merge their own branches; lane MUST NOTs do appear (don't touch other slices)"}, {"text": "Lists orchestrator responsibilities AND explicit MUST NOTs \u2014 orchestrator MUST NOT implement worker-scoped functionality on the integration branch; MUST NOT silently fix worker defects (must reject explicitly)", "passed": false, "evidence": "MUST NOTs are 'don't get bogged down implementing slices yourself', 'merge a worker's branch without reviewing it', 'skip integration testing' \u2014 does not address silent-fix-of-worker-defects discipline or rejection-with-notes"}, {"text": "Specifies that worker branches stay local by default and only publish when CI/orchestrator-remote-access/recovery requires it", "passed": false, "evidence": "Workflow tells workers to 'open a PR' from their branch \u2014 implicitly publishes; no local-by-default policy"}, {"text": "Output does not cite this skill by name (no 'multi-agent-git-workflow', 'this skill', 'as required')", "passed": true, "evidence": "No occurrences of skill name or 'this skill' phrasing"}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.25, "passed": 2, "failed": 6, "total": 8, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Tells the worker to hand off the branch to the orchestrator \u2014 NOT to merge the branch themselves", "passed": false, "evidence": "Step 5: 'Merge once approved' \u2014 explicitly tells the worker to merge their own PR after approval"}, {"text": "Explicitly states that workers MUST NOT merge their own feature branches into the integration branch, develop, or main", "passed": false, "evidence": "No prohibition on self-merge appears; the workflow assumes the worker performs the merge"}, {"text": "Tells the worker to produce a worker handoff summary (referencing task-handoff-summaries skill or its format)", "passed": false, "evidence": "Tells the worker to write a PR description with summary/scope/test plan, but no separate handoff summary or reference to a handoff format"}, {"text": "Addresses whether the branch should be published \u2014 local by default unless orchestrator needs remote access, CI required, or auditability needed", "passed": false, "evidence": "Step 1: 'Push your branch' immediately and unconditionally \u2014 no local-by-default policy"}, {"text": "States that the worker's bead remains in_progress until the orchestrator accepts the branch into the integration target \u2014 the worker does NOT close their own bead", "passed": false, "evidence": "Step 7: 'Mark the slice as done in your tracker (close proj-42-w2)' \u2014 tells the worker to close their own bead"}, {"text": "Does not tell the worker to merge to develop or main", "passed": true, "evidence": "Merge target is the integration branch (integration/proj-42_staging-bringup), not develop or main"}, {"text": "Does not tell the worker to delete their branch (cleanup is the orchestrator's responsibility after acceptance)", "passed": false, "evidence": "Step 6: 'Clean up' with explicit `git branch -d` and `git push origin --delete` for the worker's branch"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to the skill"}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.5, "passed": 4, "failed": 4, "total": 8, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Subject line uses Conventional Commits format: `<type>[optional scope]: <description>`", "passed": false, "evidence": "Subject: 'Add idempotent retry on transient processor failures (task-100)' \u2014 no Conventional Commits type prefix"}, {"text": "Subject line type is appropriate (feat for the new functionality, possibly with scope `payments` or `api`)", "passed": false, "evidence": "No type prefix at all; offers 'conventional-commits-style with feat: prefix' only as a follow-up option"}, {"text": "Body is multi-paragraph and explains BOTH what changed AND why (not just a description of the diff)", "passed": false, "evidence": "Body is a bulleted list of what was added; no 'why' rationale (no explanation of why retry, why persistence module, why specific backoff schedule, why no 4xx retry)"}, {"text": "Body or subject references the task ID `task-100` (e.g., `Refs: task-100` line in body, or task ID inline in subject)", "passed": true, "evidence": "Subject contains '(task-100)'"}, {"text": "Includes a `Co-authored-by:` trailer naming the model: `Claude Opus 4.7 (1M context) <noreply@anthropic.com>` (or equivalent)", "passed": false, "evidence": "No Co-authored-by trailer of any kind"}, {"text": "Does not include a UAT gate prompt \u2014 the change is described as not affecting externally-visible behavior beyond the documented spec, so no UAT-gate-before-commit is needed (or, if the model asks, the asking is appropriate)", "passed": true, "evidence": "No UAT prompt included \u2014 appropriate given the constraint"}, {"text": "Does not propose using `git commit --amend` (no amends discipline)", "passed": true, "evidence": "No mention of amend"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to the skill"}], "notes": []}, {"eval_id": 3, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.44, "passed": 4, "failed": 5, "total": 9, "time_seconds": 0.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Output is rejection notes addressed to the worker, NOT a fix-it-yourself plan", "passed": true, "evidence": "Document addressed to worker with 'Sending it back so we can get it sorted before merging'"}, {"text": "Explicitly states the branch is being REJECTED (not 'requesting changes' or 'small concerns') and the worker's bead remains in_progress", "passed": false, "evidence": "Title is 'Review feedback' and language is soft: 'ran into a few issues', 'sending it back', 'we can get it sorted'. Never uses the word REJECTED. Says 'small change' about husky divergence. No mention of bead status (in_progress)."}, {"text": "Names each specific failure with concrete details: 4 typecheck errors in the named file, 2 unit test failures with the NODE_VERSION cause, the husky-vs-simple-git-hooks design divergence", "passed": true, "evidence": "'4 typecheck errors' in '.github/workflows/ci-staging.yml.types.ts'; '2 new unit tests... assume process.env.NODE_VERSION is set, but it isn't in CI'; '.husky/ directory but the team's policy is to use simple-git-hooks'"}, {"text": "Tags failures by category \u2014 gates failing (typecheck, unit tests) vs. design divergence (husky vs. simple-git-hooks)", "passed": false, "evidence": "Issues listed as separate sections by symptom (Typecheck failures / Test failures / Husky vs simple-git-hooks) without an explicit gates-vs-design-divergence categorization"}, {"text": "Does NOT propose that the orchestrator fix any of the issues themselves", "passed": false, "evidence": "'Let me know if you'd like me to dig in with you' on typecheck and 'I can pair on the typecheck errors since those tend to be the most fiddly' \u2014 offers to do the fix-work jointly, blurring the boundary"}, {"text": "Does NOT minimize the failures or offer to 'just patch them up on the integration branch'", "passed": false, "evidence": "'It's a small change' about the husky-vs-simple-git-hooks divergence; soft framing throughout ('a few issues') minimizes the gate-failure severity"}, {"text": "Tells the worker to fix and re-hand-off \u2014 implies a re-handoff loop, not a fork of the work", "passed": true, "evidence": "'Could you address the above and let me know when it's ready for another pass?'"}, {"text": "Optionally notes that the rejection should be recorded in the worker's bead notes", "passed": false, "evidence": "No mention of recording the rejection in bead notes / task tracker"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No skill reference"}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 0.0, "stddev": 0.0, "min": 0.0, "max": 0.0}, "tokens": {"mean": 0.0, "stddev": 0.0, "min": 0, "max": 0}}, "without_skill": {"pass_rate": {"mean": 0.38, "stddev": 0.1117, "min": 0.25, "max": 0.5}, "time_seconds": {"mean": 0.0, "stddev": 0.0, "min": 0.0, "max": 0.0}, "tokens": {"mean": 0.0, "stddev": 0.0, "min": 0, "max": 0}}, "delta": {"pass_rate": "+0.62", "time_seconds": "+0.0", "tokens": "+0"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+{
+  "expectations": [
+    {
+      "text": "Catches snake_case on the wire (user_id, created_at, password_hash) and prescribes camelCase at the boundary",
+      "passed": true,
+      "evidence": "Finding 4: 'Wire format is snake_case (`user_id`, `created_at`, `password_hash`) — High'; correct alternative shows camelCase response with id, createdAt, updatedAt; mentions the case map at the route adapter"
+    },
+    {
+      "text": "Catches verb in URL (/api/createUser) and proposes POST /api/users",
+      "passed": true,
+      "evidence": "Finding 2: '`POST /api/createUser` puts a verb in the URL'; correct alternative '**`POST /api/users`**'"
+    },
+    {
+      "text": "Catches GET used for destructive action (/api/users/:id/delete) and proposes DELETE /api/users/:id",
+      "passed": true,
+      "evidence": "Finding 5: 'GET /api/users/:id/delete for a destructive action — Critical'; correct alternative 'DELETE /api/users/user_01HX...'"
+    },
+    {
+      "text": "Catches the raw-array response from getUsers and proposes a paginated envelope",
+      "passed": true,
+      "evidence": "Finding 1: 'GET /api/users returns a raw array — High'; alternative shows '{ data, pagination: { nextCursor, hasMore } }'"
+    },
+    {
+      "text": "Catches the bespoke listEvents envelope ({events,total,limit,offset}) and proposes the canonical shape",
+      "passed": true,
+      "evidence": "Finding 7: 'Bespoke list envelope `{ events, total, limit, offset }`'; alternative '{ data: [...], pagination: { nextCursor, hasMore } }' — same canonical envelope as users"
+    },
+    {
+      "text": "Catches validation reporting one field at a time and prescribes returning all fields at once in details[]",
+      "passed": true,
+      "evidence": "Finding 8: 'Validation reports one field at a time'; alternative shows details: [{field, message}, {field, message}] array form"
+    },
+    {
+      "text": "Catches POST returning 200 and prescribes 201 Created + Location header",
+      "passed": true,
+      "evidence": "Finding 3: 'POST returns 200 with no Location header — Medium'; alternative shows '201 Created' with 'Location: /api/users/user_01HX...'"
+    },
+    {
+      "text": "Notes lack of X-Request-ID on responses (or absence of the correlating requestId in error bodies)",
+      "passed": true,
+      "evidence": "Finding 11: 'No X-Request-ID on responses; error bodies have no requestId'; prescribes 'X-Request-ID: req_01HX...' on every response and matching requestId in error body"
+    },
+    {
+      "text": "The proposed error envelope is FLAT with domain-expressive codes — does not wrap contents in { error: {...} }, does not echo HTTP status as the code",
+      "passed": true,
+      "evidence": "Finding 9: 'Error envelope is wrapped under error: {...}'; alternative shows flat top-level '{ code, message, details?, requestId }'. Finding 10 prescribes domain-expressive codes (UserNotFound, EmailAlreadyTaken, InvalidStatusTransition) over NOT_FOUND/CONFLICT/VALIDATION_ERROR"
+    },
+    {
+      "text": "Does NOT recommend introducing a `/v1/` URL prefix — follows the One-Version Rule's 'no default version segment'",
+      "passed": true,
+      "evidence": "Section 'What I am NOT recommending': 'No /v1/ URL prefix. Default to no version segment; reserve /v2/ for the rare case where you need to ship an incompatible change...'"
+    },
+    {
+      "text": "Does NOT recommend returning `total` on an unbounded list (no COUNT(*) recommendation) — recognizes the skill's 'never return total on unbounded sets' rule",
+      "passed": true,
+      "evidence": "Finding 1: 'Do not return total. A COUNT(*) on a growing table is expensive...'; Finding 7 calls out '`total` on an unbounded set' as a problem; explicit non-recommendation 'No `total` field on the events list'"
+    },
+    {
+      "text": "Flags the URL exposing DB implementation (user_table_v2 referenced / DB naming leaking)",
+      "passed": true,
+      "evidence": "Finding 6: 'URL exposes DB implementation (`user_table_v2`) — Medium'; explanation that `/api/user_table_v2/query` leaks an internal physical-storage detail; alternative names domain resources not storage tables"
+    }
+  ],
+  "summary": {"passed": 12, "failed": 0, "total": 12, "pass_rate": 1.00}
+}

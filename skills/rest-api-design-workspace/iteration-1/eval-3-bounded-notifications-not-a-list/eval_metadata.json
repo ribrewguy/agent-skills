@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "bounded-notifications-not-a-list",
+  "prompt": "Endpoint returns the 5 most recent notifications for the current user; always 5, no client pagination. What URL and response shape?",
+  "assertions": [
+    "Does NOT add cursor/offset/page pagination (recognizes this as bounded-by-policy, not a growing list)",
+    "Returns the canonical `{ data: [...] }` envelope — NOT a bespoke envelope with a resource-named key like `{ notifications: [...] }`, and does not invent extra top-level fields like unreadCount or fetchedAt unless explicitly requested",
+    "URL contains no verbs (no /getNotifications, /fetchRecent, /latest)",
+    "Explicitly notes the bound is server-enforced (client cannot request more than 5)",
+    "Notes that broadening the bound later would be a breaking change (Hyrum's Law / contract discipline) — OR explicitly warns against exposing a `limit` query param"
+  ]
+}

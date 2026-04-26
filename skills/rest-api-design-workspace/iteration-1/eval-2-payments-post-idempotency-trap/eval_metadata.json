@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "payments-post-idempotency-trap",
+  "prompt": "POST /api/payments draft lacks an Idempotency-Key. User asks 'is anything missing?' for a money-moving POST with retry semantics. Catch the idempotency gap.",
+  "assertions": [
+    "Identifies the missing Idempotency-Key header as the primary gap",
+    "Describes retry semantics: same key + same payload returns the original response exactly",
+    "Describes 409 CONFLICT when the same key is reused with a different payload",
+    "Recommends persisting the idempotency key alongside the payload hash + response for a retention window (mentions 24h or longer for financial writes)",
+    "Does not mistakenly green-light the draft without flagging the idempotency gap",
+    "Error envelope in the revised contract is flat (top-level { code, message, details?, requestId }) with domain-expressive codes like `IdempotencyKeyReused` — not wrapped in `error:`, not `CONFLICT` as the code"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "expectations": [
+    {
+      "text": "Output uses the disagreement summary format (Topic / Implementing agent's position / Reviewing agent's position / What both agree on / What's at stake / Recommended escalation)",
+      "passed": true,
+      "evidence": "Sections present: 'The contested decision' (Topic), 'Implementing Agent's Position', 'Reviewing Agent's Position', 'Points of Agreement', 'What Is at Stake', 'Recommended Escalation' — names slightly differ but all six elements are present in order."
+    },
+    {
+      "text": "Topic is one sentence describing the contested decision (default for non-tagged reads: replica vs. primary)",
+      "passed": true,
+      "evidence": "'Should the default routing for reads that do NOT carry an explicit freshness tag be the read replica or the primary?'"
+    },
+    {
+      "text": "Implementing agent's position section captures what they did and the tradeoff they accepted (replica-by-default → relieves primary load, but relies on caller correctness)",
+      "passed": true,
+      "evidence": "States 'Default reads to the read replica; require requires_fresh: true to opt into primary' with reasoning bullets covering replica-load-relief tradeoff."
+    },
+    {
+      "text": "Reviewing agent's position section captures what they recommend and the tradeoff they propose (primary-by-default → loses replica load relief, but eliminates silent-stale-data class of bugs)",
+      "passed": true,
+      "evidence": "States 'Default reads to the primary; require prefer_replica: true to opt into the replica' with explicit tradeoff lines."
+    },
+    {
+      "text": "What both agree on section names the shared facts (replica lag exists and is <100ms-ish)",
+      "passed": true,
+      "evidence": "'Replica lag exists and is approximately <100ms.'"
+    },
+    {
+      "text": "What's at stake section names the consequence of the choice — silent data inconsistency vs. primary load",
+      "passed": true,
+      "evidence": "'Silent stale-read bugs vs. primary-load pressure.'"
+    },
+    {
+      "text": "Recommended escalation suggests a specific human and a specific question",
+      "passed": true,
+      "evidence": "'engineering owner / tech lead responsible for the data layer' with a specific blockquoted question."
+    },
+    {
+      "text": "The summary is even-handed — does NOT advocate for either side, does NOT add the writer's own analysis on top",
+      "passed": true,
+      "evidence": "Both positions presented symmetrically; no writer's preference asserted."
+    },
+    {
+      "text": "Does NOT escalate to a third agent (the skill specifically says don't recurse to another agent)",
+      "passed": true,
+      "evidence": "Escalation is to 'engineering owner / tech lead' — a human."
+    },
+    {
+      "text": "Output does not cite this skill by name",
+      "passed": true,
+      "evidence": "No mention of 'cross-agent-review' or 'this skill'."
+    }
+  ],
+  "summary": {"passed": 10, "failed": 0, "total": 10, "pass_rate": 1.0}
+}

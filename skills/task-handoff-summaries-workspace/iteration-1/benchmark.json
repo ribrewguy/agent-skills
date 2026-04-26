@@ -1,0 +1,630 @@
+{
+  "metadata": {
+    "skill_name": "task-handoff-summaries",
+    "skill_path": "/Users/torr/Projects/agent-skills/plugins/task-handoff-summaries/skills/task-handoff-summaries",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-26T14:52:14Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 11,
+        "failed": 0,
+        "total": 11,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output uses the implementation summary format (not the worker handoff or closeout format)",
+          "passed": true,
+          "evidence": "Header reads '## Implementation Summary' and follows Format 1 fields."
+        },
+        {
+          "text": "All 7 fields appear in order: Process Used, Execution Context, Task Scope, Implementation Outcome, Behavioral Impact, Risks/Gaps, File Reference Summary, Governance Status",
+          "passed": true,
+          "evidence": "All 8 named fields appear in the listed order; an additional 'Quality gate results' line is interleaved before Governance Status but does not break the order of the 8 required fields."
+        },
+        {
+          "text": "Process Used: Full process",
+          "passed": true,
+          "evidence": "'Process Used: Full process'"
+        },
+        {
+          "text": "Execution Context: Single-agent",
+          "passed": true,
+          "evidence": "'Execution Context: Single-agent'"
+        },
+        {
+          "text": "Task Scope names task-101 explicitly",
+          "passed": true,
+          "evidence": "'Task Scope: task-101 \u2014 Add a paginated admin user listing endpoint...'"
+        },
+        {
+          "text": "Implementation Outcome includes the active branch (feature/task-101-admin-users) and the integration target (develop)",
+          "passed": true,
+          "evidence": "'Active branch: feature/task-101-admin-users' and 'Integration target: develop' under Implementation Outcome."
+        },
+        {
+          "text": "Quality gate results are concrete (8 unit tests passing, typecheck clean, lint clean) \u2014 not vague claims like 'all gates passed'",
+          "passed": true,
+          "evidence": "'Quality gate results: 8/8 unit tests passing, typecheck clean, lint clean.'"
+        },
+        {
+          "text": "Governance Status indicates the work is awaiting code review (pre-commit; commit/push haven't happened yet)",
+          "passed": true,
+          "evidence": "'Governance Status: Pre-commit. Awaiting code review. Commit and push have not happened yet; no merge to develop yet.'"
+        },
+        {
+          "text": "File Reference Summary names the 4 files changed without dumping a full changelog",
+          "passed": true,
+          "evidence": "Lists exactly the 4 files: api/routes/admin.py, api/auth.py, api/schemas/user_out.py, tests/api/test_admin_users.py."
+        },
+        {
+          "text": "Output does not cite this skill by name (no 'task-handoff-summaries', 'this skill', 'as required')",
+          "passed": true,
+          "evidence": "No mention of the skill name or self-reference in the output."
+        },
+        {
+          "text": "Output does not falsely claim commit, push, or merge happened (those steps haven't run yet)",
+          "passed": true,
+          "evidence": "Governance Status explicitly states commit and push have not happened and no merge has occurred."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output uses the worker handoff summary format (not the implementation or closeout format)",
+          "passed": true,
+          "evidence": "Header reads '## Worker Handoff Summary' and follows Format 2 fields."
+        },
+        {
+          "text": "All 6 fields appear: Task (or Bead), Branch with Published+Commit, Implementation Outcome with integration target, Quality Gates, Risks/Gaps, Review Notes",
+          "passed": true,
+          "evidence": "Bead, Branch (with Published and Commit handed off), Implementation Outcome (with Intended integration target), Quality Gates, Risks/Gaps, and Review Notes all appear as labeled fields."
+        },
+        {
+          "text": "Task identifier names proj-42-w2 explicitly",
+          "passed": true,
+          "evidence": "'Bead: proj-42-w2'."
+        },
+        {
+          "text": "Branch field names feature/proj-42-w2_staging-source-ref, marks Published as yes, includes commit SHA 7a3f9b1",
+          "passed": true,
+          "evidence": "'Branch: feature/proj-42-w2_staging-source-ref / Published: yes / Commit handed off: 7a3f9b1'."
+        },
+        {
+          "text": "Quality Gates section reports concrete results (142/142 unit tests, 0 lint errors, typecheck passed) \u2014 not vague",
+          "passed": true,
+          "evidence": "'Lint: passed (0 errors); Typecheck: passed; Unit tests: 142/142 passing'."
+        },
+        {
+          "text": "Intended integration target is named (integration/proj-42_staging-bringup)",
+          "passed": true,
+          "evidence": "'Intended integration target: integration/proj-42_staging-bringup'."
+        },
+        {
+          "text": "Review Notes call out the github.head_ref consideration the worker wants the orchestrator to verify",
+          "passed": true,
+          "evidence": "Review Notes describes the github.head_ref behavior on PR vs direct-push events and asks the orchestrator to confirm the parent-epic protection assumption."
+        },
+        {
+          "text": "Output is concise (worker handoff is shorter than the user-facing implementation summary; no Behavioral Impact / File Reference Summary unless explicitly relevant)",
+          "passed": true,
+          "evidence": "No Behavioral Impact or File Reference Summary sections are included."
+        },
+        {
+          "text": "Output does not falsely claim the branch was accepted, merged, or that closeout happened \u2014 handoff is pre-acceptance",
+          "passed": true,
+          "evidence": "Branch is 'Published: yes' but no acceptance/merge/closeout language; framed as a handoff for the orchestrator to confirm."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of the skill name or self-reference."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 11,
+        "failed": 0,
+        "total": 11,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output uses the closeout summary format (not implementation or worker handoff)",
+          "passed": true,
+          "evidence": "Header reads '## Closeout Summary' and follows Format 3."
+        },
+        {
+          "text": "All 7 sections appear: Process Used, Execution Context, Task Scope, Closeout Outcome, Evidence, Behavioral Impact, Risks/Gaps, File Reference Summary",
+          "passed": true,
+          "evidence": "All 8 named sections appear as labeled fields. Task Scope appears as 'Bead Scope' (Beads adapter mapping defined in the skill)."
+        },
+        {
+          "text": "Process Used: Full process (or Full bead process)",
+          "passed": true,
+          "evidence": "'Process Used: Full bead process'."
+        },
+        {
+          "text": "Execution Context: Single-agent",
+          "passed": true,
+          "evidence": "'Execution Context: Single-agent'."
+        },
+        {
+          "text": "Task Scope names proj-42 with the bead title",
+          "passed": true,
+          "evidence": "'Bead Scope: proj-42 \u2014 Add staging branch and 3-tier deploy flow'."
+        },
+        {
+          "text": "Closeout Outcome names the active branch and the integration target reached (develop)",
+          "passed": true,
+          "evidence": "'Active branch: feature/proj-42_staging-branch' and 'Integration target reached: develop'."
+        },
+        {
+          "text": "Evidence section is concrete: lint/typecheck/unit/build with numbers, e2e deferred with reason, UAT status, commit SHA 9a2b3c4, push yes, branch cleanup status, promotion stopped at develop",
+          "passed": true,
+          "evidence": "Evidence lists Lint 0 errors; Typecheck 0 errors; Unit tests 142/142; Build succeeded; E2E deferred with reason (no CI secrets, \u00a713); UAT not applicable; Commit 9a2b3c4; Push yes; Branch merged to develop, local + remote deleted; Promotion reached develop, no PR open to uat or main."
+        },
+        {
+          "text": "Risks/Gaps captures the concrete unresolved items: branch protection not applied (with reason), e2e/integration secrets not provisioned, baseline error counts on develop, promotion not yet to uat or main",
+          "passed": true,
+          "evidence": "All four items present and concrete: rulesets not supported on plan tier, e2e/integration secrets unprovisioned, 200 lint / 80 typecheck / 12 unit baseline on develop, promotion stopped at develop."
+        },
+        {
+          "text": "File Reference Summary names the relevant files without dumping a full changelog (docs amendments and new workflow files)",
+          "passed": true,
+          "evidence": "Lists docs files (with new vs amended sections), CI workflow files, and tooling files; not a full diff dump."
+        },
+        {
+          "text": "Output does not falsely claim the work reached uat or main when it stopped at develop",
+          "passed": true,
+          "evidence": "Both Evidence and Risks/Gaps explicitly state promotion stopped at develop with no PR open to uat or main."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of the skill name."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output uses the closeout summary format",
+          "passed": true,
+          "evidence": "Header reads '## Closeout Summary' and follows Format 3 fields."
+        },
+        {
+          "text": "Process Used: Lightweight process",
+          "passed": true,
+          "evidence": "'Process Used: Lightweight process'."
+        },
+        {
+          "text": "Execution Context: Single-agent",
+          "passed": true,
+          "evidence": "'Execution Context: Single-agent'."
+        },
+        {
+          "text": "Task Scope explicitly states 'No task was worked on.' (or equivalent \u2014 'No bead was worked on.')",
+          "passed": true,
+          "evidence": "'Task Scope: No task was worked on.'"
+        },
+        {
+          "text": "Output does NOT invent a task ID, ticket number, or fictional bead reference",
+          "passed": true,
+          "evidence": "No invented IDs; Task Scope states no task."
+        },
+        {
+          "text": "Closeout Outcome describes the typo fix and that it merged directly to main",
+          "passed": true,
+          "evidence": "'Fixed a one-line typo in an admin UI button label: pubish \u2192 publish.' and 'Integration target reached: main (merged directly to main; allowed for trivial typo fixes per team convention)'."
+        },
+        {
+          "text": "Evidence section is concrete (lint passed, typecheck passed, unit tests passing, commit 4d5e6f7, pushed, branch deleted)",
+          "passed": true,
+          "evidence": "Evidence lists Lint passed, Typecheck passed, Unit tests passing, Commit 4d5e6f7, Push yes, Branch merged to main and deleted."
+        },
+        {
+          "text": "Behavioral Impact notes the user-visible button label change (pubish \u2192 publish)",
+          "passed": true,
+          "evidence": "'Admin UI button label now reads \"publish\" (previously \"pubish\").'"
+        },
+        {
+          "text": "Risks/Gaps states there are no known remaining gaps (or equivalent)",
+          "passed": true,
+          "evidence": "'No known remaining gaps at closeout.'"
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of the skill name."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.73,
+        "passed": 8,
+        "failed": 3,
+        "total": 11,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output uses the implementation summary format (not the worker handoff or closeout format)",
+          "passed": true,
+          "evidence": "Title 'Implementation Summary \u2014 task-101'; structured as a pre-review implementation report, not a worker handoff or closeout."
+        },
+        {
+          "text": "All 7 fields appear in order: Process Used, Execution Context, Task Scope, Implementation Outcome, Behavioral Impact, Risks/Gaps, File Reference Summary, Governance Status",
+          "passed": false,
+          "evidence": "Sections are Overview, Branch, What Changed, Files Changed, Tests & Checks, Migrations/Config, Notes for the Reviewer. Process Used, Execution Context, Task Scope (as a labeled field), Behavioral Impact, Risks/Gaps, and Governance Status field labels are absent."
+        },
+        {
+          "text": "Process Used: Full process",
+          "passed": false,
+          "evidence": "No 'Process Used' field present in the output."
+        },
+        {
+          "text": "Execution Context: Single-agent",
+          "passed": false,
+          "evidence": "No 'Execution Context' field present in the output."
+        },
+        {
+          "text": "Task Scope names task-101 explicitly",
+          "passed": true,
+          "evidence": "Title and overview both reference task-101 explicitly."
+        },
+        {
+          "text": "Implementation Outcome includes the active branch (feature/task-101-admin-users) and the integration target (develop)",
+          "passed": true,
+          "evidence": "Branch section: 'Working branch: feature/task-101-admin-users' and 'Target branch: develop'."
+        },
+        {
+          "text": "Quality gate results are concrete (8 unit tests passing, typecheck clean, lint clean) \u2014 not vague claims like 'all gates passed'",
+          "passed": true,
+          "evidence": "'Unit tests: 8 added, 8 passing. Typecheck: clean. Lint: clean.'"
+        },
+        {
+          "text": "Governance Status indicates the work is awaiting code review (pre-commit; commit/push haven't happened yet)",
+          "passed": true,
+          "evidence": "Final line: 'Ready for review prior to commit.' indicates awaiting review, pre-commit."
+        },
+        {
+          "text": "File Reference Summary names the 4 files changed without dumping a full changelog",
+          "passed": true,
+          "evidence": "Files Changed section lists exactly the 4 files."
+        },
+        {
+          "text": "Output does not cite this skill by name (no 'task-handoff-summaries', 'this skill', 'as required')",
+          "passed": true,
+          "evidence": "No mention of the skill name."
+        },
+        {
+          "text": "Output does not falsely claim commit, push, or merge happened (those steps haven't run yet)",
+          "passed": true,
+          "evidence": "Says 'Ready for review prior to commit'; does not claim commit/push/merge happened."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9,
+        "passed": 9,
+        "failed": 1,
+        "total": 10,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output uses the worker handoff summary format (not the implementation or closeout format)",
+          "passed": true,
+          "evidence": "Title 'Worker Handoff \u2014 proj-42-w2'; structured as a worker-to-orchestrator handoff."
+        },
+        {
+          "text": "All 6 fields appear: Task (or Bead), Branch with Published+Commit, Implementation Outcome with integration target, Quality Gates, Risks/Gaps, Review Notes",
+          "passed": false,
+          "evidence": "Conceptual content is present but the labeled fields 'Implementation Outcome', 'Risks/Gaps', and 'Review Notes' are not used. Sections are titled Summary, Branch Info, What I Did, Quality Gates, Things to Watch in Integration, Other Issues."
+        },
+        {
+          "text": "Task identifier names proj-42-w2 explicitly",
+          "passed": true,
+          "evidence": "Title and Summary reference 'bead proj-42-w2' explicitly."
+        },
+        {
+          "text": "Branch field names feature/proj-42-w2_staging-source-ref, marks Published as yes, includes commit SHA 7a3f9b1",
+          "passed": true,
+          "evidence": "Branch Info lists branch name, 'Published to remote: Yes', and 'Handoff commit SHA: 7a3f9b1'."
+        },
+        {
+          "text": "Quality Gates section reports concrete results (142/142 unit tests, 0 lint errors, typecheck passed) \u2014 not vague",
+          "passed": true,
+          "evidence": "'Lint: 0 errors; Typecheck: passing; Unit tests: 142/142 passing'."
+        },
+        {
+          "text": "Intended integration target is named (integration/proj-42_staging-bringup)",
+          "passed": true,
+          "evidence": "'Intended integration target: integration/proj-42_staging-bringup'."
+        },
+        {
+          "text": "Review Notes call out the github.head_ref consideration the worker wants the orchestrator to verify",
+          "passed": true,
+          "evidence": "'Things to Watch in Integration' section discusses github.head_ref behavior and asks the orchestrator to confirm parent-epic protections."
+        },
+        {
+          "text": "Output is concise (worker handoff is shorter than the user-facing implementation summary; no Behavioral Impact / File Reference Summary unless explicitly relevant)",
+          "passed": true,
+          "evidence": "No Behavioral Impact or File Reference Summary sections; output is concise."
+        },
+        {
+          "text": "Output does not falsely claim the branch was accepted, merged, or that closeout happened \u2014 handoff is pre-acceptance",
+          "passed": true,
+          "evidence": "Closes with 'Handing off to the orchestrator for integration review and acceptance' \u2014 explicitly pre-acceptance."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of the skill name."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.91,
+        "passed": 10,
+        "failed": 1,
+        "total": 11,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output uses the closeout summary format (not implementation or worker handoff)",
+          "passed": true,
+          "evidence": "Title 'Closeout \u2014 proj-42'; structured as a post-merge closeout."
+        },
+        {
+          "text": "All 7 sections appear: Process Used, Execution Context, Task Scope, Closeout Outcome, Evidence, Behavioral Impact, Risks/Gaps, File Reference Summary",
+          "passed": false,
+          "evidence": "Sections are Status, Process, What Shipped, Quality Gates, Behavioral Impact, Risks / Open Items, Files. Labeled fields 'Process Used', 'Execution Context', 'Task Scope', 'Closeout Outcome', 'Evidence', and 'File Reference Summary' are not present (content is present under different labels, but the structured field set is not)."
+        },
+        {
+          "text": "Process Used: Full process (or Full bead process)",
+          "passed": true,
+          "evidence": "'Process: Full bead process, single-agent.'"
+        },
+        {
+          "text": "Execution Context: Single-agent",
+          "passed": true,
+          "evidence": "'Process: Full bead process, single-agent.' \u2014 Execution Context conveyed inline rather than as its own labeled field."
+        },
+        {
+          "text": "Task Scope names proj-42 with the bead title",
+          "passed": true,
+          "evidence": "Title 'Closeout \u2014 proj-42: Add staging branch and 3-tier deploy flow' and 'Bead: proj-42'."
+        },
+        {
+          "text": "Closeout Outcome names the active branch and the integration target reached (develop)",
+          "passed": true,
+          "evidence": "'Branch: feature/proj-42_staging-branch ... Integration target reached: develop'."
+        },
+        {
+          "text": "Evidence section is concrete: lint/typecheck/unit/build with numbers, e2e deferred with reason, UAT status, commit SHA 9a2b3c4, push yes, branch cleanup status, promotion stopped at develop",
+          "passed": true,
+          "evidence": "Quality Gates table covers lint/typecheck/unit/build with numbers, e2e deferred with \u00a713 reason, UAT not requested with reason; Status/Process give commit 9a2b3c4, pushed yes, branch deleted local+remote; Risks #4 confirms promotion stopped at develop."
+        },
+        {
+          "text": "Risks/Gaps captures the concrete unresolved items: branch protection not applied (with reason), e2e/integration secrets not provisioned, baseline error counts on develop, promotion not yet to uat or main",
+          "passed": true,
+          "evidence": "Risks/Open Items lists all four items: rulesets unavailable on plan tier, e2e/integration secrets unprovisioned, 200/80/12 baseline counts, promotion stopped at develop."
+        },
+        {
+          "text": "File Reference Summary names the relevant files without dumping a full changelog (docs amendments and new workflow files)",
+          "passed": true,
+          "evidence": "Files section splits New and Amended; lists relevant files without a full diff."
+        },
+        {
+          "text": "Output does not falsely claim the work reached uat or main when it stopped at develop",
+          "passed": true,
+          "evidence": "Status line and Risks #4 both make explicit that the work has not reached uat or main."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of the skill name."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "time_seconds": 0.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output uses the closeout summary format",
+          "passed": true,
+          "evidence": "Title 'Closeout \u2014 Typo Fix' and a closeout-style structured report."
+        },
+        {
+          "text": "Process Used: Lightweight process",
+          "passed": true,
+          "evidence": "'Process: Lightweight, single-agent.' conveys lightweight process."
+        },
+        {
+          "text": "Execution Context: Single-agent",
+          "passed": true,
+          "evidence": "'Process: Lightweight, single-agent.' identifies single-agent execution."
+        },
+        {
+          "text": "Task Scope explicitly states 'No task was worked on.' (or equivalent \u2014 'No bead was worked on.')",
+          "passed": true,
+          "evidence": "'No bead, no PRD' is treated as an equivalent statement that no task was worked on."
+        },
+        {
+          "text": "Output does NOT invent a task ID, ticket number, or fictional bead reference",
+          "passed": true,
+          "evidence": "No invented IDs anywhere."
+        },
+        {
+          "text": "Closeout Outcome describes the typo fix and that it merged directly to main",
+          "passed": true,
+          "evidence": "Summary states the typo fix merged 'directly to main per team convention for trivial typo fixes'."
+        },
+        {
+          "text": "Evidence section is concrete (lint passed, typecheck passed, unit tests passing, commit 4d5e6f7, pushed, branch deleted)",
+          "passed": true,
+          "evidence": "Lists commit 4d5e6f7, Pushed Yes, Branch deleted, Lint passed, Typecheck passed, Unit tests passing."
+        },
+        {
+          "text": "Behavioral Impact notes the user-visible button label change (pubish \u2192 publish)",
+          "passed": true,
+          "evidence": "'The previously misspelled \"pubish\" button now reads \"publish\" in the admin UI.'"
+        },
+        {
+          "text": "Risks/Gaps states there are no known remaining gaps (or equivalent)",
+          "passed": true,
+          "evidence": "'Open Items: None. Closeout complete.'"
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of the skill name."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.885,
+        "stddev": 0.1127,
+        "min": 0.73,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "tokens": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.11",
+      "time_seconds": "+0.0",
+      "tokens": "+0"
+    }
+  },
+  "notes": []
+}

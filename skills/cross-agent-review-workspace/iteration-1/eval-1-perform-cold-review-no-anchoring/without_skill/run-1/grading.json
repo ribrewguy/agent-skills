@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Output uses structured-code-review's format (begins with `Findings:`, has 8-field preamble, severity-tagged findings)",
+      "passed": false,
+      "evidence": "Begins with '# Code Review: requireAuth middleware' followed by '## Summary' and '## Findings' — does NOT begin with 'Findings:' and has no 8-field preamble; severity tags are present but format does not match."
+    },
+    {
+      "text": "Identifies the timing-attack vulnerability: `token === expected` is NOT constant-time, violating the design's 'timing-safe' requirement (severity: High or Critical)",
+      "passed": true,
+      "evidence": "Finding 2 — [Critical] 'Comparison is not timing-safe... JavaScript's `===` short-circuits on the first byte that differs.'"
+    },
+    {
+      "text": "Identifies that comparing the user-supplied token directly to SESSION_SIGNING_KEY is fundamentally wrong — the token should be cryptographically verified (HMAC, JWT signature, etc.), not compared directly to a signing key (severity: High or Critical)",
+      "passed": true,
+      "evidence": "Finding 1 — [Critical] 'Token comparison does not perform cryptographic verification... Use HMAC verify, or a JWT/Paseto library.'"
+    },
+    {
+      "text": "Identifies the missing 'malformed' and 'expired' validation paths — the design says expired tokens should return 401, but the code only checks presence and equality, no expiration check",
+      "passed": true,
+      "evidence": "Finding 4 — [High] 'Missing expiration check' and Finding 5 — [High] 'Missing malformed-token detection'."
+    },
+    {
+      "text": "Identifies that `decode(token).userId` is called only AFTER the equality check passes, but if the token equals SESSION_SIGNING_KEY (which it shouldn't), decode() is being called on a signing key string — undefined behavior",
+      "passed": true,
+      "evidence": "Finding 3 — [High] '`decode(token)` is called on the signing key... so `decode(SESSION_SIGNING_KEY).userId` is being executed.'"
+    },
+    {
+      "text": "Does NOT include phrases that suggest the reviewer is anchoring on the implementer's confidence (no 'the implementer was careful but missed X', no 'as expected, the work mostly looks good')",
+      "passed": true,
+      "evidence": "No anchoring phrases; the summary leads with 'multiple serious problems that prevent it from functioning'."
+    },
+    {
+      "text": "Findings are framed as 'found problems', not as 'minor improvements' — the framing matches the adversarial-review intent",
+      "passed": true,
+      "evidence": "Recommendation: 'Do not ship in this state.' Findings labeled Critical/High."
+    },
+    {
+      "text": "Output does not cite either skill by name",
+      "passed": true,
+      "evidence": "No mention of 'structured-code-review' or 'cross-agent-review' by name."
+    }
+  ],
+  "summary": {"passed": 7, "failed": 1, "total": 8, "pass_rate": 0.875}
+}

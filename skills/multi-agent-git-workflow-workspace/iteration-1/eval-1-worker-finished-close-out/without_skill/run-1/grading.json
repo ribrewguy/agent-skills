@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Tells the worker to hand off the branch to the orchestrator — NOT to merge the branch themselves", "passed": false, "evidence": "Step 5: 'Merge once approved' — explicitly tells the worker to merge their own PR after approval"},
+    {"text": "Explicitly states that workers MUST NOT merge their own feature branches into the integration branch, develop, or main", "passed": false, "evidence": "No prohibition on self-merge appears; the workflow assumes the worker performs the merge"},
+    {"text": "Tells the worker to produce a worker handoff summary (referencing task-handoff-summaries skill or its format)", "passed": false, "evidence": "Tells the worker to write a PR description with summary/scope/test plan, but no separate handoff summary or reference to a handoff format"},
+    {"text": "Addresses whether the branch should be published — local by default unless orchestrator needs remote access, CI required, or auditability needed", "passed": false, "evidence": "Step 1: 'Push your branch' immediately and unconditionally — no local-by-default policy"},
+    {"text": "States that the worker's bead remains in_progress until the orchestrator accepts the branch into the integration target — the worker does NOT close their own bead", "passed": false, "evidence": "Step 7: 'Mark the slice as done in your tracker (close proj-42-w2)' — tells the worker to close their own bead"},
+    {"text": "Does not tell the worker to merge to develop or main", "passed": true, "evidence": "Merge target is the integration branch (integration/proj-42_staging-bringup), not develop or main"},
+    {"text": "Does not tell the worker to delete their branch (cleanup is the orchestrator's responsibility after acceptance)", "passed": false, "evidence": "Step 6: 'Clean up' with explicit `git branch -d` and `git push origin --delete` for the worker's branch"},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to the skill"}
+  ],
+  "summary": {"passed": 2, "failed": 6, "total": 8, "pass_rate": 0.25}
+}

@@ -1,0 +1,65 @@
+{
+  "expectations": [
+    {
+      "text": "List endpoint is GET /api/tasks (plural, resource-oriented, no verbs)",
+      "passed": true,
+      "evidence": "Section '1. List tasks' shows '**`GET /api/tasks`**'"
+    },
+    {
+      "text": "List response wraps rows in an envelope with `data` and a pagination sub-object (not a bare array, not a bespoke envelope like {tasks, total, limit, offset}, not a differently-named sub-object like pageInfo)",
+      "passed": true,
+      "evidence": "Sample response shows '\"data\": [...]' and '\"pagination\": { \"nextCursor\": ..., \"hasMore\": true }'; Paginated<T> type defined as { data: T[]; pagination: { nextCursor, hasMore } }"
+    },
+    {
+      "text": "Pagination uses cursor-based pagination with default limit 20 and max limit 100 clamped server-side",
+      "passed": true,
+      "evidence": "Query parameter table: 'cursor' opaque string, 'limit ... Default 20, max 100. Server clamps; out-of-range rejected with InvalidRequestParam'"
+    },
+    {
+      "text": "Search uses a single `q` query param",
+      "passed": true,
+      "evidence": "Query parameter table: '`q` | string | Free-text search across `title` and `description`'"
+    },
+    {
+      "text": "Sort uses field:direction syntax on a single `sort` query param (e.g., `sort=priority:desc,createdAt:asc`) — not leading-minus syntax",
+      "passed": true,
+      "evidence": "'`sort` ... `field:direction` pairs, comma-separated. Allowed fields: `priority`, `createdAt`. Direction: `asc` | `desc`. ... Example: `sort=priority:desc,createdAt:asc`'"
+    },
+    {
+      "text": "The 'complete' operation is expressed as a state transition via PATCH on the task resource (PATCH /api/tasks/:id with { status: 'COMPLETED' }) — NOT as a sub-resource action verb like POST /api/tasks/:id/complete",
+      "passed": true,
+      "evidence": "Section '4. Mark a task complete' shows '**`PATCH /api/tasks/:id`** ... To complete: PATCH /api/tasks/task_01HXY... { \"status\": \"COMPLETED\" }' and explicitly states 'There is no /complete sub-resource'"
+    },
+    {
+      "text": "Side effects of completion (emails, audit rows) are described as service-layer responsibilities keyed to the state transition itself, not as a reason to invent a dedicated URL",
+      "passed": true,
+      "evidence": "Side-effect discipline section: 'Side effects ... attach to the actual transition, not to the URL' with code showing isCompletion check (old !== 'COMPLETED' && next === 'COMPLETED') gating sendCompletionEmail and audit.write"
+    },
+    {
+      "text": "POST /api/tasks returns 201 Created with a Location header pointing at the new resource",
+      "passed": true,
+      "evidence": "Section '2. Create a task' Status codes: '`201 Created` — body is the new `Task`. Response includes `Location: /api/tasks/<id>` header.'"
+    },
+    {
+      "text": "Wire format is camelCase for body/query fields (assigneeId, createdAt, etc.), not snake_case",
+      "passed": true,
+      "evidence": "Task interface: 'assigneeId: UserId | null; createdAt: string; updatedAt: string; completedAt'; cross-cutting requirements: 'body fields and query params are camelCase'"
+    },
+    {
+      "text": "TypeScript types separate input (CreateTaskInput) from output (Task) — output includes server-generated fields like id, createdAt",
+      "passed": true,
+      "evidence": "CreateTaskInput interface has only client-supplied fields (title, description?, priority?, assigneeId?, status?); Task interface separately defined with server-generated id, createdAt, updatedAt, completedAt, createdBy"
+    },
+    {
+      "text": "Error envelope is FLAT at the top level — { code, message, details?, requestId } — NOT nested under an `error:` key",
+      "passed": true,
+      "evidence": "APIError interface: '{ code: string; message: string; details?: ...; requestId: string }' and explicit note 'There is no { error: { ... } } wrapper'"
+    },
+    {
+      "text": "Error `code` values are domain-expressive (e.g., TaskNotFound, TaskAlreadyCompleted, InvalidRequestBody) and do NOT merely echo the HTTP status (not NOT_FOUND, not VALIDATION_ERROR, not CONFLICT as a generic code)",
+      "passed": true,
+      "evidence": "Error catalog table includes TaskNotFound, InvalidStatusTransition, TaskAlreadyCompleted, InvalidRequestBody, IdempotencyKeyReused, SessionExpired, InsufficientPermissions — explicitly states 'Codes are domain-expressive — none of them just echo the HTTP status word'"
+    }
+  ],
+  "summary": {"passed": 12, "failed": 0, "total": 12, "pass_rate": 1.00}
+}

@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "Identifies the missing Idempotency-Key header as the primary gap",
+      "passed": true,
+      "evidence": "Opening line: 'the draft is missing an Idempotency-Key header on a money-moving POST. Without it, any client retry... risks creating a duplicate charge. This is the single most important thing to add'"
+    },
+    {
+      "text": "Describes retry semantics: same key + same payload returns the original response exactly",
+      "passed": true,
+      "evidence": "'Same key arrives again with the same payload... This is a retry. **Replay the original response byte-for-byte** — same status, same body, same Location header. The server must not process the payment twice.'"
+    },
+    {
+      "text": "Describes 409 CONFLICT when the same key is reused with a different payload",
+      "passed": true,
+      "evidence": "'Same key arrives with a different payload... Reject with: HTTP/1.1 409 Conflict' with body code 'IdempotencyKeyReused'"
+    },
+    {
+      "text": "Recommends persisting the idempotency key alongside the payload hash + response for a retention window (mentions 24h or longer for financial writes)",
+      "passed": true,
+      "evidence": "Persistence table includes idempotency_key, request_hash (SHA-256), response_status, response_body, response_headers, created_at; retention section: 'At least 24 hours, and significantly longer for payments... For financial writes I'd default to at least 7 days'"
+    },
+    {
+      "text": "Does not mistakenly green-light the draft without flagging the idempotency gap",
+      "passed": true,
+      "evidence": "Opens with 'the draft is missing an Idempotency-Key header' and the entire response is structured around closing that gap; closing TL;DR table starts with the gap"
+    },
+    {
+      "text": "Error envelope in the revised contract is flat (top-level { code, message, details?, requestId }) with domain-expressive codes like `IdempotencyKeyReused` — not wrapped in `error:`, not `CONFLICT` as the code",
+      "passed": true,
+      "evidence": "409 example shows flat top-level keys: code: 'IdempotencyKeyReused', message, details, requestId — not wrapped in error:; catalog includes IdempotencyKeyRequired, IdempotencyKeyReused, IdempotencyRequestInFlight (all domain-expressive)"
+    }
+  ],
+  "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.00}
+}

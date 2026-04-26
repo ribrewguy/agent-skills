@@ -1,0 +1,18 @@
+{
+  "expectations": [
+    {"text": "Output begins with the literal line `Findings:` (no preceding text)", "passed": true, "evidence": "Line 1: 'Findings:'"},
+    {"text": "All eight preamble fields are present, in order: Review Scope, Process Context, Execution Context, Integration Target, Design Reference, Architecture Reference, Feature Specification Reference, PRD Reference", "passed": true, "evidence": "Lines 2-9 contain all eight fields in the specified order"},
+    {"text": "Review Scope names task-101 (e.g., `Review Scope: Task task-101`)", "passed": true, "evidence": "Line 2: 'Review Scope: Task task-101'"},
+    {"text": "PRD Reference cites docs/prds/02-admin-tooling.md (with section reference)", "passed": true, "evidence": "Line 9: 'PRD Reference: docs/prds/02-admin-tooling.md §3 (\"Admin endpoints must be auditable and rate-limited\")'"},
+    {"text": "At least one finding is tagged severity High (the hardcoded API key OR the SQL injection vulnerability via f-string interpolation)", "passed": true, "evidence": "Four `High` findings present including hardcoded key and SQL injection"},
+    {"text": "The hardcoded API key (`sk_live_Adm1n_2024_HARDCODED`) is identified as a finding", "passed": true, "evidence": "First High finding cites the literal key and api/routes/admin.py:4"},
+    {"text": "The SQL injection via f-string interpolation of req.query_params is identified as a finding", "passed": true, "evidence": "Second High finding: '`since` query parameter is interpolated into the SQL via an f-string, producing a textbook SQL injection sink' at api/routes/admin.py:11"},
+    {"text": "The verb in URL (`/listAllUsers`) is identified — should be `GET /admin/users`", "passed": true, "evidence": "Medium finding: 'URL uses a verb (`/admin/listAllUsers`) instead of a resource. ... Rename to `GET /admin/users`'"},
+    {"text": "The missing pagination is identified (design says 'paginated')", "passed": true, "evidence": "Medium finding: 'No pagination is implemented; the handler returns every matching row in one response'"},
+    {"text": "The missing admin permission check is identified (design says 'requires admin permission')", "passed": true, "evidence": "High finding at api/routes/admin.py:9-12: 'The handler has no admin permission check'"},
+    {"text": "Findings are ordered by severity, highest first (no Low listed before a High)", "passed": true, "evidence": "Order in document: 4 `High` findings, then 4 `Medium`, then 1 `Low`"},
+    {"text": "Each finding includes a file path with a line number reference, severity in backticks, Problem/Why/Source of truth/Proposed fix structure", "passed": true, "evidence": "Every finding bullet uses backtick severity, `[api/routes/admin.py:N]` location, and Problem/Why it matters/Source of truth/Proposed fix lines"},
+    {"text": "Output does not cite this skill by name (no 'structured-code-review', 'per the skill', 'as required by the skill')", "passed": true, "evidence": "No occurrences of 'structured-code-review', 'per the skill', or 'as required by the skill' anywhere in the output"}
+  ],
+  "summary": {"passed": 13, "failed": 0, "total": 13, "pass_rate": 1.00}
+}

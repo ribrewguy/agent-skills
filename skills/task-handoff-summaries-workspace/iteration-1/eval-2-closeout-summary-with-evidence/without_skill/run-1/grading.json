@@ -1,0 +1,16 @@
+{
+  "expectations": [
+    {"text": "Output uses the closeout summary format (not implementation or worker handoff)", "passed": true, "evidence": "Title 'Closeout — proj-42'; structured as a post-merge closeout."},
+    {"text": "All 7 sections appear: Process Used, Execution Context, Task Scope, Closeout Outcome, Evidence, Behavioral Impact, Risks/Gaps, File Reference Summary", "passed": false, "evidence": "Sections are Status, Process, What Shipped, Quality Gates, Behavioral Impact, Risks / Open Items, Files. Labeled fields 'Process Used', 'Execution Context', 'Task Scope', 'Closeout Outcome', 'Evidence', and 'File Reference Summary' are not present (content is present under different labels, but the structured field set is not)."},
+    {"text": "Process Used: Full process (or Full bead process)", "passed": true, "evidence": "'Process: Full bead process, single-agent.'"},
+    {"text": "Execution Context: Single-agent", "passed": true, "evidence": "'Process: Full bead process, single-agent.' — Execution Context conveyed inline rather than as its own labeled field."},
+    {"text": "Task Scope names proj-42 with the bead title", "passed": true, "evidence": "Title 'Closeout — proj-42: Add staging branch and 3-tier deploy flow' and 'Bead: proj-42'."},
+    {"text": "Closeout Outcome names the active branch and the integration target reached (develop)", "passed": true, "evidence": "'Branch: feature/proj-42_staging-branch ... Integration target reached: develop'."},
+    {"text": "Evidence section is concrete: lint/typecheck/unit/build with numbers, e2e deferred with reason, UAT status, commit SHA 9a2b3c4, push yes, branch cleanup status, promotion stopped at develop", "passed": true, "evidence": "Quality Gates table covers lint/typecheck/unit/build with numbers, e2e deferred with §13 reason, UAT not requested with reason; Status/Process give commit 9a2b3c4, pushed yes, branch deleted local+remote; Risks #4 confirms promotion stopped at develop."},
+    {"text": "Risks/Gaps captures the concrete unresolved items: branch protection not applied (with reason), e2e/integration secrets not provisioned, baseline error counts on develop, promotion not yet to uat or main", "passed": true, "evidence": "Risks/Open Items lists all four items: rulesets unavailable on plan tier, e2e/integration secrets unprovisioned, 200/80/12 baseline counts, promotion stopped at develop."},
+    {"text": "File Reference Summary names the relevant files without dumping a full changelog (docs amendments and new workflow files)", "passed": true, "evidence": "Files section splits New and Amended; lists relevant files without a full diff."},
+    {"text": "Output does not falsely claim the work reached uat or main when it stopped at develop", "passed": true, "evidence": "Status line and Risks #4 both make explicit that the work has not reached uat or main."},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of the skill name."}
+  ],
+  "summary": {"passed": 10, "failed": 1, "total": 11, "pass_rate": 0.91}
+}

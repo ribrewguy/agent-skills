@@ -1,0 +1,65 @@
+{
+  "expectations": [
+    {
+      "text": "List endpoint is GET /api/tasks (plural, resource-oriented, no verbs)",
+      "passed": true,
+      "evidence": "Section '1. List tasks' shows '**`GET /api/v1/tasks`**' — plural, no verbs (the `/v1/` prefix is not a verb)"
+    },
+    {
+      "text": "List response wraps rows in an envelope with `data` and a pagination sub-object (not a bare array, not a bespoke envelope like {tasks, total, limit, offset}, not a differently-named sub-object like pageInfo)",
+      "passed": false,
+      "evidence": "ListTasksResponse uses bespoke shape '{ tasks: Task[]; total: number; page: number; pageSize: number }' — top-level resource-named key 'tasks' instead of 'data', no nested pagination sub-object, includes 'total'"
+    },
+    {
+      "text": "Pagination uses cursor-based pagination with default limit 20 and max limit 100 clamped server-side",
+      "passed": false,
+      "evidence": "Uses page/pageSize (offset-based), default pageSize 25 (not 20). Max 100 mentioned but strategy is page-number not cursor"
+    },
+    {
+      "text": "Search uses a single `q` query param",
+      "passed": false,
+      "evidence": "Query param table uses 'search' not 'q'"
+    },
+    {
+      "text": "Sort uses field:direction syntax on a single `sort` query param (e.g., `sort=priority:desc,createdAt:asc`) — not leading-minus syntax",
+      "passed": false,
+      "evidence": "Sort example: 'e.g. `-priority,createdAt` (leading `-` = desc)' — uses leading-minus syntax, not field:direction"
+    },
+    {
+      "text": "The 'complete' operation is expressed as a state transition via PATCH on the task resource (PATCH /api/tasks/:id with { status: 'COMPLETED' }) — NOT as a sub-resource action verb like POST /api/tasks/:id/complete",
+      "passed": false,
+      "evidence": "Section '4. Mark task complete' uses '**`POST /api/v1/tasks/:id/complete`**' — exactly the sub-resource action verb anti-pattern, with rationale 'a dedicated endpoint... separating it from a generic update keeps that side-effect contract explicit'"
+    },
+    {
+      "text": "Side effects of completion (emails, audit rows) are described as service-layer responsibilities keyed to the state transition itself, not as a reason to invent a dedicated URL",
+      "passed": false,
+      "evidence": "Side effects are explicitly used as the *justification* for a dedicated URL: 'Why a dedicated endpoint? Completion is a *distinct domain operation* — it sends emails, writes audit rows...'"
+    },
+    {
+      "text": "POST /api/tasks returns 201 Created with a Location header pointing at the new resource",
+      "passed": false,
+      "evidence": "Section '2. Create a task' Status codes: '200 OK — created' (no 201, no Location header)"
+    },
+    {
+      "text": "Wire format is camelCase for body/query fields (assigneeId, createdAt, etc.), not snake_case",
+      "passed": true,
+      "evidence": "Conventions: 'snake_case-free (camelCase on the wire)'; Task interface uses createdAt, updatedAt, completedAt, createdById"
+    },
+    {
+      "text": "TypeScript types separate input (CreateTaskInput) from output (Task) — output includes server-generated fields like id, createdAt",
+      "passed": true,
+      "evidence": "CreateTaskRequest contains only client-supplied fields (title, description?, priority?, assigneeId?, status?); Task type separately defined with id, createdAt, updatedAt, completedAt, createdById"
+    },
+    {
+      "text": "Error envelope is FLAT at the top level — { code, message, details?, requestId } — NOT nested under an `error:` key",
+      "passed": false,
+      "evidence": "ApiErrorResponse: '{ error: { code: string; message: string; fields?: ... } }' — explicitly nested under `error:` key"
+    },
+    {
+      "text": "Error `code` values are domain-expressive (e.g., TaskNotFound, TaskAlreadyCompleted, InvalidRequestBody) and do NOT merely echo the HTTP status (not NOT_FOUND, not VALIDATION_ERROR, not CONFLICT as a generic code)",
+      "passed": false,
+      "evidence": "Validation error example uses 'code: \"VALIDATION_ERROR\"'; status code section references '404 NOT_FOUND' and '409 CONFLICT' as the codes — all echo HTTP status"
+    }
+  ],
+  "summary": {"passed": 3, "failed": 9, "total": 12, "pass_rate": 0.25}
+}

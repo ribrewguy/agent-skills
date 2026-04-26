@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Subject line uses Conventional Commits format: `<type>[optional scope]: <description>`", "passed": true, "evidence": "Subject: 'feat(payments): add idempotent retry on transient processor failures'"},
+    {"text": "Subject line type is appropriate (feat for the new functionality, possibly with scope `payments` or `api`)", "passed": true, "evidence": "Type 'feat' with scope 'payments' — matches new-feature change"},
+    {"text": "Body is multi-paragraph and explains BOTH what changed AND why (not just a description of the diff)", "passed": true, "evidence": "5+ paragraphs covering retry schedule (and why fixed not exponential), 4xx-no-retry rationale, idempotency-key persistence rationale (process-restart double-charge prevention), test coverage, externally-visible-behavior note"},
+    {"text": "Body or subject references the task ID `task-100` (e.g., `Refs: task-100` line in body, or task ID inline in subject)", "passed": true, "evidence": "'Refs: task-100' line in body trailers"},
+    {"text": "Includes a `Co-authored-by:` trailer naming the model: `Claude Opus 4.7 (1M context) <noreply@anthropic.com>` (or equivalent)", "passed": true, "evidence": "'Co-authored-by: Claude Opus 4.7 (1M context) <noreply@anthropic.com>'"},
+    {"text": "Does not include a UAT gate prompt — the change is described as not affecting externally-visible behavior beyond the documented spec, so no UAT-gate-before-commit is needed (or, if the model asks, the asking is appropriate)", "passed": true, "evidence": "Notes section says 'No UAT gate prompt needed. You've stated the change does not affect externally visible behavior beyond what the spec already documents'"},
+    {"text": "Does not propose using `git commit --amend` (no amends discipline)", "passed": true, "evidence": "Notes section explicitly says 'Don't amend... Don't reach for git commit --amend'"},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to the skill"}
+  ],
+  "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}
+}

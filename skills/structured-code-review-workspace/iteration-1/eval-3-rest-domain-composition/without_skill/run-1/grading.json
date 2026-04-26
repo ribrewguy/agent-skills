@@ -1,0 +1,15 @@
+{
+  "expectations": [
+    {"text": "Output begins with the literal line `Findings:`", "passed": false, "evidence": "Line 1: '# PR Review: `mark task complete` endpoint' — no `Findings:` header"},
+    {"text": "All eight preamble fields are present in order", "passed": false, "evidence": "Output uses prose section headings ('## URL design', '## Idempotency'); none of the eight preamble fields appear"},
+    {"text": "Review Scope names task-103", "passed": false, "evidence": "task-103 is not mentioned anywhere in the output"},
+    {"text": "Findings are tagged with severity in backticks (`High`, `Medium`, `Low`, or `Critical` if a higher tier is used)", "passed": false, "evidence": "No backtick severity tags appear on any finding; severity is implied by section heading order"},
+    {"text": "The use of POST sub-resource verb (`/api/tasks/:id/complete`) is identified as inconsistent with REST conventions — should be PATCH on the resource", "passed": true, "evidence": "Section 'URL design — use `PATCH` on the resource': 'sub-resource verb endpoint. The standard REST way ... is a partial update on the task itself ... PATCH /api/tasks/:id'"},
+    {"text": "The missing Idempotency-Key on the side-effectful POST is identified as a finding", "passed": true, "evidence": "Section 'Idempotency — required on a side-effectful POST': 'Add an `Idempotency-Key` header requirement'"},
+    {"text": "The snake_case wire field `task_id` is identified as a finding (should be camelCase)", "passed": true, "evidence": "Section 'Wire naming — use camelCase': '`task_id` is snake_case ... `taskId`'"},
+    {"text": "The `200` status (rather than reflecting the state-transition correctly) and the bypass of the canonical error envelope are noted where relevant", "passed": true, "evidence": "Section 'Status code' addresses 200/PATCH semantics; section 'Error handling' explicitly notes bypass of the canonical error envelope"},
+    {"text": "Findings are ordered by severity, highest first", "passed": true, "evidence": "Higher-impact issues (URL design, idempotency, transactional integrity, authz) appear before naming nits and input-validation polish; ordering is roughly by severity"},
+    {"text": "Output does not cite either skill by name (no mention of 'structured-code-review' or 'rest-api-design' as the source of any rule)", "passed": true, "evidence": "Neither skill name appears in the output"}
+  ],
+  "summary": {"passed": 6, "failed": 4, "total": 10, "pass_rate": 0.60}
+}

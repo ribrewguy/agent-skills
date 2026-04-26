@@ -1,0 +1,15 @@
+{
+  "expectations": [
+    {"text": "Output uses the worker handoff summary format (not the implementation or closeout format)", "passed": true, "evidence": "Header reads '## Worker Handoff Summary' and follows Format 2 fields."},
+    {"text": "All 6 fields appear: Task (or Bead), Branch with Published+Commit, Implementation Outcome with integration target, Quality Gates, Risks/Gaps, Review Notes", "passed": true, "evidence": "Bead, Branch (with Published and Commit handed off), Implementation Outcome (with Intended integration target), Quality Gates, Risks/Gaps, and Review Notes all appear as labeled fields."},
+    {"text": "Task identifier names proj-42-w2 explicitly", "passed": true, "evidence": "'Bead: proj-42-w2'."},
+    {"text": "Branch field names feature/proj-42-w2_staging-source-ref, marks Published as yes, includes commit SHA 7a3f9b1", "passed": true, "evidence": "'Branch: feature/proj-42-w2_staging-source-ref / Published: yes / Commit handed off: 7a3f9b1'."},
+    {"text": "Quality Gates section reports concrete results (142/142 unit tests, 0 lint errors, typecheck passed) — not vague", "passed": true, "evidence": "'Lint: passed (0 errors); Typecheck: passed; Unit tests: 142/142 passing'."},
+    {"text": "Intended integration target is named (integration/proj-42_staging-bringup)", "passed": true, "evidence": "'Intended integration target: integration/proj-42_staging-bringup'."},
+    {"text": "Review Notes call out the github.head_ref consideration the worker wants the orchestrator to verify", "passed": true, "evidence": "Review Notes describes the github.head_ref behavior on PR vs direct-push events and asks the orchestrator to confirm the parent-epic protection assumption."},
+    {"text": "Output is concise (worker handoff is shorter than the user-facing implementation summary; no Behavioral Impact / File Reference Summary unless explicitly relevant)", "passed": true, "evidence": "No Behavioral Impact or File Reference Summary sections are included."},
+    {"text": "Output does not falsely claim the branch was accepted, merged, or that closeout happened — handoff is pre-acceptance", "passed": true, "evidence": "Branch is 'Published: yes' but no acceptance/merge/closeout language; framed as a handoff for the orchestrator to confirm."},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of the skill name or self-reference."}
+  ],
+  "summary": {"passed": 10, "failed": 0, "total": 10, "pass_rate": 1.0}
+}

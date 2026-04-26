@@ -1,0 +1,14 @@
+{
+  "expectations": [
+    {"text": "Names a parent bead (proj-42) and 3 child beads (one per slice) — does not propose reusing a single bead for multiple slices", "passed": true, "evidence": "Parent task proj-42; subtasks proj-42a, proj-42b, proj-42c"},
+    {"text": "Names 3 worker feature branches in the format `feature/<bead_id>_<short_name>` — one per worker bead", "passed": false, "evidence": "Uses 'proj-42/policy-docs', 'proj-42/ci-workflows', 'proj-42/source-ref-enforcement' — namespaced branch style, not feature/<bead_id>_<short_name>"},
+    {"text": "Names an integration branch in the format `integration/<parent_bead_id>_<short_name>` — for the coordinated work", "passed": false, "evidence": "Uses 'proj-42/main' as the parent epic branch, not integration/proj-42_<short_name>"},
+    {"text": "Names the integration target as `develop` (single-agent close-out is to develop; the 3-tier promotion to staging/main is out of scope)", "passed": false, "evidence": "'Open the final PR from proj-42/main to your target branch (likely main or develop)' — ambiguous, does not commit to develop"},
+    {"text": "Specifies that EACH worker uses a dedicated git worktree (multi-agent MUST use worktrees)", "passed": true, "evidence": "'Each agent should work in a separate directory' with three explicit git worktree add commands"},
+    {"text": "Lists worker responsibilities AND explicit MUST NOTs — workers MUST NOT merge their own branches; MUST NOT fix things outside their slice", "passed": false, "evidence": "Workers told 'open a PR' and 'You review and merge each PR' — workflow implies orchestrator merges, but never explicitly states workers MUST NOT merge their own branches; lane MUST NOTs do appear (don't touch other slices)"},
+    {"text": "Lists orchestrator responsibilities AND explicit MUST NOTs — orchestrator MUST NOT implement worker-scoped functionality on the integration branch; MUST NOT silently fix worker defects (must reject explicitly)", "passed": false, "evidence": "MUST NOTs are 'don't get bogged down implementing slices yourself', 'merge a worker's branch without reviewing it', 'skip integration testing' — does not address silent-fix-of-worker-defects discipline or rejection-with-notes"},
+    {"text": "Specifies that worker branches stay local by default and only publish when CI/orchestrator-remote-access/recovery requires it", "passed": false, "evidence": "Workflow tells workers to 'open a PR' from their branch — implicitly publishes; no local-by-default policy"},
+    {"text": "Output does not cite this skill by name (no 'multi-agent-git-workflow', 'this skill', 'as required')", "passed": true, "evidence": "No occurrences of skill name or 'this skill' phrasing"}
+  ],
+  "summary": {"passed": 3, "failed": 6, "total": 9, "pass_rate": 0.33}
+}

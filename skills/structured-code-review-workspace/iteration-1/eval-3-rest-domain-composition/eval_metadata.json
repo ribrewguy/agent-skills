@@ -1,0 +1,17 @@
+{
+  "eval_id": 3,
+  "eval_name": "rest-domain-composition",
+  "prompt": "Review this PR using structured-code-review's format and rest-api-design's conventions. The PR adds a new endpoint to a TypeScript Express service. Task is `task-103`; design says 'Add endpoint to mark a task complete; sends notification email and writes audit row.'\n\n```ts\n// api/routes/tasks.ts (added)\nrouter.post('/api/tasks/:id/complete', async (req, res) => {\n  await db.update('tasks', { status: 'COMPLETED' }, { id: req.params.id })\n  await sendEmail(req.body.notify_user)\n  res.status(200).json({ task_id: req.params.id, status: 'COMPLETED' })\n})\n```\n\nNo Idempotency-Key handling. The standard error envelope (per the team's conventions) is the flat `{ code, message, details?, requestId }` form.",
+  "assertions": [
+    "Output begins with the literal line `Findings:`",
+    "All eight preamble fields are present in order",
+    "Review Scope names task-103",
+    "Findings are tagged with severity in backticks (`High`, `Medium`, `Low`, or `Critical` if a higher tier is used)",
+    "The use of POST sub-resource verb (`/api/tasks/:id/complete`) is identified as inconsistent with REST conventions — should be PATCH on the resource",
+    "The missing Idempotency-Key on the side-effectful POST is identified as a finding",
+    "The snake_case wire field `task_id` is identified as a finding (should be camelCase)",
+    "The `200` status (rather than reflecting the state-transition correctly) and the bypass of the canonical error envelope are noted where relevant",
+    "Findings are ordered by severity, highest first",
+    "Output does not cite either skill by name (no mention of 'structured-code-review' or 'rest-api-design' as the source of any rule)"
+  ]
+}

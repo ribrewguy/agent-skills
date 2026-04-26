@@ -1,0 +1,9 @@
+{
+  "id": 3,
+  "name": "lightweight-no-task-closeout",
+  "skill": "task-handoff-summaries",
+  "skill_path": "/Users/torr/Projects/agent-skills/plugins/task-handoff-summaries/skills/task-handoff-summaries/SKILL.md",
+  "prompt": "Quick one — I just merged a 1-line typo fix (changed 'pubish' to 'publish' in a button label in our admin UI). No bead. No PRD. Single-agent. Branch fix/typo-publish-button merged to main directly (allowed for trivial typo fixes per team convention). Commit SHA: 4d5e6f7. Pushed. Branch deleted. lint passed, typecheck passed, unit tests still pass (no test impact). Write a closeout summary.",
+  "iteration": 1,
+  "runs_per_arm": 1
+}

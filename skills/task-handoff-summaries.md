@@ -62,6 +62,8 @@ For other tools, see [Install](../install).
 
 ## Eval results
 
+Full per-eval breakdown, interactive review viewer, and links to raw model outputs: **[task-handoff-summaries evaluations](../evals/task-handoff-summaries)**.
+
 Iteration-1 benchmark: **100% pass rate with-skill vs. 76% baseline** (+24pp delta) across four test cases. Smaller delta than `structured-code-review` (+69pp) because baselines naturally produce reasonable summaries; they just label fields differently. The skill's value is in *standardizing* the field set so summaries scan consistently across many reports.
 
 | Eval | What it probes |

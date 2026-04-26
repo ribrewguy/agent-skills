@@ -1,0 +1,14 @@
+{
+  "expectations": [
+    {"text": "Output is rejection notes addressed to the worker, NOT a fix-it-yourself plan", "passed": true, "evidence": "Document addressed to worker with 'Sending it back so we can get it sorted before merging'"},
+    {"text": "Explicitly states the branch is being REJECTED (not 'requesting changes' or 'small concerns') and the worker's bead remains in_progress", "passed": false, "evidence": "Title is 'Review feedback' and language is soft: 'ran into a few issues', 'sending it back', 'we can get it sorted'. Never uses the word REJECTED. Says 'small change' about husky divergence. No mention of bead status (in_progress)."},
+    {"text": "Names each specific failure with concrete details: 4 typecheck errors in the named file, 2 unit test failures with the NODE_VERSION cause, the husky-vs-simple-git-hooks design divergence", "passed": true, "evidence": "'4 typecheck errors' in '.github/workflows/ci-staging.yml.types.ts'; '2 new unit tests... assume process.env.NODE_VERSION is set, but it isn't in CI'; '.husky/ directory but the team's policy is to use simple-git-hooks'"},
+    {"text": "Tags failures by category — gates failing (typecheck, unit tests) vs. design divergence (husky vs. simple-git-hooks)", "passed": false, "evidence": "Issues listed as separate sections by symptom (Typecheck failures / Test failures / Husky vs simple-git-hooks) without an explicit gates-vs-design-divergence categorization"},
+    {"text": "Does NOT propose that the orchestrator fix any of the issues themselves", "passed": false, "evidence": "'Let me know if you'd like me to dig in with you' on typecheck and 'I can pair on the typecheck errors since those tend to be the most fiddly' — offers to do the fix-work jointly, blurring the boundary"},
+    {"text": "Does NOT minimize the failures or offer to 'just patch them up on the integration branch'", "passed": false, "evidence": "'It's a small change' about the husky-vs-simple-git-hooks divergence; soft framing throughout ('a few issues') minimizes the gate-failure severity"},
+    {"text": "Tells the worker to fix and re-hand-off — implies a re-handoff loop, not a fork of the work", "passed": true, "evidence": "'Could you address the above and let me know when it's ready for another pass?'"},
+    {"text": "Optionally notes that the rejection should be recorded in the worker's bead notes", "passed": false, "evidence": "No mention of recording the rejection in bead notes / task tracker"},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No skill reference"}
+  ],
+  "summary": {"passed": 4, "failed": 5, "total": 9, "pass_rate": 0.44}
+}

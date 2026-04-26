@@ -48,7 +48,7 @@ exclude:
   - .DS_Store
   - "*.swp"
   - plugins/
-  - "**/evals/"
+  - "plugins/**/evals/"
   - "**/.claude-plugin/"
 
 markdown: kramdown

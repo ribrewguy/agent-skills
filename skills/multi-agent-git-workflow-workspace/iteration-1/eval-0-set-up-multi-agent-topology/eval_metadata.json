@@ -1,0 +1,6 @@
+{
+  "id": 0,
+  "name": "set-up-multi-agent-topology",
+  "skill": "multi-agent-git-workflow",
+  "prompt": "I'm starting an epic that needs to be split across 3 implementation agents in parallel. The parent task is proj-42 (Add staging branch and 3-tier deploy flow). The three slices are: (1) policy doc updates and renames, (2) CI workflow YAML files for ci-develop / ci-staging / ci-main, (3) source-ref enforcement workflow + pre-commit hook config. I'll be the orchestrator. Set up the multi-agent topology — name the beads, the branches, the worktrees, the integration target. Tell me what each worker is responsible for and what they MUST NOT do. Tell me what I'm responsible for as orchestrator and what I MUST NOT do."
+}

@@ -1,0 +1,16 @@
+{
+  "expectations": [
+    {"text": "Output uses the implementation summary format (not the worker handoff or closeout format)", "passed": true, "evidence": "Header reads '## Implementation Summary' and follows Format 1 fields."},
+    {"text": "All 7 fields appear in order: Process Used, Execution Context, Task Scope, Implementation Outcome, Behavioral Impact, Risks/Gaps, File Reference Summary, Governance Status", "passed": true, "evidence": "All 8 named fields appear in the listed order; an additional 'Quality gate results' line is interleaved before Governance Status but does not break the order of the 8 required fields."},
+    {"text": "Process Used: Full process", "passed": true, "evidence": "'Process Used: Full process'"},
+    {"text": "Execution Context: Single-agent", "passed": true, "evidence": "'Execution Context: Single-agent'"},
+    {"text": "Task Scope names task-101 explicitly", "passed": true, "evidence": "'Task Scope: task-101 — Add a paginated admin user listing endpoint...'"},
+    {"text": "Implementation Outcome includes the active branch (feature/task-101-admin-users) and the integration target (develop)", "passed": true, "evidence": "'Active branch: feature/task-101-admin-users' and 'Integration target: develop' under Implementation Outcome."},
+    {"text": "Quality gate results are concrete (8 unit tests passing, typecheck clean, lint clean) — not vague claims like 'all gates passed'", "passed": true, "evidence": "'Quality gate results: 8/8 unit tests passing, typecheck clean, lint clean.'"},
+    {"text": "Governance Status indicates the work is awaiting code review (pre-commit; commit/push haven't happened yet)", "passed": true, "evidence": "'Governance Status: Pre-commit. Awaiting code review. Commit and push have not happened yet; no merge to develop yet.'"},
+    {"text": "File Reference Summary names the 4 files changed without dumping a full changelog", "passed": true, "evidence": "Lists exactly the 4 files: api/routes/admin.py, api/auth.py, api/schemas/user_out.py, tests/api/test_admin_users.py."},
+    {"text": "Output does not cite this skill by name (no 'task-handoff-summaries', 'this skill', 'as required')", "passed": true, "evidence": "No mention of the skill name or self-reference in the output."},
+    {"text": "Output does not falsely claim commit, push, or merge happened (those steps haven't run yet)", "passed": true, "evidence": "Governance Status explicitly states commit and push have not happened and no merge has occurred."}
+  ],
+  "summary": {"passed": 11, "failed": 0, "total": 11, "pass_rate": 1.0}
+}

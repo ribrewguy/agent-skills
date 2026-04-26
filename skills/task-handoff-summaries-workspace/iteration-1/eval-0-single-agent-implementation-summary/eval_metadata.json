@@ -1,0 +1,9 @@
+{
+  "id": 0,
+  "name": "single-agent-implementation-summary",
+  "skill": "task-handoff-summaries",
+  "skill_path": "/Users/torr/Projects/agent-skills/plugins/task-handoff-summaries/skills/task-handoff-summaries/SKILL.md",
+  "prompt": "I just finished implementing the changes for task-101. The work added a paginated admin user listing endpoint at GET /api/admin/users (replacing a previous draft that had verbs in the URL and SQL injection issues — fixed both). I wrote 8 unit tests, all passing. typecheck and lint are clean. The endpoint requires admin permission via a require_admin dependency. Write the implementation summary I should hand to the reviewer before I commit. The work was single-agent, full process, on branch feature/task-101-admin-users targeting develop. No migrations, no config changes. Files changed: api/routes/admin.py, api/auth.py (added require_admin), api/schemas/user_out.py (new DTO), tests/api/test_admin_users.py.",
+  "iteration": 1,
+  "runs_per_arm": 1
+}

@@ -1,0 +1,6 @@
+{
+  "id": 2,
+  "name": "write-commit-message-with-task-id-and-coauthor",
+  "skill": "multi-agent-git-workflow",
+  "prompt": "Write the commit message for this change. The change implements task-100: 'Add idempotent retry on transient processor failures.' The diff: api/services/payments.ts (new retryWithBackoff helper that retries 5xx/timeout up to 3 times with 250/500/1000ms backoff), api/db/idempotency_keys.ts (new persistence module so the Idempotency-Key survives in-process state loss between retries), api/services/payments.test.ts (8 new tests covering retry success, exhaustion, 4xx-no-retry, key-survives-restart). I (Claude Opus 4.7, 1M context) wrote this. The change does NOT affect externally visible behavior beyond what the spec already documents."
+}

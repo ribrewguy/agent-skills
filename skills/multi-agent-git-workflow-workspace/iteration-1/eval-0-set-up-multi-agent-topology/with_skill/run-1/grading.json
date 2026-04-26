@@ -1,0 +1,14 @@
+{
+  "expectations": [
+    {"text": "Names a parent bead (proj-42) and 3 child beads (one per slice) — does not propose reusing a single bead for multiple slices", "passed": true, "evidence": "Parent: proj-42; Children: proj-42-w1, proj-42-w2, proj-42-w3 with note 'Don't fold two slices into the same bead'"},
+    {"text": "Names 3 worker feature branches in the format `feature/<bead_id>_<short_name>` — one per worker bead", "passed": true, "evidence": "feature/proj-42-w1_policy-docs, feature/proj-42-w2_ci-workflows, feature/proj-42-w3_source-ref-enforcement"},
+    {"text": "Names an integration branch in the format `integration/<parent_bead_id>_<short_name>` — for the coordinated work", "passed": true, "evidence": "integration/proj-42_staging-bringup"},
+    {"text": "Names the integration target as `develop` (single-agent close-out is to develop; the 3-tier promotion to staging/main is out of scope)", "passed": true, "evidence": "'merge integration/proj-42_staging-bringup into develop. The further promotion to a staging branch and main is out of scope...'"},
+    {"text": "Specifies that EACH worker uses a dedicated git worktree (multi-agent MUST use worktrees)", "passed": true, "evidence": "'Multi-agent work mandates one Git worktree per agent' with explicit ../<repo>-proj-42-w1/w2/w3 paths and git worktree add commands"},
+    {"text": "Lists worker responsibilities AND explicit MUST NOTs — workers MUST NOT merge their own branches; MUST NOT fix things outside their slice", "passed": true, "evidence": "'Each worker MUST NOT: Merge their own feature/* branch... Fix things outside their slice...'"},
+    {"text": "Lists orchestrator responsibilities AND explicit MUST NOTs — orchestrator MUST NOT implement worker-scoped functionality on the integration branch; MUST NOT silently fix worker defects (must reject explicitly)", "passed": true, "evidence": "'You MUST NOT: Implement worker-scoped functionality on the integration branch... Silently fix worker defects. Even small ones.'"},
+    {"text": "Specifies that worker branches stay local by default and only publish when CI/orchestrator-remote-access/recovery requires it", "passed": true, "evidence": "'Worker feature/* branches stay local unless one of these applies: you need remote access, CI is required... user explicitly wants it published, or a remote recovery point is needed'"},
+    {"text": "Output does not cite this skill by name (no 'multi-agent-git-workflow', 'this skill', 'as required')", "passed": true, "evidence": "No occurrences of 'multi-agent-git-workflow' or 'this skill' or 'as required' phrases"}
+  ],
+  "summary": {"passed": 9, "failed": 0, "total": 9, "pass_rate": 1.0}
+}

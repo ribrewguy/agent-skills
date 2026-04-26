@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "rest-api-design", "runs": [{"id": "eval-0-design-task-api-from-scratch-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Task Management API \u2014 HTTP Contract\n\nBelow is the contract for the five operations. Conventions used throughout: paths are plural nouns with no verbs, request/response bodies and query params are camelCase, list endpoints return a `{ data, pagination }` envelope, error bodies are flat (`{ code, message, details?, requestId }`), every response carries `X-Request-ID`.\n\n---\n\n## Shared types\n\n```ts\n// Branded IDs prevent passing a UserId where a TaskId is expected.\ntype TaskId   = string & { readonly __brand: 'TaskId' }\ntype UserId   = string & { readonly __brand: 'UserId' }\ntype CommentId = string & { readonly __brand: 'CommentId' }\n\ntype TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'\ntype TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'\n\ninterface Task {\n  id: TaskId\n  title: string\n  description: string | null\n  status: TaskStatus\n  priority: TaskPriority\n  assigneeId: UserId | null\n  createdAt: string   // ISO-8601\n  updatedAt: string\n  completedAt: string | null\n  createdBy: UserId\n}\n\ninterface Paginated<T> {\n  data: T[]\n  pagination: {\n    nextCursor: string | null\n    hasMore: boolean\n  }\n}\n\ninterface APIError {\n  code: string                                   // e.g. \"TaskNotFound\"\n  message: string\n  details?: Record<string, unknown> | Array<Record<string, unknown>>\n  requestId: string\n}\n```\n\nEvery error response uses `APIError` at the top level. There is no `{ error: { ... } }` wrapper \u2014 the HTTP status already classifies the response as an error.\n\n---\n\n## 1. List tasks\n\n**`GET /api/tasks`**\n\n### Query parameters\n\n| Param         | Type                  | Notes |\n|---------------|-----------------------|-------|\n| `q`           | string                | Free-text search across `title` and `description`. |\n| `assigneeId`  | string (UserId)       | Filter by assignee. Repeat to OR-match (`assigneeId=u_1&assigneeId=u_2`). |\n| `status`      | `TaskStatus`          | Repeat to OR-match. |\n| `sort`        | string                | `field:direction` pairs, comma-separated. Allowed fields: `priority`, `createdAt`. Direction: `asc` \\| `desc`. Default `createdAt:desc`. Example: `sort=priority:desc,createdAt:asc`. |\n| `cursor`      | string (opaque)       | From previous response's `pagination.nextCursor`. |\n| `limit`       | integer               | Default `20`, max `100`. Server clamps; out-of-range rejected with `InvalidRequestParam`. |\n\n### Status codes\n\n- `200 OK` \u2014 list (possibly empty).\n- `400 Bad Request` \u2014 invalid sort field, malformed cursor, sort change with stale cursor, limit out of range.\n- `401 Unauthorized` \u2014 missing/expired session.\n\n### Response\n\n```ts\ntype ListTasksResponse = Paginated<Task>\n```\n\nSample (200):\n\n```json\n{\n  \"data\": [\n    {\n      \"id\": \"task_01HXY...\",\n      \"title\": \"Ship invoicing v2\",\n      \"description\": \"Cut over the old engine.\",\n      \"status\": \"IN_PROGRESS\",\n      \"priority\": \"HIGH\",\n      \"assigneeId\": \"user_01HX...\",\n      \"createdAt\": \"2026-04-20T13:04:11Z\",\n      \"updatedAt\": \"2026-04-25T08:15:02Z\",\n      \"completedAt\": null,\n      \"createdBy\": \"user_01HW...\"\n    }\n  ],\n  \"pagination\": { \"nextCursor\": \"eyJpZCI6InRhc2tfMDFI...\", \"hasMore\": true }\n}\n```\n\n### TypeScript types\n\n```ts\ninterface ListTasksParams {\n  q?: string\n  assigneeId?: UserId | UserId[]\n  status?: TaskStatus | TaskStatus[]\n  sort?: string                  // 'priority:desc,createdAt:asc'\n  cursor?: string\n  limit?: number                 // 1..100, default 20\n}\n```\n\n### Edge cases\n\n- **Empty result** \u2014 `data: []`, `nextCursor: null`, `hasMore: false`. Same envelope shape \u2014 no special-case 404.\n- **Cursor + sort change** \u2014 switching `sort` while reusing an old cursor returns `400` with `code: \"CursorSortMismatch\"`. Cursors are bound to the sort under which they were issued.\n- **No `total`.** The set is unbounded; we never `COUNT(*)` it. If a UI needs \"page X of Y,\" it shouldn't be on this endpoint.\n- **Free-text + filter** \u2014 filters apply first (AND), search runs on the filtered subset.\n\n---\n\n## 2. Create a task\n\n**`POST /api/tasks`**\n\n### Headers\n\n- `Content-Type: application/json` (required)\n\n### Request body\n\n```ts\ninterface CreateTaskInput {\n  title: string                         // required, 1..200 chars\n  description?: string                  // optional, \u2264 4000 chars\n  priority?: TaskPriority               // default 'MEDIUM'\n  assigneeId?: UserId                   // must reference an existing user\n  status?: Extract<TaskStatus, 'PENDING' | 'IN_PROGRESS'>  // initial status; default 'PENDING'\n}\n```\n\nNote: `id`, `createdAt`, `updatedAt`, `completedAt`, `createdBy` are server-generated. They are not on `CreateTaskInput` and may not be sent by the client.\n\n### Status codes\n\n- `201 Created` \u2014 body is the new `Task`. Response includes `Location: /api/tasks/<id>` header.\n- `400 Bad Request` \u2014 malformed JSON.\n- `422 Unprocessable Entity` \u2014 schema validation failed. Returns *all* offending fields in `details: Array<{field, message}>`.\n- `401 Unauthorized`, `403 Forbidden` \u2014 auth issues.\n\n### Sample error (422)\n\n```json\n{\n  \"code\": \"InvalidRequestBody\",\n  \"message\": \"Request validation failed\",\n  \"details\": [\n    { \"field\": \"title\", \"message\": \"Title is required\" },\n    { \"field\": \"priority\", \"message\": \"Must be one of LOW, MEDIUM, HIGH, URGENT\" }\n  ],\n  \"requestId\": \"req_01HXY...\"\n}\n```\n\n### Edge cases\n\n- **Unknown `assigneeId`** \u2014 `422` with `code: \"AssigneeNotFound\"`.\n- **Trailing whitespace / casing** \u2014 server normalises `title` (trim) on input; document the rule so clients don't depend on echo equality.\n- **Duplicate titles** are allowed; the server doesn't enforce uniqueness on free text.\n\n---\n\n## 3. Get a single task\n\n**`GET /api/tasks/:id`**\n\n### Status codes\n\n- `200 OK` \u2014 body is `Task`.\n- `404 Not Found` \u2014 `code: \"TaskNotFound\"`.\n- `401 Unauthorized`, `403 Forbidden`.\n\n### Edge cases\n\n- **Soft-deleted tasks** \u2014 return `404` with `code: \"TaskNotFound\"`. Do not leak existence.\n- **Caching** \u2014 return `ETag`; clients may send `If-None-Match` for `304 Not Modified`. Optional but cheap.\n\n---\n\n## 4. Mark a task complete (and other state transitions)\n\n**`PATCH /api/tasks/:id`** \u2014 same endpoint, with a status field in the body.\n\nCompletion is a state transition on the task \u2014 it changes `status` from a non-terminal value to `COMPLETED`. There is no `/complete` sub-resource. Treating completion as a verb in the URL would fragment the URL space (we'd need `/cancel`, `/reopen`, `/archive` next), and the side-effect work doesn't actually depend on the URL \u2014 it depends on the transition.\n\n### Headers\n\n- `Content-Type: application/json`\n- `Idempotency-Key: <uuid>` (recommended for completion because side effects are externally visible)\n\n### Request body\n\n```ts\ninterface UpdateTaskInput {\n  title?: string\n  description?: string | null         // null clears\n  priority?: TaskPriority\n  assigneeId?: UserId | null          // null unassigns\n  status?: TaskStatus                 // 'COMPLETED' to complete\n}\n```\n\nTo complete:\n\n```http\nPATCH /api/tasks/task_01HXY...\nContent-Type: application/json\nIdempotency-Key: 88a3b...\n\n{ \"status\": \"COMPLETED\" }\n```\n\n### Status codes\n\n- `200 OK` \u2014 body is the updated `Task`.\n- `400 Bad Request`, `422 Unprocessable Entity` \u2014 validation.\n- `404 Not Found` \u2014 `TaskNotFound`.\n- `409 Conflict` \u2014 `InvalidStatusTransition` (e.g. `COMPLETED \u2192 IN_PROGRESS`) or `TaskAlreadyCompleted` if you explicitly forbid no-op recompletes.\n\n### Side-effect discipline\n\nSide effects (completion email, audit row, webhook fire) attach to the **actual transition**, not to the URL. The handler reads the existing task, applies the patch, and only fires side effects when `oldStatus !== 'COMPLETED' && newStatus === 'COMPLETED'`:\n\n```ts\nasync function patchTask(id: TaskId, input: UpdateTaskInput): Promise<Task> {\n  const old = await tasks.findOne(id)\n  if (!old) throw new TaskNotFoundError(id)\n\n  const next = { ...old, ...input }\n  validateTransition(old.status, next.status)   // throws on forbidden moves\n  await tasks.update(id, next)\n\n  const isCompletion = old.status !== 'COMPLETED' && next.status === 'COMPLETED'\n  if (isCompletion) {\n    await emailer.sendCompletionEmail(next)\n    await audit.write({ event: 'task.completed', taskId: id, actorId: ctx.userId })\n  }\n\n  return next\n}\n```\n\nThis makes a retried PATCH safe \u2014 re-PATCHing `{ status: 'COMPLETED' }` on an already-completed task is a no-op and does not double-send the email. Combine with `Idempotency-Key` to give the client byte-identical response replay across retries.\n\n### Edge cases\n\n- **Already completed** \u2014 repeated `PATCH { status: 'COMPLETED' }` returns `200 OK` with the same body, no new emails. (Or `409 TaskAlreadyCompleted` if your domain prefers an explicit error \u2014 pick one and document it.)\n- **Forbidden transition** \u2014 `409 InvalidStatusTransition`, `details: { from, to }`.\n- **Concurrent updates** \u2014 to enforce optimistic concurrency, accept `If-Match: <etag>` and return `412 Precondition Failed`.\n\n---\n\n## 5. Add a comment to a task\n\n**`POST /api/tasks/:id/comments`**\n\nA comment is a new resource with its own identity, lifecycle, and URL \u2014 sub-resource POST is the right tool here (unlike completion, which is a field flip on the parent).\n\n### Request body\n\n```ts\ninterface CreateCommentInput {\n  body: string                          // required, 1..10_000 chars\n}\n\ninterface Comment {\n  id: CommentId\n  taskId: TaskId\n  body: string\n  authorId: UserId\n  createdAt: string\n  updatedAt: string\n  editedAt: string | null\n}\n```\n\n### Status codes\n\n- `201 Created` \u2014 body is `Comment`. `Location: /api/comments/<id>` header (or `/api/tasks/:id/comments/<id>` if you don't expose comments at the top level).\n- `400`, `422` \u2014 body validation.\n- `404` \u2014 `TaskNotFound`.\n\n### Listing comments\n\n**`GET /api/tasks/:id/comments`** \u2014 same `Paginated<Comment>` envelope and cursor rules as tasks.\n\n### Edge cases\n\n- **Empty body** \u2014 `422 InvalidRequestBody` with `details: [{ field: 'body', message: 'Body is required' }]`.\n- **Comment on a deleted task** \u2014 `404 TaskNotFound`.\n\n---\n\n## Error catalog (used above)\n\n| HTTP status | Code                      | When |\n|-------------|---------------------------|------|\n| 400         | `InvalidRequestParam`     | Malformed query (bad cursor, bad sort, bad limit). |\n| 400         | `CursorSortMismatch`      | Reused a cursor under a different `sort` than the one it was issued for. |\n| 401         | `SessionExpired`          | Missing or expired session. |\n| 403         | `InsufficientPermissions` | Authenticated, but not allowed to act on this task. |\n| 404         | `TaskNotFound`            | No such task (or soft-deleted). |\n| 409         | `InvalidStatusTransition` | Forbidden state transition. |\n| 409         | `TaskAlreadyCompleted`    | (Optional) explicit error on no-op recomplete. |\n| 409         | `IdempotencyKeyReused`    | Same `Idempotency-Key` arrived with a different payload hash. |\n| 422         | `InvalidRequestBody`      | Schema validation failed. `details: Array<{field, message}>`. |\n| 429         | `RateLimited`             | Throttled. `Retry-After` and `X-RateLimit-*` headers set. |\n\nCodes are domain-expressive \u2014 none of them just echo the HTTP status word. `code` and HTTP status do different jobs: HTTP classifies for proxies and generic clients, `code` names the precise domain reason.\n\n---\n\n## Cross-cutting requirements\n\n- **Headers on every response** \u2014 `X-Request-ID` (correlates with `requestId` inside any error body), `Content-Type: application/json; charset=utf-8`.\n- **Rate limiting** \u2014 emit `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` on success; `Retry-After` on `429`.\n- **Validation at the boundary only.** Internal services trust their inputs. Validators run inside the route handler (Zod / Pydantic / your-pick) and produce the `InvalidRequestBody` array shape on failure.\n- **Wire convention** \u2014 body fields and query params are camelCase. The DB is snake_case under the hood; route adapters do the case map. Do not let `created_at` or `assignee_id` reach the client.\n"}], "grading": {"expectations": [{"text": "List endpoint is GET /api/tasks (plural, resource-oriented, no verbs)", "passed": true, "evidence": "Section '1. List tasks' shows '**`GET /api/tasks`**'"}, {"text": "List response wraps rows in an envelope with `data` and a pagination sub-object (not a bare array, not a bespoke envelope like {tasks, total, limit, offset}, not a differently-named sub-object like pageInfo)", "passed": true, "evidence": "Sample response shows '\"data\": [...]' and '\"pagination\": { \"nextCursor\": ..., \"hasMore\": true }'; Paginated<T> type defined as { data: T[]; pagination: { nextCursor, hasMore } }"}, {"text": "Pagination uses cursor-based pagination with default limit 20 and max limit 100 clamped server-side", "passed": true, "evidence": "Query parameter table: 'cursor' opaque string, 'limit ... Default 20, max 100. Server clamps; out-of-range rejected with InvalidRequestParam'"}, {"text": "Search uses a single `q` query param", "passed": true, "evidence": "Query parameter table: '`q` | string | Free-text search across `title` and `description`'"}, {"text": "Sort uses field:direction syntax on a single `sort` query param (e.g., `sort=priority:desc,createdAt:asc`) \u2014 not leading-minus syntax", "passed": true, "evidence": "'`sort` ... `field:direction` pairs, comma-separated. Allowed fields: `priority`, `createdAt`. Direction: `asc` | `desc`. ... Example: `sort=priority:desc,createdAt:asc`'"}, {"text": "The 'complete' operation is expressed as a state transition via PATCH on the task resource (PATCH /api/tasks/:id with { status: 'COMPLETED' }) \u2014 NOT as a sub-resource action verb like POST /api/tasks/:id/complete", "passed": true, "evidence": "Section '4. Mark a task complete' shows '**`PATCH /api/tasks/:id`** ... To complete: PATCH /api/tasks/task_01HXY... { \"status\": \"COMPLETED\" }' and explicitly states 'There is no /complete sub-resource'"}, {"text": "Side effects of completion (emails, audit rows) are described as service-layer responsibilities keyed to the state transition itself, not as a reason to invent a dedicated URL", "passed": true, "evidence": "Side-effect discipline section: 'Side effects ... attach to the actual transition, not to the URL' with code showing isCompletion check (old !== 'COMPLETED' && next === 'COMPLETED') gating sendCompletionEmail and audit.write"}, {"text": "POST /api/tasks returns 201 Created with a Location header pointing at the new resource", "passed": true, "evidence": "Section '2. Create a task' Status codes: '`201 Created` \u2014 body is the new `Task`. Response includes `Location: /api/tasks/<id>` header.'"}, {"text": "Wire format is camelCase for body/query fields (assigneeId, createdAt, etc.), not snake_case", "passed": true, "evidence": "Task interface: 'assigneeId: UserId | null; createdAt: string; updatedAt: string; completedAt'; cross-cutting requirements: 'body fields and query params are camelCase'"}, {"text": "TypeScript types separate input (CreateTaskInput) from output (Task) \u2014 output includes server-generated fields like id, createdAt", "passed": true, "evidence": "CreateTaskInput interface has only client-supplied fields (title, description?, priority?, assigneeId?, status?); Task interface separately defined with server-generated id, createdAt, updatedAt, completedAt, createdBy"}, {"text": "Error envelope is FLAT at the top level \u2014 { code, message, details?, requestId } \u2014 NOT nested under an `error:` key", "passed": true, "evidence": "APIError interface: '{ code: string; message: string; details?: ...; requestId: string }' and explicit note 'There is no { error: { ... } } wrapper'"}, {"text": "Error `code` values are domain-expressive (e.g., TaskNotFound, TaskAlreadyCompleted, InvalidRequestBody) and do NOT merely echo the HTTP status (not NOT_FOUND, not VALIDATION_ERROR, not CONFLICT as a generic code)", "passed": true, "evidence": "Error catalog table includes TaskNotFound, InvalidStatusTransition, TaskAlreadyCompleted, InvalidRequestBody, IdempotencyKeyReused, SessionExpired, InsufficientPermissions \u2014 explicitly states 'Codes are domain-expressive \u2014 none of them just echo the HTTP status word'"}], "summary": {"passed": 12, "failed": 0, "total": 12, "pass_rate": 1.0}}}, {"id": "eval-0-design-task-api-from-scratch-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Task Management API Design\n\nHere is a clean HTTP contract for your task-management backend. I'll spell out URL, method, status codes, params, request/response bodies, and TypeScript types for each endpoint, then hit edge cases at the end.\n\n## Conventions\n\n- Base path: `/api/v1`\n- All bodies are JSON, snake_case-free (camelCase on the wire).\n- Auth: assume a `Authorization: Bearer <token>` header on every request.\n- Error response shape:\n\n```ts\ninterface ApiErrorResponse {\n  error: {\n    code: string         // e.g. \"VALIDATION_ERROR\"\n    message: string\n    fields?: Record<string, string>  // for validation errors\n  }\n}\n```\n\n- Common shared types:\n\n```ts\ntype ISO8601 = string\n\ntype TaskStatus = \"todo\" | \"in_progress\" | \"done\"\ntype TaskPriority = \"low\" | \"medium\" | \"high\" | \"urgent\"\n\ninterface User {\n  id: string\n  name: string\n  email: string\n}\n\ninterface Task {\n  id: string\n  title: string\n  description: string | null\n  status: TaskStatus\n  priority: TaskPriority\n  assignee: User | null\n  createdAt: ISO8601\n  updatedAt: ISO8601\n  completedAt: ISO8601 | null\n  createdById: string\n}\n\ninterface Comment {\n  id: string\n  taskId: string\n  authorId: string\n  body: string\n  createdAt: ISO8601\n}\n```\n\n---\n\n## 1. List tasks\n\n**`GET /api/v1/tasks`**\n\nSupports search, filter, sort, and offset/limit pagination.\n\n### Query parameters\n\n| Name        | Type                          | Notes                                        |\n|-------------|-------------------------------|----------------------------------------------|\n| `search`    | string                        | Free-text over title + description           |\n| `assignee`  | string (userId)               | Filter by assignee. Repeat for multiple      |\n| `status`    | `TaskStatus`                  | Filter by status. Repeat for multiple        |\n| `sort`      | string                        | e.g. `-priority,createdAt` (leading `-` = desc) |\n| `page`      | integer (default `1`)         | 1-indexed                                    |\n| `pageSize`  | integer (default `25`, max `100`) |                                          |\n\n### Response \u2014 `200 OK`\n\n```ts\ninterface ListTasksResponse {\n  tasks: Task[]\n  total: number          // total matching rows\n  page: number\n  pageSize: number\n}\n```\n\n### TypeScript request type\n\n```ts\ninterface ListTasksQuery {\n  search?: string\n  assignee?: string | string[]\n  status?: TaskStatus | TaskStatus[]\n  sort?: string\n  page?: number\n  pageSize?: number\n}\n```\n\n### Status codes\n- `200 OK` \u2014 list returned\n- `400 Bad Request` \u2014 bad query (e.g. invalid sort field)\n- `401 Unauthorized`\n\n---\n\n## 2. Create a task\n\n**`POST /api/v1/tasks`**\n\n### Request body\n\n```ts\ninterface CreateTaskRequest {\n  title: string                       // required, 1..200 chars\n  description?: string                // optional\n  priority?: TaskPriority             // default \"medium\"\n  assigneeId?: string                 // user id\n  status?: TaskStatus                 // default \"todo\"\n}\n```\n\n### Response \u2014 `200 OK`\n\nThe created `Task` resource.\n\n### Status codes\n- `200 OK` \u2014 created\n- `400 Bad Request` \u2014 malformed JSON\n- `422 Unprocessable Entity` \u2014 VALIDATION_ERROR with field-by-field messages\n- `401 Unauthorized`\n\n### Validation errors\n\nReturn one field at a time so the client can highlight individual inputs:\n\n```json\n{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"title is required\",\n    \"fields\": { \"title\": \"required\" }\n  }\n}\n```\n\n---\n\n## 3. Get a single task\n\n**`GET /api/v1/tasks/:id`**\n\n### Response \u2014 `200 OK`\nThe `Task` resource.\n\n### Status codes\n- `200 OK`\n- `404 NOT_FOUND` \u2014 `{ error: { code: \"NOT_FOUND\", message: \"Task <id> not found\" } }`\n- `401 Unauthorized`\n\n---\n\n## 4. Mark task complete\n\n**`POST /api/v1/tasks/:id/complete`**\n\nWhy a dedicated endpoint? Completion is a *distinct domain operation* \u2014 it sends emails, writes audit rows, and may trigger webhooks. Separating it from a generic update keeps that side-effect contract explicit, and the URL is self-documenting in logs (`POST /tasks/abc/complete` is unambiguous in tracing tools).\n\n### Request body\n\nEmpty (or optional `note` for the audit row):\n\n```ts\ninterface CompleteTaskRequest {\n  note?: string\n}\n```\n\n### Response \u2014 `200 OK`\nReturns the updated `Task` (with `status: \"done\"` and a populated `completedAt`).\n\n### Status codes\n- `200 OK`\n- `404 NOT_FOUND`\n- `409 CONFLICT` \u2014 task is already completed\n- `401 Unauthorized`, `403 Forbidden`\n\n### Side-effect summary\n- Sends completion email to `task.createdBy` and `task.assignee`.\n- Writes an `audit_log` row.\n\n---\n\n## 5. Add a comment to a task\n\n**`POST /api/v1/tasks/:id/comments`**\n\n### Request body\n\n```ts\ninterface CreateCommentRequest {\n  body: string         // required, 1..5000 chars\n}\n```\n\n### Response \u2014 `200 OK`\n\nThe created `Comment` resource.\n\n### Status codes\n- `200 OK`\n- `404 NOT_FOUND` \u2014 task does not exist\n- `422 Unprocessable Entity` \u2014 empty body\n- `401 Unauthorized`\n\n### Bonus: list comments\n\n`GET /api/v1/tasks/:id/comments` \u2192 `{ comments: Comment[], total, page, pageSize }`.\n\n---\n\n## Edge cases\n\n1. **Pagination beyond the end** \u2014 return `{ tasks: [], total, ... }`, not a 404.\n2. **Sorting on unknown field** \u2014 `400 Bad Request` with VALIDATION_ERROR.\n3. **Deleting / unassigning user** \u2014 preserve `assigneeId` but the `assignee` object becomes `null` if hard-deleted; better to soft-delete users.\n4. **Race on completion** \u2014 second `POST /complete` returns `409 CONFLICT`.\n5. **Comment on completed task** \u2014 allowed by default; flag it if your product wants to lock comments after completion.\n6. **Filter combinations** \u2014 multiple `status` values OR within the param, AND across different params.\n7. **Search index lag** \u2014 note that newly created tasks may take a moment to appear in `search` queries if you're using async indexing.\n8. **Auth scope** \u2014 only the assignee, creator, or an admin can complete a task; otherwise `403 Forbidden`.\n"}], "grading": {"expectations": [{"text": "List endpoint is GET /api/tasks (plural, resource-oriented, no verbs)", "passed": true, "evidence": "Section '1. List tasks' shows '**`GET /api/v1/tasks`**' \u2014 plural, no verbs (the `/v1/` prefix is not a verb)"}, {"text": "List response wraps rows in an envelope with `data` and a pagination sub-object (not a bare array, not a bespoke envelope like {tasks, total, limit, offset}, not a differently-named sub-object like pageInfo)", "passed": false, "evidence": "ListTasksResponse uses bespoke shape '{ tasks: Task[]; total: number; page: number; pageSize: number }' \u2014 top-level resource-named key 'tasks' instead of 'data', no nested pagination sub-object, includes 'total'"}, {"text": "Pagination uses cursor-based pagination with default limit 20 and max limit 100 clamped server-side", "passed": false, "evidence": "Uses page/pageSize (offset-based), default pageSize 25 (not 20). Max 100 mentioned but strategy is page-number not cursor"}, {"text": "Search uses a single `q` query param", "passed": false, "evidence": "Query param table uses 'search' not 'q'"}, {"text": "Sort uses field:direction syntax on a single `sort` query param (e.g., `sort=priority:desc,createdAt:asc`) \u2014 not leading-minus syntax", "passed": false, "evidence": "Sort example: 'e.g. `-priority,createdAt` (leading `-` = desc)' \u2014 uses leading-minus syntax, not field:direction"}, {"text": "The 'complete' operation is expressed as a state transition via PATCH on the task resource (PATCH /api/tasks/:id with { status: 'COMPLETED' }) \u2014 NOT as a sub-resource action verb like POST /api/tasks/:id/complete", "passed": false, "evidence": "Section '4. Mark task complete' uses '**`POST /api/v1/tasks/:id/complete`**' \u2014 exactly the sub-resource action verb anti-pattern, with rationale 'a dedicated endpoint... separating it from a generic update keeps that side-effect contract explicit'"}, {"text": "Side effects of completion (emails, audit rows) are described as service-layer responsibilities keyed to the state transition itself, not as a reason to invent a dedicated URL", "passed": false, "evidence": "Side effects are explicitly used as the *justification* for a dedicated URL: 'Why a dedicated endpoint? Completion is a *distinct domain operation* \u2014 it sends emails, writes audit rows...'"}, {"text": "POST /api/tasks returns 201 Created with a Location header pointing at the new resource", "passed": false, "evidence": "Section '2. Create a task' Status codes: '200 OK \u2014 created' (no 201, no Location header)"}, {"text": "Wire format is camelCase for body/query fields (assigneeId, createdAt, etc.), not snake_case", "passed": true, "evidence": "Conventions: 'snake_case-free (camelCase on the wire)'; Task interface uses createdAt, updatedAt, completedAt, createdById"}, {"text": "TypeScript types separate input (CreateTaskInput) from output (Task) \u2014 output includes server-generated fields like id, createdAt", "passed": true, "evidence": "CreateTaskRequest contains only client-supplied fields (title, description?, priority?, assigneeId?, status?); Task type separately defined with id, createdAt, updatedAt, completedAt, createdById"}, {"text": "Error envelope is FLAT at the top level \u2014 { code, message, details?, requestId } \u2014 NOT nested under an `error:` key", "passed": false, "evidence": "ApiErrorResponse: '{ error: { code: string; message: string; fields?: ... } }' \u2014 explicitly nested under `error:` key"}, {"text": "Error `code` values are domain-expressive (e.g., TaskNotFound, TaskAlreadyCompleted, InvalidRequestBody) and do NOT merely echo the HTTP status (not NOT_FOUND, not VALIDATION_ERROR, not CONFLICT as a generic code)", "passed": false, "evidence": "Validation error example uses 'code: \"VALIDATION_ERROR\"'; status code section references '404 NOT_FOUND' and '409 CONFLICT' as the codes \u2014 all echo HTTP status"}], "summary": {"passed": 3, "failed": 9, "total": 12, "pass_rate": 0.25}}}, {"id": "eval-1-pr-audit-multiple-violations-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# PR Audit: REST Surface Violations\n\nThe PR introduces four routes that each break a different REST convention. I'll go through them in order, then close with the cross-cutting issues. Findings are tagged with severity so you can scan and triage.\n\n---\n\n## Finding 1 \u2014 `GET /api/users` returns a raw array \u2014 `High`\n\n**Why it matters.** A bare `[...]` body cannot grow into a paginated list without breaking every consumer that wrote `response.json().then(arr => arr.map(...))`. Since users is an unbounded set (it grows over time), this becomes a contract problem the moment the table reaches a few thousand rows. Bare arrays also block adding sibling metadata (cursors, flags) without a major version bump.\n\n**Correct alternative.**\n\n```http\nGET /api/users?cursor=<opaque>&limit=20\n```\n\n```json\n{\n  \"data\": [{ \"id\": \"user_01HX...\", \"email\": \"...\" }],\n  \"pagination\": { \"nextCursor\": \"eyJp...\", \"hasMore\": true }\n}\n```\n\n- Cursor-based pagination (opaque `nextCursor`, `hasMore` boolean). Cursors are server-defined; clients pass back whatever they received.\n- Default `limit=20`, max `limit=100`, clamped at the route handler.\n- **Do not return `total`.** A `COUNT(*)` on a growing table is expensive and tells the client nothing actionable. Reserve `total` for bounded sets.\n\n---\n\n## Finding 2 \u2014 `POST /api/createUser` puts a verb in the URL \u2014 `High`\n\n**Why it matters.** REST URLs name resources, not actions; the HTTP method names the action. `POST /api/createUser` duplicates the verb in two places and fragments the URL space \u2014 the next dev will reach for `/api/deleteUser`, `/api/updateUser`, and the surface area explodes.\n\n**Correct alternative.**\n\n```http\nPOST /api/users\nContent-Type: application/json\n```\n\nThe method (`POST`) means \"create\"; the path names the collection.\n\n---\n\n## Finding 3 \u2014 `POST` returns `200` with no `Location` header \u2014 `Medium`\n\n**Why it matters.** `200 OK` does not communicate \"a new resource was created at a discoverable URL.\" Clients (and proxies) lose the cue that the response represents a fresh resource and have to parse the body to find the new ID.\n\n**Correct alternative.**\n\n```http\nHTTP/1.1 201 Created\nLocation: /api/users/user_01HX...\nContent-Type: application/json\nX-Request-ID: req_01HX...\n\n{ \"id\": \"user_01HX...\", \"email\": \"...\", \"createdAt\": \"2026-04-26T...Z\" }\n```\n\n- `201 Created` on successful create.\n- `Location: /api/users/<id>` so the client can follow up with a `GET`.\n\n---\n\n## Finding 4 \u2014 Wire format is snake_case (`user_id`, `created_at`, `password_hash`) \u2014 `High`\n\n**Why it matters.** snake_case on the wire is usually a sign that raw DB rows are being serialized straight to the response \u2014 meaning your DB schema is now part of the public contract (Hyrum's Law). Renaming a column becomes a breaking change.\n\n**Bonus \u2014 `password_hash` in the response is a `Critical` data-leak issue.** Password hashes (or any cryptographic credential material) should never leave the database. Even bcrypt hashes are sensitive: they let an attacker run an offline dictionary attack at their leisure. Strip them at the service boundary. (This is a security concern, not strictly a REST one \u2014 handing it to the security review for confirmation, but call it out now because it's also visible from the contract.)\n\n**Correct alternative.** camelCase on the wire. The DB stays snake_case; route adapters do the case map.\n\n```json\n{\n  \"id\": \"user_01HX...\",\n  \"email\": \"ada@example.com\",\n  \"createdAt\": \"2026-04-26T...Z\",\n  \"updatedAt\": \"2026-04-26T...Z\"\n}\n```\n\nUse a shared `dbToWire` / `wireToDb` utility \u2014 don't hand-map field by field.\n\n---\n\n## Finding 5 \u2014 `GET /api/users/:id/delete` for a destructive action \u2014 `Critical`\n\n**Why it matters.** This is the most serious finding in the diff. `GET` is *defined* by RFC 9110 as safe and idempotent \u2014 meaning intermediaries (browsers, proxies, link prefetchers, anti-virus URL scanners, search engine crawlers if the URL ever leaks) feel free to fetch it speculatively. Using `GET` to delete a user means a logged-in user hovering over a link in a chat client can trigger a deletion. Same for any caching layer that warms URLs.\n\n**Correct alternative.**\n\n```http\nDELETE /api/users/user_01HX...\n```\n\n- `DELETE` method.\n- `204 No Content` on success (or `200` with a minimal body if you want to return an audit reference).\n- Re-deleting an already-deleted user returns `404` with a domain code (`UserNotFound`) \u2014 this is the idempotency contract for `DELETE`.\n\n---\n\n## Finding 6 \u2014 URL exposes DB implementation (`user_table_v2`) \u2014 `Medium`\n\n**Why it matters.** `/api/user_table_v2/query` (or anything similar in the diff) leaks an internal physical-storage detail into the public URL. Once consumers depend on `user_table_v2`, the next migration to `user_table_v3` is a breaking change \u2014 even though it's purely an internal refactor.\n\n**Correct alternative.** URLs name *domain* resources, not storage tables. `/api/users` (or a domain-meaningful sub-resource) regardless of which backend table holds the data.\n\n---\n\n## Finding 7 \u2014 Bespoke list envelope `{ events, total, limit, offset }` \u2014 `High`\n\n**Why it matters.** Two distinct problems live in this one shape:\n\n1. **Resource-named top-level key (`events`).** Every list endpoint having a different top-level key (`users`, `events`, `tasks`...) means clients can't share a single \"unwrap a list response\" helper. A canonical `data` key makes generic pagination handling possible.\n2. **`total` on an unbounded set.** `events` is a growing log \u2014 `COUNT(*)` over an unbounded set is expensive and the answer drifts between request and use. Don't return it.\n\n**Correct alternative.**\n\n```json\n{\n  \"data\": [{ \"id\": \"evt_01HX...\", \"type\": \"user.created\", \"createdAt\": \"...\" }],\n  \"pagination\": { \"nextCursor\": \"...\", \"hasMore\": true }\n}\n```\n\nUse the same `{ data, pagination: { nextCursor, hasMore } }` envelope as `GET /api/users`. One shape across every list endpoint, one client helper. Switch from `offset/limit` to cursor-based pagination \u2014 the events log is high-write, so offset pagination drifts (rows shift between page reads).\n\n---\n\n## Finding 8 \u2014 Validation reports one field at a time \u2014 `High`\n\n**Why it matters.** Returning the *first* validation error per request forces the user into a \"submit, fix, submit again\" round-trip per field. The validator already has the full set; surfacing them all in one response is strictly less work.\n\n**Correct alternative.**\n\n```json\n{\n  \"code\": \"InvalidRequestBody\",\n  \"message\": \"Request validation failed\",\n  \"details\": [\n    { \"field\": \"email\", \"message\": \"Email address is required\" },\n    { \"field\": \"password\", \"message\": \"Password must be at least 8 characters\" }\n  ],\n  \"requestId\": \"req_01HX...\"\n}\n```\n\n`details` is an array of `{ field, message }` so the client can render every error inline at once.\n\n---\n\n## Finding 9 \u2014 Error envelope is wrapped under `error: {...}` \u2014 `Medium`\n\n**Why it matters.** `{ \"error\": { \"code\": ..., \"message\": ... } }` adds a layer of nesting that the HTTP status already provides. The HTTP status classifies the response as an error; the body *is* the error payload.\n\n**Correct alternative \u2014 flat envelope.**\n\n```json\n{\n  \"code\": \"TaskNotFound\",\n  \"message\": \"No task with id task_01HX...\",\n  \"details\": { \"id\": \"task_01HX...\" },\n  \"requestId\": \"req_01HX...\"\n}\n```\n\nTop-level fields: `code`, `message`, `details?`, `requestId`. No `error:` wrapper.\n\n---\n\n## Finding 10 \u2014 Error codes echo the HTTP status (`NOT_FOUND`, `VALIDATION_ERROR`, `CONFLICT`) \u2014 `Medium`\n\n**Why it matters.** HTTP status and `code` do different jobs:\n\n- HTTP status classifies for *generic* clients, proxies, and retry libraries (4xx / 5xx).\n- `code` names *the specific domain reason* the request failed, so programmatic clients can branch on cause.\n\n`code: \"NOT_FOUND\"` on a 404 is two layers saying the same thing \u2014 it wastes the field. The interesting question is \"*what* is missing?\" \u2014 `UserNotFound`, `TaskNotFound`, `WebhookNotFound` \u2014 and the client cares which.\n\n**Correct alternative.** Domain-expressive codes from a maintained catalog:\n\n| HTTP | Anti-pattern | Use instead |\n|------|--------------|-------------|\n| 404  | `NOT_FOUND` | `UserNotFound`, `TaskNotFound` |\n| 422  | `VALIDATION_ERROR` | `InvalidRequestBody`, `EmailFormatInvalid` |\n| 409  | `CONFLICT` | `IdempotencyKeyReused`, `EmailAlreadyTaken`, `InvalidStatusTransition` |\n| 403  | `FORBIDDEN` | `AccountSuspended`, `InsufficientPermissions` |\n\nUse one consistent style (`PascalCase` or `UPPER_SNAKE_CASE`) and add new codes via a catalog, not inline in handlers.\n\n---\n\n## Finding 11 \u2014 No `X-Request-ID` on responses; error bodies have no `requestId` \u2014 `Medium`\n\n**Why it matters.** When a customer reports an error, the only way to find their request in your logs is a request ID. Without it, support traces bounce around for hours.\n\n**Correct alternative.** Every response (success and error) sets:\n\n```http\nX-Request-ID: req_01HX...\n```\n\nEvery error body includes the same value as `requestId` so the customer-paste from a UI error message is enough to locate the request server-side.\n\n---\n\n## What I am NOT recommending\n\nA few changes that look natural at first glance but are deliberate non-recommendations:\n\n- **No `/v1/` URL prefix.** Default to no version segment; reserve `/v2/` for the rare case where you need to ship an incompatible change alongside a deprecation window for an external consumer that's locked to the old shape. Internal-only breaking changes are migrations, not versions.\n- **No `total` field on the events list.** It's an unbounded set; the count is expensive and not actionable. (Repeated from finding 7 because reviewers often try to add it back.)\n\n---\n\n## Out of lane\n\nThese touched the diff but belong to other reviews. Calling them out so they aren't dropped, but not prescribing fixes here:\n\n- `password_hash` exposure \u2014 this is a security review issue first, REST contract second. Owner: security skill.\n- The implementation of CORS, session handling, and rate-limit *algorithms* \u2014 REST contract covers the headers (`X-RateLimit-*`, `Retry-After`, `Access-Control-Allow-Origin` discipline), not the limiter itself.\n\n---\n\n## Summary\n\n| # | Severity | Finding |\n|---|----------|---------|\n| 5 | Critical | `GET` for destructive action |\n| 4 | High     | snake_case on the wire (and `password_hash` exposure \u2014 security) |\n| 1 | High     | Bare-array list response |\n| 2 | High     | Verb in URL (`/createUser`) |\n| 7 | High     | Bespoke list envelope + `total` on unbounded set |\n| 8 | High     | Validation round-tripped per field |\n| 3 | Medium   | `POST` returning 200, no `Location` |\n| 6 | Medium   | DB implementation in URL |\n| 9 | Medium   | Error wrapped under `error:` |\n| 10 | Medium  | Error codes echo HTTP status |\n| 11 | Medium  | Missing `X-Request-ID` / `requestId` |\n"}], "grading": {"expectations": [{"text": "Catches snake_case on the wire (user_id, created_at, password_hash) and prescribes camelCase at the boundary", "passed": true, "evidence": "Finding 4: 'Wire format is snake_case (`user_id`, `created_at`, `password_hash`) \u2014 High'; correct alternative shows camelCase response with id, createdAt, updatedAt; mentions the case map at the route adapter"}, {"text": "Catches verb in URL (/api/createUser) and proposes POST /api/users", "passed": true, "evidence": "Finding 2: '`POST /api/createUser` puts a verb in the URL'; correct alternative '**`POST /api/users`**'"}, {"text": "Catches GET used for destructive action (/api/users/:id/delete) and proposes DELETE /api/users/:id", "passed": true, "evidence": "Finding 5: 'GET /api/users/:id/delete for a destructive action \u2014 Critical'; correct alternative 'DELETE /api/users/user_01HX...'"}, {"text": "Catches the raw-array response from getUsers and proposes a paginated envelope", "passed": true, "evidence": "Finding 1: 'GET /api/users returns a raw array \u2014 High'; alternative shows '{ data, pagination: { nextCursor, hasMore } }'"}, {"text": "Catches the bespoke listEvents envelope ({events,total,limit,offset}) and proposes the canonical shape", "passed": true, "evidence": "Finding 7: 'Bespoke list envelope `{ events, total, limit, offset }`'; alternative '{ data: [...], pagination: { nextCursor, hasMore } }' \u2014 same canonical envelope as users"}, {"text": "Catches validation reporting one field at a time and prescribes returning all fields at once in details[]", "passed": true, "evidence": "Finding 8: 'Validation reports one field at a time'; alternative shows details: [{field, message}, {field, message}] array form"}, {"text": "Catches POST returning 200 and prescribes 201 Created + Location header", "passed": true, "evidence": "Finding 3: 'POST returns 200 with no Location header \u2014 Medium'; alternative shows '201 Created' with 'Location: /api/users/user_01HX...'"}, {"text": "Notes lack of X-Request-ID on responses (or absence of the correlating requestId in error bodies)", "passed": true, "evidence": "Finding 11: 'No X-Request-ID on responses; error bodies have no requestId'; prescribes 'X-Request-ID: req_01HX...' on every response and matching requestId in error body"}, {"text": "The proposed error envelope is FLAT with domain-expressive codes \u2014 does not wrap contents in { error: {...} }, does not echo HTTP status as the code", "passed": true, "evidence": "Finding 9: 'Error envelope is wrapped under error: {...}'; alternative shows flat top-level '{ code, message, details?, requestId }'. Finding 10 prescribes domain-expressive codes (UserNotFound, EmailAlreadyTaken, InvalidStatusTransition) over NOT_FOUND/CONFLICT/VALIDATION_ERROR"}, {"text": "Does NOT recommend introducing a `/v1/` URL prefix \u2014 follows the One-Version Rule's 'no default version segment'", "passed": true, "evidence": "Section 'What I am NOT recommending': 'No /v1/ URL prefix. Default to no version segment; reserve /v2/ for the rare case where you need to ship an incompatible change...'"}, {"text": "Does NOT recommend returning `total` on an unbounded list (no COUNT(*) recommendation) \u2014 recognizes the skill's 'never return total on unbounded sets' rule", "passed": true, "evidence": "Finding 1: 'Do not return total. A COUNT(*) on a growing table is expensive...'; Finding 7 calls out '`total` on an unbounded set' as a problem; explicit non-recommendation 'No `total` field on the events list'"}, {"text": "Flags the URL exposing DB implementation (user_table_v2 referenced / DB naming leaking)", "passed": true, "evidence": "Finding 6: 'URL exposes DB implementation (`user_table_v2`) \u2014 Medium'; explanation that `/api/user_table_v2/query` leaks an internal physical-storage detail; alternative names domain resources not storage tables"}], "summary": {"passed": 12, "failed": 0, "total": 12, "pass_rate": 1.0}}}, {"id": "eval-1-pr-audit-multiple-violations-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# PR Review: API Endpoint Issues\n\nThis PR has several REST and API design issues. Let me walk through each one.\n\n## 1. `GET /api/users` returns a raw array\n\n**Problem.** A bare array is hard to evolve. If you later need to add pagination, metadata, or any other top-level field, you have to do a v2 migration to avoid breaking clients.\n\n**Fix.** Wrap the response in an envelope and add pagination from day one.\n\n```json\n{\n  \"users\": [...],\n  \"page\": 1,\n  \"pageSize\": 20,\n  \"total\": 1234\n}\n```\n\nThis way you can add fields like `nextPage`, filters, or summary stats without a breaking change.\n\n## 2. `POST /api/createUser` \u2014 verb in the URL\n\n**Problem.** REST URLs name resources, not actions. `createUser` is the HTTP method's job (`POST`).\n\n**Fix.** Use `POST /v1/users` \u2014 and consider versioning the prefix (`/v1/`) so you have a clear migration path later.\n\n## 3. `POST` returning `200` with snake_case payload\n\n**Problem.** Two issues here:\n\n1. The conventional success status for a `POST` that creates a resource is `201 Created` with a `Location` header pointing to the new resource.\n2. `snake_case` on the wire is unusual for a JSON API; most teams pick camelCase or PascalCase for consistency with JavaScript clients.\n\n**Fix.**\n\n```http\nHTTP/1.1 201 Created\nLocation: /v1/users/abc123\n\n{\n  \"id\": \"abc123\",\n  \"userName\": \"ada\",\n  \"createdAt\": \"2026-04-26T...\"\n}\n```\n\nIf you have any reason to keep snake_case (some Python / Ruby shops do), be consistent across all endpoints. Mixing styles is the worst outcome.\n\n## 4. `GET /api/users/:id/delete` for a destructive action\n\n**Problem.** `GET` should be safe and idempotent. Using `GET` to delete a resource:\n\n- Causes browsers, caches, and prefetchers to delete users speculatively.\n- Won't be cached correctly.\n- Is not how anybody expects a REST API to work.\n\n**Fix.**\n\n```http\nDELETE /v1/users/:id\n```\n\nwith `204 No Content` on success.\n\n## 5. Bespoke `{events, total, limit, offset}` envelope\n\n**Problem.** Bespoke per-endpoint envelopes are inconsistent \u2014 clients can't share a generic pagination helper across endpoints. Better to have *one* pagination shape for the whole API.\n\n**Fix.** Pick a shape and use it everywhere. For example:\n\n```json\n{\n  \"data\": [...],\n  \"pagination\": {\n    \"page\": 2,\n    \"pageSize\": 20,\n    \"total\": 437\n  }\n}\n```\n\nUse the same envelope for `GET /api/users` and any other list endpoint.\n\n## 6. Validation errors reported one field at a time\n\n**Problem.** Returning only the first validation error means the user has to round-trip each fix one at a time. Bad UX.\n\n**Fix.** Return all validation failures in one response:\n\n```json\n{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Validation failed\",\n    \"fields\": {\n      \"email\": \"Email is required\",\n      \"password\": \"Password must be at least 8 characters\"\n    }\n  }\n}\n```\n\nMost validation libraries (Zod, Yup, Joi, Pydantic, validator) collect all errors automatically \u2014 pass them through.\n\n## 7. `password_hash` is in the response\n\n**Problem.** Hashes should never leave the database. Even bcrypt hashes give attackers an offline cracking surface.\n\n**Fix.** Strip from the response model. Use a sanitizer / DTO at the boundary.\n\n## Summary\n\n| Endpoint | Issue | Fix |\n|---|---|---|\n| `GET /api/users` | bare array, no pagination | wrap in envelope, paginate |\n| `POST /api/createUser` | verb in URL, returns 200, snake_case | `POST /v1/users` returning 201 |\n| `GET /api/users/:id/delete` | destructive GET | `DELETE /v1/users/:id` |\n| listEvents | bespoke envelope | canonical `{data, pagination}` |\n| validation | one error at a time | return all |\n| response | leaks `password_hash` | drop from response |\n\nAdopting `/v1/` as a prefix from the start gives you room to evolve. And establishing one error envelope (`{ error: { code, message, fields? } }`) and one pagination envelope across the whole API will save a lot of pain later.\n"}], "grading": {"expectations": [{"text": "Catches snake_case on the wire (user_id, created_at, password_hash) and prescribes camelCase at the boundary", "passed": true, "evidence": "Section 3 mentions snake_case is unusual and shows camelCase example (userName, createdAt). Hedged ('If you have any reason to keep snake_case... be consistent') but the camelCase recommendation is present"}, {"text": "Catches verb in URL (/api/createUser) and proposes POST /api/users", "passed": true, "evidence": "Section 2: 'verb in the URL... `createUser` is the HTTP method's job (POST)'; fix: 'POST /v1/users'"}, {"text": "Catches GET used for destructive action (/api/users/:id/delete) and proposes DELETE /api/users/:id", "passed": true, "evidence": "Section 4: 'DELETE /v1/users/:id with 204 No Content on success'"}, {"text": "Catches the raw-array response from getUsers and proposes a paginated envelope", "passed": true, "evidence": "Section 1: 'A bare array is hard to evolve... Wrap the response in an envelope and add pagination from day one' with example `{ users, page, pageSize, total }`"}, {"text": "Catches the bespoke listEvents envelope ({events,total,limit,offset}) and proposes the canonical shape", "passed": true, "evidence": "Section 5: 'Bespoke per-endpoint envelopes are inconsistent... Pick a shape and use it everywhere' with example `{ data, pagination: { page, pageSize, total } }`"}, {"text": "Catches validation reporting one field at a time and prescribes returning all fields at once in details[]", "passed": true, "evidence": "Section 6: 'Returning only the first validation error means the user has to round-trip... Return all validation failures in one response' with fields object example"}, {"text": "Catches POST returning 200 and prescribes 201 Created + Location header", "passed": true, "evidence": "Section 3: 'conventional success status for a POST that creates a resource is 201 Created with a Location header'; fix shows '201 Created' with 'Location: /v1/users/abc123'"}, {"text": "Notes lack of X-Request-ID on responses (or absence of the correlating requestId in error bodies)", "passed": false, "evidence": "No mention of X-Request-ID, request correlation, or requestId field anywhere in the review"}, {"text": "The proposed error envelope is FLAT with domain-expressive codes \u2014 does not wrap contents in { error: {...} }, does not echo HTTP status as the code", "passed": false, "evidence": "Summary recommends '`{ error: { code, message, fields? } }`' \u2014 explicitly wrapped under `error:`. Section 6 example shows code 'VALIDATION_ERROR' which echoes the HTTP 422 status"}, {"text": "Does NOT recommend introducing a `/v1/` URL prefix \u2014 follows the One-Version Rule's 'no default version segment'", "passed": false, "evidence": "Section 2: 'consider versioning the prefix (/v1/) so you have a clear migration path later'; final summary: 'Adopting /v1/ as a prefix from the start gives you room to evolve' \u2014 explicitly recommends /v1/"}, {"text": "Does NOT recommend returning `total` on an unbounded list (no COUNT(*) recommendation) \u2014 recognizes the skill's 'never return total on unbounded sets' rule", "passed": false, "evidence": "Section 1 recommends `{ users, page, pageSize, total }`; Section 5 recommends `{ data, pagination: { page, pageSize, total } }` \u2014 both include `total`"}, {"text": "Flags the URL exposing DB implementation (user_table_v2 referenced / DB naming leaking)", "passed": false, "evidence": "No mention of user_table_v2 or any URL exposing DB schema/implementation"}], "summary": {"passed": 7, "failed": 5, "total": 12, "pass_rate": 0.58}}}, {"id": "eval-2-payments-post-idempotency-trap-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Review of `POST /api/payments` \u2014 Yes, something significant is missing\n\nShort answer: **the draft is missing an `Idempotency-Key` header on a money-moving POST**. Without it, any client retry \u2014 network blip, gateway timeout, mobile app reconnect, queue redelivery \u2014 risks creating a duplicate charge. This is the single most important thing to add before this endpoint goes anywhere near production.\n\n## Why this matters specifically for payments\n\n`POST` is not idempotent by default. Two identical requests can \u2014 and at scale, will \u2014 create two payments. The standard failure mode looks like this:\n\n1. Client sends `POST /api/payments` with `{ amount: 100.00 }`.\n2. Server processes the charge, sends a `201 Created` response.\n3. Response is dropped before reaching the client (network reset, load balancer timeout, app crash).\n4. Client retries with the same body.\n5. Server has no way to recognize this as the same logical request and creates a second payment.\n\nYou now have a duplicate charge, a confused customer, a chargeback risk, and a manual reconciliation problem. Idempotency keys are the contract that prevents this.\n\n## The contract to add\n\nRequire the header on this route:\n\n```http\nPOST /api/payments\nContent-Type: application/json\nIdempotency-Key: 9b1c4e6a-1a82-4a0e-b56b-2f2c2e0f9c7d\n```\n\n- **Format.** A client-generated UUIDv4 (or any sufficiently unique string) \u2014 the server doesn't pick it. Keys must be unique per logical operation; clients reuse the *same* key on retries of the *same* request.\n- **Required.** Reject the request with `400` and `code: \"IdempotencyKeyRequired\"` if absent. Don't make it optional on this route \u2014 money-moving endpoints can't afford \"well, the client forgot.\"\n\n## Server semantics\n\nThree scenarios the handler must support:\n\n### 1. First time the key is seen\n\nProcess the request normally, persist the result, return `201 Created` with the new `Payment`. From this point the key is \"claimed.\"\n\n### 2. Same key arrives again with the same payload\n\nThis is a retry. **Replay the original response byte-for-byte** \u2014 same status, same body, same `Location` header. The server must not process the payment twice. From the client's perspective the retry succeeded; from the ledger's perspective only one charge happened.\n\nThe \"same payload\" check is done by hashing the canonical body (sorted keys, normalized whitespace) and comparing to the hash stored against the key.\n\n### 3. Same key arrives with a different payload\n\nSomething is wrong on the client side \u2014 the same key is being reused for a different operation. Reject with:\n\n```http\nHTTP/1.1 409 Conflict\nContent-Type: application/json\nX-Request-ID: req_01HX...\n\n{\n  \"code\": \"IdempotencyKeyReused\",\n  \"message\": \"This Idempotency-Key was previously used for a different request\",\n  \"details\": {\n    \"previousRequestAt\": \"2026-04-26T18:02:11Z\",\n    \"previousPaymentId\": \"pay_01HX...\"\n  },\n  \"requestId\": \"req_01HX...\"\n}\n```\n\nNote the error envelope: flat at the top level (`code`, `message`, `details`, `requestId`), no `error:` wrapper, and `code` is domain-expressive (`IdempotencyKeyReused`) \u2014 not the generic `CONFLICT` that just echoes the HTTP status.\n\n## What the server has to persist\n\nA single row keyed by `(merchant_id, idempotency_key)` with these columns:\n\n| Column            | Notes |\n|-------------------|-------|\n| `merchant_id`     | Scope keys to the tenant so two merchants can pick the same UUID by chance. |\n| `idempotency_key` | The header value. |\n| `request_hash`    | SHA-256 of the canonicalized request body \u2014 cheap \"did the payload change?\" check. |\n| `response_status` | HTTP status to replay (201, 422, 409, etc \u2014 yes, replay errors too). |\n| `response_body`   | Serialized response body, including the original `requestId`. |\n| `response_headers`| At minimum `Location`. |\n| `created_at`      | For retention sweeping. |\n| `state`           | `IN_FLIGHT` / `COMPLETED` (so concurrent retries of the *same* key wait or reject \u2014 see \"in-flight\" below). |\n\n### Retention window\n\n**At least 24 hours**, and significantly longer for payments \u2014 most processors recommend 7\u201330 days, and Stripe keeps keys for 24h *of inactivity* on a sliding window. For financial writes I'd default to **at least 7 days**, document the value, and bump it if a retry storm has ever crossed the window. The longer the window, the more confidently a client can replay an old retry; the trade-off is storage and a slow background sweeper.\n\n### In-flight requests\n\nIf the same key arrives while the first is still processing, the second request should **wait** (briefly, with a timeout) for the first to finish, then replay its response \u2014 or, if your infra can't easily wait, return `409 IdempotencyRequestInFlight` and let the client retry after a short backoff. Don't process the second request in parallel; that's the duplicate-charge bug the whole pattern exists to prevent.\n\n## What this changes in the route schema\n\nThe schema for `POST /api/payments` should require the header:\n\n```ts\nconst headersSchema = z.object({\n  'idempotency-key': z.string().uuid(),\n  'content-type': z.literal('application/json'),\n})\n\nconst bodySchema = z.object({\n  amount: z.string().regex(/^\\d+\\.\\d{2}$/),       // string-decimal, never float for money\n  currency: z.enum(['USD', 'EUR', 'GBP']),\n  source: z.string(),                             // payment source reference\n  description: z.string().max(500).optional(),\n  metadata: z.record(z.string()).optional(),\n})\n```\n\nAnd validation runs at the route boundary \u2014 both header and body \u2014 returning all violations at once if the body is malformed:\n\n```json\n{\n  \"code\": \"InvalidRequestBody\",\n  \"message\": \"Request validation failed\",\n  \"details\": [\n    { \"field\": \"amount\", \"message\": \"Must be a decimal string with two places (e.g. \\\"100.00\\\")\" }\n  ],\n  \"requestId\": \"req_01HX...\"\n}\n```\n\n## What idempotency keys do *not* protect against\n\nA few clarifications worth pinning down so the team isn't surprised later:\n\n- **They protect one client's retry loop.** They do not deduplicate requests across two distinct clients (mobile app on phone A, mobile app on phone B). That's a domain-level dedup problem \u2014 solved with a unique constraint on something the user controls (e.g. an order ID).\n- **They do not replace audit logging.** The persisted response is a cache for replay, not a record of what happened \u2014 keep your normal audit / ledger writes.\n- **They are not optional once you've shipped them.** Removing the header requirement after clients depend on it is a breaking change; document it in the contract and treat it like any other public field.\n\n## TL;DR \u2014 the gap and the fix\n\n| Gap | Fix |\n|-----|-----|\n| `POST /api/payments` accepts no idempotency key | Require `Idempotency-Key` header (UUID) |\n| Retries can produce duplicate charges | Persist `(merchantId, key, requestHash, status, body, headers)` and replay on retry |\n| Same key + different payload silently overwrites | Return `409` with `code: \"IdempotencyKeyReused\"` and the previous payment id in `details` |\n| In-flight retries race | Mark in-flight; second arrival waits or returns `409 IdempotencyRequestInFlight` |\n| Retention undefined | Document the window \u2014 7+ days for financial writes |\n| Catalog | Add `IdempotencyKeyRequired`, `IdempotencyKeyReused`, `IdempotencyRequestInFlight` to the error catalog |\n\nOnce those are wired, the contract is safe to retry from any client \u2014 which is what every well-designed money-moving endpoint promises.\n"}], "grading": {"expectations": [{"text": "Identifies the missing Idempotency-Key header as the primary gap", "passed": true, "evidence": "Opening line: 'the draft is missing an Idempotency-Key header on a money-moving POST. Without it, any client retry... risks creating a duplicate charge. This is the single most important thing to add'"}, {"text": "Describes retry semantics: same key + same payload returns the original response exactly", "passed": true, "evidence": "'Same key arrives again with the same payload... This is a retry. **Replay the original response byte-for-byte** \u2014 same status, same body, same Location header. The server must not process the payment twice.'"}, {"text": "Describes 409 CONFLICT when the same key is reused with a different payload", "passed": true, "evidence": "'Same key arrives with a different payload... Reject with: HTTP/1.1 409 Conflict' with body code 'IdempotencyKeyReused'"}, {"text": "Recommends persisting the idempotency key alongside the payload hash + response for a retention window (mentions 24h or longer for financial writes)", "passed": true, "evidence": "Persistence table includes idempotency_key, request_hash (SHA-256), response_status, response_body, response_headers, created_at; retention section: 'At least 24 hours, and significantly longer for payments... For financial writes I'd default to at least 7 days'"}, {"text": "Does not mistakenly green-light the draft without flagging the idempotency gap", "passed": true, "evidence": "Opens with 'the draft is missing an Idempotency-Key header' and the entire response is structured around closing that gap; closing TL;DR table starts with the gap"}, {"text": "Error envelope in the revised contract is flat (top-level { code, message, details?, requestId }) with domain-expressive codes like `IdempotencyKeyReused` \u2014 not wrapped in `error:`, not `CONFLICT` as the code", "passed": true, "evidence": "409 example shows flat top-level keys: code: 'IdempotencyKeyReused', message, details, requestId \u2014 not wrapped in error:; catalog includes IdempotencyKeyRequired, IdempotencyKeyReused, IdempotencyRequestInFlight (all domain-expressive)"}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}}}, {"id": "eval-2-payments-post-idempotency-trap-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Review of `POST /api/payments`\n\nThe draft looks reasonable on the surface, but for a money-moving endpoint there are a few things I'd want to see before we ship. Here's my review:\n\n## 1. Authentication and authorization\n\nMake sure the route requires a verified caller (API key, OAuth bearer, signed request, etc). For internal admin operations vs. public client-initiated payments, the auth model can differ \u2014 call out which is which.\n\n## 2. Input validation\n\n- Validate the `amount` server-side. Don't trust the client. Also use a decimal type or string-encoded decimal rather than a JS float.\n- Validate the currency against an allowlist.\n- Reject negative amounts, zero, or amounts above a per-merchant limit.\n- Validate the customer reference / payment source.\n\n## 3. Error responses\n\nDefine error response shape:\n\n```json\n{\n  \"error\": {\n    \"code\": \"INSUFFICIENT_FUNDS\",\n    \"message\": \"Card declined: insufficient funds\"\n  }\n}\n```\n\nMap the common decline codes from your processor to your own error codes so clients have a stable contract.\n\n## 4. PCI / compliance\n\nIf the endpoint accepts raw card details, you're in PCI scope \u2014 typically you want to take a tokenized payment source instead (e.g. a Stripe / Braintree token) so the card data never touches your servers.\n\n## 5. Logging\n\nLog the request and response (excluding card numbers) with a request ID for support traceability.\n\n## 6. Rate limiting\n\nPayment endpoints are attractive targets for card-testing attacks. Rate limit aggressively per IP and per customer, and consider 3DS / step-up auth on suspicious patterns.\n\n## 7. Webhook / async handling\n\nIf the payment can be asynchronous (3DS challenge, ACH, etc), the synchronous response should clearly indicate `pending` vs `succeeded`, and you'll want a webhook to inform the merchant when the final state lands.\n\n## 8. Status codes\n\n- `201 Created` on successful payment creation, with `Location` pointing at `/api/payments/{id}`.\n- `422 Unprocessable Entity` for validation errors.\n- `402 Payment Required` for processor declines (card declined, insufficient funds, etc).\n- `429 Too Many Requests` when rate limits trigger.\n\n## Summary\n\nTighten up auth, server-side validation, and error mapping. Take tokenized payment sources rather than raw card details. Decide synchronous vs. async behavior and set up webhooks for the async case. Beyond that the shape looks fine.\n"}], "grading": {"expectations": [{"text": "Identifies the missing Idempotency-Key header as the primary gap", "passed": false, "evidence": "The review covers auth, validation, error responses, PCI, logging, rate limiting, async webhooks, and status codes \u2014 but never mentions Idempotency-Key, idempotency, or duplicate-charge protection on retries"}, {"text": "Describes retry semantics: same key + same payload returns the original response exactly", "passed": false, "evidence": "No discussion of retry semantics or idempotency key handling"}, {"text": "Describes 409 CONFLICT when the same key is reused with a different payload", "passed": false, "evidence": "Status codes mention 422, 402, 429 but no 409 in the context of idempotency-key reuse"}, {"text": "Recommends persisting the idempotency key alongside the payload hash + response for a retention window (mentions 24h or longer for financial writes)", "passed": false, "evidence": "No mention of persisting idempotency keys, payload hashes, or retention windows"}, {"text": "Does not mistakenly green-light the draft without flagging the idempotency gap", "passed": false, "evidence": "Summary closes with 'Beyond that the shape looks fine' \u2014 effectively green-lighting the contract while missing the central money-moving gap"}, {"text": "Error envelope in the revised contract is flat (top-level { code, message, details?, requestId }) with domain-expressive codes like `IdempotencyKeyReused` \u2014 not wrapped in `error:`, not `CONFLICT` as the code", "passed": false, "evidence": "Section 3 example wraps payload in '{ error: { code, message } }'; no IdempotencyKeyReused code present (the topic is absent entirely)"}], "summary": {"passed": 0, "failed": 6, "total": 6, "pass_rate": 0.0}}}, {"id": "eval-3-bounded-notifications-not-a-list-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Recent Notifications \u2014 URL and Response Shape\n\nThe endpoint is small but the design choices matter, because \"always 5\" is a *policy bound*, not \"we just don't paginate yet.\" Treat it that way and the shape becomes clear.\n\n## URL\n\n```\nGET /api/notifications/recent\n```\n\nPlural noun, no verbs \u2014 `getNotifications`, `fetchRecent`, `latest` would all bake the action into the URL when the HTTP method already names it. The `/recent` segment is a sub-resource describing *which* notifications, not an action.\n\nIf `/recent` reads awkwardly, an alternative is:\n\n```\nGET /api/me/notifications\n```\n\n\u2026where the rule \"5 most recent for the current user\" lives entirely in the route's documented behavior. Either is fine; pick one and don't expose both.\n\n## Response shape\n\n```http\nHTTP/1.1 200 OK\nContent-Type: application/json; charset=utf-8\nX-Request-ID: req_01HX...\n\n{\n  \"data\": [\n    {\n      \"id\": \"ntf_01HX...\",\n      \"type\": \"comment.mention\",\n      \"title\": \"Ada mentioned you in a comment\",\n      \"createdAt\": \"2026-04-26T18:02:11Z\",\n      \"readAt\": null,\n      \"subjectUrl\": \"/api/tasks/task_01HX...\"\n    }\n    /* \u2026up to 4 more, never more than 5 */\n  ]\n}\n```\n\nA few deliberate choices:\n\n- **`{ data: [...] }` envelope, not a bare array.** Bare arrays can't grow into a richer response without breaking every consumer. The envelope is the same shape we use for paginated lists, minus the `pagination` sub-object \u2014 so any \"unwrap a list response\" client helper still works.\n- **No top-level resource name** (no `{ \"notifications\": [...] }`). Keeping the key generic across all list-shaped endpoints means clients write `response.data` once and never special-case per route.\n- **No invented sibling fields.** No `unreadCount`, no `fetchedAt`, no `lastSeenId`. Those weren't asked for; adding them speculatively creates contract obligations (Hyrum's Law \u2014 once a field is observable, somebody depends on it). If unread count is needed later, it goes on its own dedicated endpoint or a clearly-named response field added intentionally.\n\n## What's deliberately *missing*\n\nThis is the most important part of the design.\n\n### No pagination\n\nThis is bounded by policy at 5 \u2014 it is not a growing list. Cursor / offset / page parameters don't belong here. Adding them would imply the bound is negotiable when it isn't.\n\n### No `limit` / `count` / `take` query parameter\n\nDo not let the client request fewer than 5, or \u2014 much more importantly \u2014 *more* than 5. The bound is server-enforced and fixed.\n\n```http\nGET /api/notifications/recent?limit=50    \u2190 do not honor this\n```\n\nIf the client could pass `limit=50`, then within a week you'll have a dashboard quietly relying on 50, and your \"always 5\" guarantee is dead. Refuse the parameter (treat it as an unknown field and ignore it, or `400` if you want to be loud about it). Either way, **the server returns at most 5**, period.\n\n### No `total` field\n\nThe set is, by construction, at most 5. There's no pagination to drive a total against, and the client can `data.length` it anyway.\n\n## Why \"always 5\" needs guardrails\n\nTwo reasons to write this rule down explicitly in the route's documentation, not just in the handler:\n\n1. **Hyrum's Law.** As soon as the response always has 5 items, every consumer depends on exactly 5. A future change to \"the 5 most recent in the last 24h\" (which can produce fewer than 5) is now a breaking change to anyone who hard-coded `notifications[4]`. Document upfront that the array contains *up to* 5 items so clients don't hard-code length.\n2. **Broadening the bound is a breaking change.** Going from \"always 5\" to \"configurable, default 20\" is not additive \u2014 it changes the response size, the latency profile, and the implied contract. If you ever need that, it's a new endpoint (`GET /api/notifications` with cursor pagination), and `/recent` stays exactly as it is. Don't try to evolve `/recent` into a paginated list.\n\n## Summary\n\n| | |\n|---|---|\n| **Method + URL** | `GET /api/notifications/recent` |\n| **Auth** | Authenticated user (the \"current user\" comes from the session, not the URL) |\n| **Query params** | None. Reject or ignore `limit`/`page`/`cursor`. |\n| **Status** | `200 OK` always (empty array if the user has no notifications) |\n| **Body** | `{ \"data\": Notification[] }` \u2014 at most 5 items |\n| **Headers** | `X-Request-ID` on every response |\n| **Errors** | `401 SessionExpired` if unauthenticated. The flat error envelope (`{ code, message, details?, requestId }`) applies. |\n\nThe smallest thing the route has to do, with no doors left open for the bound to drift later.\n"}], "grading": {"expectations": [{"text": "Does NOT add cursor/offset/page pagination (recognizes this as bounded-by-policy, not a growing list)", "passed": true, "evidence": "Section 'No pagination': 'This is bounded by policy at 5 \u2014 it is not a growing list. Cursor / offset / page parameters don't belong here.'"}, {"text": "Returns the canonical `{ data: [...] }` envelope \u2014 NOT a bespoke envelope with a resource-named key like `{ notifications: [...] }`, and does not invent extra top-level fields like unreadCount or fetchedAt unless explicitly requested", "passed": true, "evidence": "Response shape is `{ \"data\": [...] }`; explicit notes 'No top-level resource name (no { \"notifications\": [...] })' and 'No invented sibling fields. No unreadCount, no fetchedAt, no lastSeenId'"}, {"text": "URL contains no verbs (no /getNotifications, /fetchRecent, /latest)", "passed": true, "evidence": "URL: 'GET /api/notifications/recent. Plural noun, no verbs \u2014 getNotifications, fetchRecent, latest would all bake the action into the URL'"}, {"text": "Explicitly notes the bound is server-enforced (client cannot request more than 5)", "passed": true, "evidence": "'Do not let the client request fewer than 5, or \u2014 much more importantly \u2014 more than 5. The bound is server-enforced and fixed.' and 'the server returns at most 5, period'"}, {"text": "Notes that broadening the bound later would be a breaking change (Hyrum's Law / contract discipline) \u2014 OR explicitly warns against exposing a `limit` query param", "passed": true, "evidence": "Both: 'No limit / count / take query parameter. Do not let the client request... more than 5'; AND 'Broadening the bound is a breaking change. Going from \"always 5\" to \"configurable, default 20\" is not additive'; AND Hyrum's Law explicitly invoked"}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}}}, {"id": "eval-3-bounded-notifications-not-a-list-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Recent Notifications Endpoint\n\nSince the requirement is fixed at 5 and there's no pagination, you can keep this very simple.\n\n## URL\n\n```\nGET /api/notifications/recent\n```\n\nOr alternatively `GET /api/notifications?limit=5` \u2014 but a dedicated `/recent` endpoint is cleaner since the count is fixed. The current user is inferred from the auth token, no need to put a user id in the URL.\n\n## Response shape\n\n```json\n{\n  \"notifications\": [\n    {\n      \"id\": \"ntf_abc123\",\n      \"type\": \"comment_mention\",\n      \"title\": \"Sam mentioned you in a comment\",\n      \"body\": \"...\",\n      \"createdAt\": \"2026-04-26T18:02:11Z\",\n      \"isRead\": false,\n      \"linkUrl\": \"/tasks/123\"\n    }\n  ],\n  \"unreadCount\": 3,\n  \"fetchedAt\": \"2026-04-26T18:05:00Z\"\n}\n```\n\nI included a couple of useful extras:\n\n- **`unreadCount`** \u2014 handy for the badge in the UI without having to make a second call.\n- **`fetchedAt`** \u2014 lets the client decide when the data is stale and trigger a refetch.\n\n## Status codes\n\n- `200 OK` \u2014 array returned (may be empty if the user has no notifications yet).\n- `401 Unauthorized` \u2014 no session.\n\n## TypeScript\n\n```ts\ninterface Notification {\n  id: string\n  type: NotificationType\n  title: string\n  body: string\n  createdAt: string\n  isRead: boolean\n  linkUrl: string\n}\n\ninterface RecentNotificationsResponse {\n  notifications: Notification[]\n  unreadCount: number\n  fetchedAt: string\n}\n```\n\nThat should be enough. Keep the array length capped at 5 server-side regardless of any client query params.\n"}], "grading": {"expectations": [{"text": "Does NOT add cursor/offset/page pagination (recognizes this as bounded-by-policy, not a growing list)", "passed": true, "evidence": "No cursor, offset, or page parameters in the design; opening line 'Since the requirement is fixed at 5 and there's no pagination, you can keep this very simple'"}, {"text": "Returns the canonical `{ data: [...] }` envelope \u2014 NOT a bespoke envelope with a resource-named key like `{ notifications: [...] }`, and does not invent extra top-level fields like unreadCount or fetchedAt unless explicitly requested", "passed": false, "evidence": "Response shape is bespoke: '{ notifications: [...], unreadCount: 3, fetchedAt: \"...\" }' \u2014 uses resource-named key 'notifications' and invents both unreadCount AND fetchedAt extras (the exact two fields the assertion warns against)"}, {"text": "URL contains no verbs (no /getNotifications, /fetchRecent, /latest)", "passed": true, "evidence": "Recommends 'GET /api/notifications/recent' \u2014 no verbs"}, {"text": "Explicitly notes the bound is server-enforced (client cannot request more than 5)", "passed": true, "evidence": "Closing line: 'Keep the array length capped at 5 server-side regardless of any client query params' \u2014 explicitly server-enforced"}, {"text": "Notes that broadening the bound later would be a breaking change (Hyrum's Law / contract discipline) \u2014 OR explicitly warns against exposing a `limit` query param", "passed": false, "evidence": "No mention that broadening would be a breaking change. Mentions 'or alternatively GET /api/notifications?limit=5' as an option (the opposite of warning against a limit param)"}], "summary": {"passed": 3, "failed": 2, "total": 5, "pass_rate": 0.6}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "rest-api-design", "skill_path": "/Users/torr/Projects/agent-skills/plugins/rest-api-design/skills/rest-api-design", "executor_model": "<model-name>", "analyzer_model": "<model-name>", "timestamp": "2026-04-26T14:52:14Z", "evals_run": [0, 1, 2, 3], "runs_per_configuration": 3}, "runs": [{"eval_id": 0, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 12, "failed": 0, "total": 12, "time_seconds": 180, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "List endpoint is GET /api/tasks (plural, resource-oriented, no verbs)", "passed": true, "evidence": "Section '1. List tasks' shows '**`GET /api/tasks`**'"}, {"text": "List response wraps rows in an envelope with `data` and a pagination sub-object (not a bare array, not a bespoke envelope like {tasks, total, limit, offset}, not a differently-named sub-object like pageInfo)", "passed": true, "evidence": "Sample response shows '\"data\": [...]' and '\"pagination\": { \"nextCursor\": ..., \"hasMore\": true }'; Paginated<T> type defined as { data: T[]; pagination: { nextCursor, hasMore } }"}, {"text": "Pagination uses cursor-based pagination with default limit 20 and max limit 100 clamped server-side", "passed": true, "evidence": "Query parameter table: 'cursor' opaque string, 'limit ... Default 20, max 100. Server clamps; out-of-range rejected with InvalidRequestParam'"}, {"text": "Search uses a single `q` query param", "passed": true, "evidence": "Query parameter table: '`q` | string | Free-text search across `title` and `description`'"}, {"text": "Sort uses field:direction syntax on a single `sort` query param (e.g., `sort=priority:desc,createdAt:asc`) \u2014 not leading-minus syntax", "passed": true, "evidence": "'`sort` ... `field:direction` pairs, comma-separated. Allowed fields: `priority`, `createdAt`. Direction: `asc` | `desc`. ... Example: `sort=priority:desc,createdAt:asc`'"}, {"text": "The 'complete' operation is expressed as a state transition via PATCH on the task resource (PATCH /api/tasks/:id with { status: 'COMPLETED' }) \u2014 NOT as a sub-resource action verb like POST /api/tasks/:id/complete", "passed": true, "evidence": "Section '4. Mark a task complete' shows '**`PATCH /api/tasks/:id`** ... To complete: PATCH /api/tasks/task_01HXY... { \"status\": \"COMPLETED\" }' and explicitly states 'There is no /complete sub-resource'"}, {"text": "Side effects of completion (emails, audit rows) are described as service-layer responsibilities keyed to the state transition itself, not as a reason to invent a dedicated URL", "passed": true, "evidence": "Side-effect discipline section: 'Side effects ... attach to the actual transition, not to the URL' with code showing isCompletion check (old !== 'COMPLETED' && next === 'COMPLETED') gating sendCompletionEmail and audit.write"}, {"text": "POST /api/tasks returns 201 Created with a Location header pointing at the new resource", "passed": true, "evidence": "Section '2. Create a task' Status codes: '`201 Created` \u2014 body is the new `Task`. Response includes `Location: /api/tasks/<id>` header.'"}, {"text": "Wire format is camelCase for body/query fields (assigneeId, createdAt, etc.), not snake_case", "passed": true, "evidence": "Task interface: 'assigneeId: UserId | null; createdAt: string; updatedAt: string; completedAt'; cross-cutting requirements: 'body fields and query params are camelCase'"}, {"text": "TypeScript types separate input (CreateTaskInput) from output (Task) \u2014 output includes server-generated fields like id, createdAt", "passed": true, "evidence": "CreateTaskInput interface has only client-supplied fields (title, description?, priority?, assigneeId?, status?); Task interface separately defined with server-generated id, createdAt, updatedAt, completedAt, createdBy"}, {"text": "Error envelope is FLAT at the top level \u2014 { code, message, details?, requestId } \u2014 NOT nested under an `error:` key", "passed": true, "evidence": "APIError interface: '{ code: string; message: string; details?: ...; requestId: string }' and explicit note 'There is no { error: { ... } } wrapper'"}, {"text": "Error `code` values are domain-expressive (e.g., TaskNotFound, TaskAlreadyCompleted, InvalidRequestBody) and do NOT merely echo the HTTP status (not NOT_FOUND, not VALIDATION_ERROR, not CONFLICT as a generic code)", "passed": true, "evidence": "Error catalog table includes TaskNotFound, InvalidStatusTransition, TaskAlreadyCompleted, InvalidRequestBody, IdempotencyKeyReused, SessionExpired, InsufficientPermissions \u2014 explicitly states 'Codes are domain-expressive \u2014 none of them just echo the HTTP status word'"}], "notes": []}, {"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 12, "failed": 0, "total": 12, "time_seconds": 200, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Catches snake_case on the wire (user_id, created_at, password_hash) and prescribes camelCase at the boundary", "passed": true, "evidence": "Finding 4: 'Wire format is snake_case (`user_id`, `created_at`, `password_hash`) \u2014 High'; correct alternative shows camelCase response with id, createdAt, updatedAt; mentions the case map at the route adapter"}, {"text": "Catches verb in URL (/api/createUser) and proposes POST /api/users", "passed": true, "evidence": "Finding 2: '`POST /api/createUser` puts a verb in the URL'; correct alternative '**`POST /api/users`**'"}, {"text": "Catches GET used for destructive action (/api/users/:id/delete) and proposes DELETE /api/users/:id", "passed": true, "evidence": "Finding 5: 'GET /api/users/:id/delete for a destructive action \u2014 Critical'; correct alternative 'DELETE /api/users/user_01HX...'"}, {"text": "Catches the raw-array response from getUsers and proposes a paginated envelope", "passed": true, "evidence": "Finding 1: 'GET /api/users returns a raw array \u2014 High'; alternative shows '{ data, pagination: { nextCursor, hasMore } }'"}, {"text": "Catches the bespoke listEvents envelope ({events,total,limit,offset}) and proposes the canonical shape", "passed": true, "evidence": "Finding 7: 'Bespoke list envelope `{ events, total, limit, offset }`'; alternative '{ data: [...], pagination: { nextCursor, hasMore } }' \u2014 same canonical envelope as users"}, {"text": "Catches validation reporting one field at a time and prescribes returning all fields at once in details[]", "passed": true, "evidence": "Finding 8: 'Validation reports one field at a time'; alternative shows details: [{field, message}, {field, message}] array form"}, {"text": "Catches POST returning 200 and prescribes 201 Created + Location header", "passed": true, "evidence": "Finding 3: 'POST returns 200 with no Location header \u2014 Medium'; alternative shows '201 Created' with 'Location: /api/users/user_01HX...'"}, {"text": "Notes lack of X-Request-ID on responses (or absence of the correlating requestId in error bodies)", "passed": true, "evidence": "Finding 11: 'No X-Request-ID on responses; error bodies have no requestId'; prescribes 'X-Request-ID: req_01HX...' on every response and matching requestId in error body"}, {"text": "The proposed error envelope is FLAT with domain-expressive codes \u2014 does not wrap contents in { error: {...} }, does not echo HTTP status as the code", "passed": true, "evidence": "Finding 9: 'Error envelope is wrapped under error: {...}'; alternative shows flat top-level '{ code, message, details?, requestId }'. Finding 10 prescribes domain-expressive codes (UserNotFound, EmailAlreadyTaken, InvalidStatusTransition) over NOT_FOUND/CONFLICT/VALIDATION_ERROR"}, {"text": "Does NOT recommend introducing a `/v1/` URL prefix \u2014 follows the One-Version Rule's 'no default version segment'", "passed": true, "evidence": "Section 'What I am NOT recommending': 'No /v1/ URL prefix. Default to no version segment; reserve /v2/ for the rare case where you need to ship an incompatible change...'"}, {"text": "Does NOT recommend returning `total` on an unbounded list (no COUNT(*) recommendation) \u2014 recognizes the skill's 'never return total on unbounded sets' rule", "passed": true, "evidence": "Finding 1: 'Do not return total. A COUNT(*) on a growing table is expensive...'; Finding 7 calls out '`total` on an unbounded set' as a problem; explicit non-recommendation 'No `total` field on the events list'"}, {"text": "Flags the URL exposing DB implementation (user_table_v2 referenced / DB naming leaking)", "passed": true, "evidence": "Finding 6: 'URL exposes DB implementation (`user_table_v2`) \u2014 Medium'; explanation that `/api/user_table_v2/query` leaks an internal physical-storage detail; alternative names domain resources not storage tables"}], "notes": []}, {"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 150, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Identifies the missing Idempotency-Key header as the primary gap", "passed": true, "evidence": "Opening line: 'the draft is missing an Idempotency-Key header on a money-moving POST. Without it, any client retry... risks creating a duplicate charge. This is the single most important thing to add'"}, {"text": "Describes retry semantics: same key + same payload returns the original response exactly", "passed": true, "evidence": "'Same key arrives again with the same payload... This is a retry. **Replay the original response byte-for-byte** \u2014 same status, same body, same Location header. The server must not process the payment twice.'"}, {"text": "Describes 409 CONFLICT when the same key is reused with a different payload", "passed": true, "evidence": "'Same key arrives with a different payload... Reject with: HTTP/1.1 409 Conflict' with body code 'IdempotencyKeyReused'"}, {"text": "Recommends persisting the idempotency key alongside the payload hash + response for a retention window (mentions 24h or longer for financial writes)", "passed": true, "evidence": "Persistence table includes idempotency_key, request_hash (SHA-256), response_status, response_body, response_headers, created_at; retention section: 'At least 24 hours, and significantly longer for payments... For financial writes I'd default to at least 7 days'"}, {"text": "Does not mistakenly green-light the draft without flagging the idempotency gap", "passed": true, "evidence": "Opens with 'the draft is missing an Idempotency-Key header' and the entire response is structured around closing that gap; closing TL;DR table starts with the gap"}, {"text": "Error envelope in the revised contract is flat (top-level { code, message, details?, requestId }) with domain-expressive codes like `IdempotencyKeyReused` \u2014 not wrapped in `error:`, not `CONFLICT` as the code", "passed": true, "evidence": "409 example shows flat top-level keys: code: 'IdempotencyKeyReused', message, details, requestId \u2014 not wrapped in error:; catalog includes IdempotencyKeyRequired, IdempotencyKeyReused, IdempotencyRequestInFlight (all domain-expressive)"}], "notes": []}, {"eval_id": 3, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 100, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Does NOT add cursor/offset/page pagination (recognizes this as bounded-by-policy, not a growing list)", "passed": true, "evidence": "Section 'No pagination': 'This is bounded by policy at 5 \u2014 it is not a growing list. Cursor / offset / page parameters don't belong here.'"}, {"text": "Returns the canonical `{ data: [...] }` envelope \u2014 NOT a bespoke envelope with a resource-named key like `{ notifications: [...] }`, and does not invent extra top-level fields like unreadCount or fetchedAt unless explicitly requested", "passed": true, "evidence": "Response shape is `{ \"data\": [...] }`; explicit notes 'No top-level resource name (no { \"notifications\": [...] })' and 'No invented sibling fields. No unreadCount, no fetchedAt, no lastSeenId'"}, {"text": "URL contains no verbs (no /getNotifications, /fetchRecent, /latest)", "passed": true, "evidence": "URL: 'GET /api/notifications/recent. Plural noun, no verbs \u2014 getNotifications, fetchRecent, latest would all bake the action into the URL'"}, {"text": "Explicitly notes the bound is server-enforced (client cannot request more than 5)", "passed": true, "evidence": "'Do not let the client request fewer than 5, or \u2014 much more importantly \u2014 more than 5. The bound is server-enforced and fixed.' and 'the server returns at most 5, period'"}, {"text": "Notes that broadening the bound later would be a breaking change (Hyrum's Law / contract discipline) \u2014 OR explicitly warns against exposing a `limit` query param", "passed": true, "evidence": "Both: 'No limit / count / take query parameter. Do not let the client request... more than 5'; AND 'Broadening the bound is a breaking change. Going from \"always 5\" to \"configurable, default 20\" is not additive'; AND Hyrum's Law explicitly invoked"}], "notes": []}, {"eval_id": 0, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.25, "passed": 3, "failed": 9, "total": 12, "time_seconds": 120, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "List endpoint is GET /api/tasks (plural, resource-oriented, no verbs)", "passed": true, "evidence": "Section '1. List tasks' shows '**`GET /api/v1/tasks`**' \u2014 plural, no verbs (the `/v1/` prefix is not a verb)"}, {"text": "List response wraps rows in an envelope with `data` and a pagination sub-object (not a bare array, not a bespoke envelope like {tasks, total, limit, offset}, not a differently-named sub-object like pageInfo)", "passed": false, "evidence": "ListTasksResponse uses bespoke shape '{ tasks: Task[]; total: number; page: number; pageSize: number }' \u2014 top-level resource-named key 'tasks' instead of 'data', no nested pagination sub-object, includes 'total'"}, {"text": "Pagination uses cursor-based pagination with default limit 20 and max limit 100 clamped server-side", "passed": false, "evidence": "Uses page/pageSize (offset-based), default pageSize 25 (not 20). Max 100 mentioned but strategy is page-number not cursor"}, {"text": "Search uses a single `q` query param", "passed": false, "evidence": "Query param table uses 'search' not 'q'"}, {"text": "Sort uses field:direction syntax on a single `sort` query param (e.g., `sort=priority:desc,createdAt:asc`) \u2014 not leading-minus syntax", "passed": false, "evidence": "Sort example: 'e.g. `-priority,createdAt` (leading `-` = desc)' \u2014 uses leading-minus syntax, not field:direction"}, {"text": "The 'complete' operation is expressed as a state transition via PATCH on the task resource (PATCH /api/tasks/:id with { status: 'COMPLETED' }) \u2014 NOT as a sub-resource action verb like POST /api/tasks/:id/complete", "passed": false, "evidence": "Section '4. Mark task complete' uses '**`POST /api/v1/tasks/:id/complete`**' \u2014 exactly the sub-resource action verb anti-pattern, with rationale 'a dedicated endpoint... separating it from a generic update keeps that side-effect contract explicit'"}, {"text": "Side effects of completion (emails, audit rows) are described as service-layer responsibilities keyed to the state transition itself, not as a reason to invent a dedicated URL", "passed": false, "evidence": "Side effects are explicitly used as the *justification* for a dedicated URL: 'Why a dedicated endpoint? Completion is a *distinct domain operation* \u2014 it sends emails, writes audit rows...'"}, {"text": "POST /api/tasks returns 201 Created with a Location header pointing at the new resource", "passed": false, "evidence": "Section '2. Create a task' Status codes: '200 OK \u2014 created' (no 201, no Location header)"}, {"text": "Wire format is camelCase for body/query fields (assigneeId, createdAt, etc.), not snake_case", "passed": true, "evidence": "Conventions: 'snake_case-free (camelCase on the wire)'; Task interface uses createdAt, updatedAt, completedAt, createdById"}, {"text": "TypeScript types separate input (CreateTaskInput) from output (Task) \u2014 output includes server-generated fields like id, createdAt", "passed": true, "evidence": "CreateTaskRequest contains only client-supplied fields (title, description?, priority?, assigneeId?, status?); Task type separately defined with id, createdAt, updatedAt, completedAt, createdById"}, {"text": "Error envelope is FLAT at the top level \u2014 { code, message, details?, requestId } \u2014 NOT nested under an `error:` key", "passed": false, "evidence": "ApiErrorResponse: '{ error: { code: string; message: string; fields?: ... } }' \u2014 explicitly nested under `error:` key"}, {"text": "Error `code` values are domain-expressive (e.g., TaskNotFound, TaskAlreadyCompleted, InvalidRequestBody) and do NOT merely echo the HTTP status (not NOT_FOUND, not VALIDATION_ERROR, not CONFLICT as a generic code)", "passed": false, "evidence": "Validation error example uses 'code: \"VALIDATION_ERROR\"'; status code section references '404 NOT_FOUND' and '409 CONFLICT' as the codes \u2014 all echo HTTP status"}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.58, "passed": 7, "failed": 5, "total": 12, "time_seconds": 130, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Catches snake_case on the wire (user_id, created_at, password_hash) and prescribes camelCase at the boundary", "passed": true, "evidence": "Section 3 mentions snake_case is unusual and shows camelCase example (userName, createdAt). Hedged ('If you have any reason to keep snake_case... be consistent') but the camelCase recommendation is present"}, {"text": "Catches verb in URL (/api/createUser) and proposes POST /api/users", "passed": true, "evidence": "Section 2: 'verb in the URL... `createUser` is the HTTP method's job (POST)'; fix: 'POST /v1/users'"}, {"text": "Catches GET used for destructive action (/api/users/:id/delete) and proposes DELETE /api/users/:id", "passed": true, "evidence": "Section 4: 'DELETE /v1/users/:id with 204 No Content on success'"}, {"text": "Catches the raw-array response from getUsers and proposes a paginated envelope", "passed": true, "evidence": "Section 1: 'A bare array is hard to evolve... Wrap the response in an envelope and add pagination from day one' with example `{ users, page, pageSize, total }`"}, {"text": "Catches the bespoke listEvents envelope ({events,total,limit,offset}) and proposes the canonical shape", "passed": true, "evidence": "Section 5: 'Bespoke per-endpoint envelopes are inconsistent... Pick a shape and use it everywhere' with example `{ data, pagination: { page, pageSize, total } }`"}, {"text": "Catches validation reporting one field at a time and prescribes returning all fields at once in details[]", "passed": true, "evidence": "Section 6: 'Returning only the first validation error means the user has to round-trip... Return all validation failures in one response' with fields object example"}, {"text": "Catches POST returning 200 and prescribes 201 Created + Location header", "passed": true, "evidence": "Section 3: 'conventional success status for a POST that creates a resource is 201 Created with a Location header'; fix shows '201 Created' with 'Location: /v1/users/abc123'"}, {"text": "Notes lack of X-Request-ID on responses (or absence of the correlating requestId in error bodies)", "passed": false, "evidence": "No mention of X-Request-ID, request correlation, or requestId field anywhere in the review"}, {"text": "The proposed error envelope is FLAT with domain-expressive codes \u2014 does not wrap contents in { error: {...} }, does not echo HTTP status as the code", "passed": false, "evidence": "Summary recommends '`{ error: { code, message, fields? } }`' \u2014 explicitly wrapped under `error:`. Section 6 example shows code 'VALIDATION_ERROR' which echoes the HTTP 422 status"}, {"text": "Does NOT recommend introducing a `/v1/` URL prefix \u2014 follows the One-Version Rule's 'no default version segment'", "passed": false, "evidence": "Section 2: 'consider versioning the prefix (/v1/) so you have a clear migration path later'; final summary: 'Adopting /v1/ as a prefix from the start gives you room to evolve' \u2014 explicitly recommends /v1/"}, {"text": "Does NOT recommend returning `total` on an unbounded list (no COUNT(*) recommendation) \u2014 recognizes the skill's 'never return total on unbounded sets' rule", "passed": false, "evidence": "Section 1 recommends `{ users, page, pageSize, total }`; Section 5 recommends `{ data, pagination: { page, pageSize, total } }` \u2014 both include `total`"}, {"text": "Flags the URL exposing DB implementation (user_table_v2 referenced / DB naming leaking)", "passed": false, "evidence": "No mention of user_table_v2 or any URL exposing DB schema/implementation"}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.0, "passed": 0, "failed": 6, "total": 6, "time_seconds": 90, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Identifies the missing Idempotency-Key header as the primary gap", "passed": false, "evidence": "The review covers auth, validation, error responses, PCI, logging, rate limiting, async webhooks, and status codes \u2014 but never mentions Idempotency-Key, idempotency, or duplicate-charge protection on retries"}, {"text": "Describes retry semantics: same key + same payload returns the original response exactly", "passed": false, "evidence": "No discussion of retry semantics or idempotency key handling"}, {"text": "Describes 409 CONFLICT when the same key is reused with a different payload", "passed": false, "evidence": "Status codes mention 422, 402, 429 but no 409 in the context of idempotency-key reuse"}, {"text": "Recommends persisting the idempotency key alongside the payload hash + response for a retention window (mentions 24h or longer for financial writes)", "passed": false, "evidence": "No mention of persisting idempotency keys, payload hashes, or retention windows"}, {"text": "Does not mistakenly green-light the draft without flagging the idempotency gap", "passed": false, "evidence": "Summary closes with 'Beyond that the shape looks fine' \u2014 effectively green-lighting the contract while missing the central money-moving gap"}, {"text": "Error envelope in the revised contract is flat (top-level { code, message, details?, requestId }) with domain-expressive codes like `IdempotencyKeyReused` \u2014 not wrapped in `error:`, not `CONFLICT` as the code", "passed": false, "evidence": "Section 3 example wraps payload in '{ error: { code, message } }'; no IdempotencyKeyReused code present (the topic is absent entirely)"}], "notes": []}, {"eval_id": 3, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.6, "passed": 3, "failed": 2, "total": 5, "time_seconds": 60, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Does NOT add cursor/offset/page pagination (recognizes this as bounded-by-policy, not a growing list)", "passed": true, "evidence": "No cursor, offset, or page parameters in the design; opening line 'Since the requirement is fixed at 5 and there's no pagination, you can keep this very simple'"}, {"text": "Returns the canonical `{ data: [...] }` envelope \u2014 NOT a bespoke envelope with a resource-named key like `{ notifications: [...] }`, and does not invent extra top-level fields like unreadCount or fetchedAt unless explicitly requested", "passed": false, "evidence": "Response shape is bespoke: '{ notifications: [...], unreadCount: 3, fetchedAt: \"...\" }' \u2014 uses resource-named key 'notifications' and invents both unreadCount AND fetchedAt extras (the exact two fields the assertion warns against)"}, {"text": "URL contains no verbs (no /getNotifications, /fetchRecent, /latest)", "passed": true, "evidence": "Recommends 'GET /api/notifications/recent' \u2014 no verbs"}, {"text": "Explicitly notes the bound is server-enforced (client cannot request more than 5)", "passed": true, "evidence": "Closing line: 'Keep the array length capped at 5 server-side regardless of any client query params' \u2014 explicitly server-enforced"}, {"text": "Notes that broadening the bound later would be a breaking change (Hyrum's Law / contract discipline) \u2014 OR explicitly warns against exposing a `limit` query param", "passed": false, "evidence": "No mention that broadening would be a breaking change. Mentions 'or alternatively GET /api/notifications?limit=5' as an option (the opposite of warning against a limit param)"}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 157.5, "stddev": 43.4933, "min": 100, "max": 200}, "tokens": {"mean": 0.0, "stddev": 0.0, "min": 0, "max": 0}}, "without_skill": {"pass_rate": {"mean": 0.3575, "stddev": 0.2873, "min": 0.0, "max": 0.6}, "time_seconds": {"mean": 100.0, "stddev": 31.6228, "min": 60, "max": 130}, "tokens": {"mean": 0.0, "stddev": 0.0, "min": 0, "max": 0}}, "delta": {"pass_rate": "+0.64", "time_seconds": "+57.5", "tokens": "+0"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "expectations": [
+    {"text": "Output is rejection notes addressed to the worker, NOT a fix-it-yourself plan", "passed": true, "evidence": "Document is titled 'Rejection notes — proj-42-w3' and addressed to worker with 'please address the issues below and re-hand-off the same branch'"},
+    {"text": "Explicitly states the branch is being REJECTED (not 'requesting changes' or 'small concerns') and the worker's bead remains in_progress", "passed": true, "evidence": "'Decision: REJECTED. Branch ... is not being merged ... Bead proj-42-w3 remains in_progress' — and explicitly contrasts: 'This is not requesting changes or small concerns'"},
+    {"text": "Names each specific failure with concrete details: 4 typecheck errors in the named file, 2 unit test failures with the NODE_VERSION cause, the husky-vs-simple-git-hooks design divergence", "passed": true, "evidence": "Item 1: '4 typecheck errors in .github/workflows/ci-staging.yml.types.ts'; Item 2: '2 new tests fail because they assume process.env.NODE_VERSION is set'; Item 3: 'adds an .husky/ directory. The bead design ... specifies simple-git-hooks, not husky'"},
+    {"text": "Tags failures by category — gates failing (typecheck, unit tests) vs. design divergence (husky vs. simple-git-hooks)", "passed": true, "evidence": "Explicit headings 'Category: failing required gates' (covers typecheck + unit tests) and 'Category: design divergence (bead design / architecture)' (covers husky)"},
+    {"text": "Does NOT propose that the orchestrator fix any of the issues themselves", "passed": true, "evidence": "'What I am not doing' section: 'I am not fixing the typecheck errors... not patching the failing tests... not swapping .husky/ for simple-git-hooks myself'"},
+    {"text": "Does NOT minimize the failures or offer to 'just patch them up on the integration branch'", "passed": true, "evidence": "Says explicitly silent integration-branch patching 'destroys the audit trail and erases your visibility into what was wrong'"},
+    {"text": "Tells the worker to fix and re-hand-off — implies a re-handoff loop, not a fork of the work", "passed": true, "evidence": "'What you do next' section: 'Address the three items above on the same branch (don't fork the work into a new branch)... Re-hand-off with an updated worker handoff summary'"},
+    {"text": "Optionally notes that the rejection should be recorded in the worker's bead notes", "passed": true, "evidence": "'Audit trail note: I'll record this rejection on bead proj-42-w3 with a pointer to these notes'"},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No reference to skill name; mentions 'mandatory rejection conditions' generically"}
+  ],
+  "summary": {"passed": 9, "failed": 0, "total": 9, "pass_rate": 1.0}
+}

@@ -1,0 +1,19 @@
+{
+  "eval_id": 0,
+  "eval_name": "design-task-api-from-scratch",
+  "prompt": "I'm building a task-management backend for a small team app. Design the HTTP contract for the following operations and write the TypeScript request/response types for each:\n\n1. List tasks — supports free-text search, filter by assignee and status, sort by priority and created-at. Could grow unbounded.\n2. Create a task.\n3. Get a single task.\n4. Mark a task complete (a distinct operation — emails sent, audit rows written).\n5. Add a comment to a task.\n\nGive me URL, method, status codes, params, request body, response body, TypeScript types, and edge cases.",
+  "assertions": [
+    "List endpoint is GET /api/tasks (plural, resource-oriented, no verbs)",
+    "List response wraps rows in an envelope with `data` and a pagination sub-object (not a bare array, not a bespoke envelope like {tasks, total, limit, offset}, not a differently-named sub-object like pageInfo)",
+    "Pagination uses cursor-based pagination with default limit 20 and max limit 100 clamped server-side",
+    "Search uses a single `q` query param",
+    "Sort uses field:direction syntax on a single `sort` query param (e.g., `sort=priority:desc,createdAt:asc`) — not leading-minus syntax",
+    "The 'complete' operation is expressed as a state transition via PATCH on the task resource (PATCH /api/tasks/:id with { status: 'COMPLETED' }) — NOT as a sub-resource action verb like POST /api/tasks/:id/complete",
+    "Side effects of completion (emails, audit rows) are described as service-layer responsibilities keyed to the state transition itself, not as a reason to invent a dedicated URL",
+    "POST /api/tasks returns 201 Created with a Location header pointing at the new resource",
+    "Wire format is camelCase for body/query fields (assigneeId, createdAt, etc.), not snake_case",
+    "TypeScript types separate input (CreateTaskInput) from output (Task) — output includes server-generated fields like id, createdAt",
+    "Error envelope is FLAT at the top level — { code, message, details?, requestId } — NOT nested under an `error:` key",
+    "Error `code` values are domain-expressive (e.g., TaskNotFound, TaskAlreadyCompleted, InvalidRequestBody) and do NOT merely echo the HTTP status (not NOT_FOUND, not VALIDATION_ERROR, not CONFLICT as a generic code)"
+  ]
+}

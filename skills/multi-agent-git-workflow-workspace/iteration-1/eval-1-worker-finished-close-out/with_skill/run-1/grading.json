@@ -1,0 +1,13 @@
+{
+  "expectations": [
+    {"text": "Tells the worker to hand off the branch to the orchestrator — NOT to merge the branch themselves", "passed": true, "evidence": "'Hand off to the orchestrator — do not merge yourself' as a top-level instruction"},
+    {"text": "Explicitly states that workers MUST NOT merge their own feature branches into the integration branch, develop, or main", "passed": true, "evidence": "'Workers do not merge their own feature/* branches. That means you MUST NOT: Merge ... into integration/...; Merge it into develop; Merge it into main; Merge it into another worker's branch'"},
+    {"text": "Tells the worker to produce a worker handoff summary (referencing task-handoff-summaries skill or its format)", "passed": true, "evidence": "'Write the worker handoff summary' section with bead/branch/SHA/gates/changes/risks structure, referencing 'the format from the worker handoff skill'"},
+    {"text": "Addresses whether the branch should be published — local by default unless orchestrator needs remote access, CI required, or auditability needed", "passed": true, "evidence": "'Worker feature/* branches stay local by default' with explicit conditions: orchestrator can't access local worktree, CI required, user wants visibility, recovery point"},
+    {"text": "States that the worker's bead remains in_progress until the orchestrator accepts the branch into the integration target — the worker does NOT close their own bead", "passed": true, "evidence": "'The bead stays in_progress. You do not close your own bead. It closes when the orchestrator accepts the branch into integration/proj-42_staging-bringup.'"},
+    {"text": "Does not tell the worker to merge to develop or main", "passed": true, "evidence": "Explicitly forbids merging to develop or main"},
+    {"text": "Does not tell the worker to delete their branch (cleanup is the orchestrator's responsibility after acceptance)", "passed": true, "evidence": "'Deleting your branch or removing your worktree. Cleanup happens after the orchestrator accepts and merges. They are responsible for deleting accepted feature branches'"},
+    {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No occurrences of 'multi-agent-git-workflow' or 'this skill'; mentions 'the worker handoff skill' generically"}
+  ],
+  "summary": {"passed": 8, "failed": 0, "total": 8, "pass_rate": 1.0}
+}

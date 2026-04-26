@@ -1,0 +1,18 @@
+{
+  "expectations": [
+    {"text": "Output begins with the literal line `Findings:` (no preceding text)", "passed": false, "evidence": "Line 1: '# PR Review: Admin User Listing Endpoint' — no `Findings:` header"},
+    {"text": "All eight preamble fields are present, in order: Review Scope, Process Context, Execution Context, Integration Target, Design Reference, Architecture Reference, Feature Specification Reference, PRD Reference", "passed": false, "evidence": "No preamble fields appear at all; output uses prose section headings only"},
+    {"text": "Review Scope names task-101 (e.g., `Review Scope: Task task-101`)", "passed": false, "evidence": "task-101 is not mentioned anywhere in the output"},
+    {"text": "PRD Reference cites docs/prds/02-admin-tooling.md (with section reference)", "passed": false, "evidence": "Output mentions 'PRD says admin endpoints must be auditable and rate-limited' but no formal PRD Reference line and no path 'docs/prds/02-admin-tooling.md' is cited"},
+    {"text": "At least one finding is tagged severity High (the hardcoded API key OR the SQL injection vulnerability via f-string interpolation)", "passed": false, "evidence": "Output uses '## Critical issues' as a section heading; no backtick severity tags on findings — assertion requires severity tagging"},
+    {"text": "The hardcoded API key (`sk_live_Adm1n_2024_HARDCODED`) is identified as a finding", "passed": true, "evidence": "Section 1: 'Hardcoded API key in source code. Line 4 has `API_KEY = ...sk_live_...HARDCODED`'"},
+    {"text": "The SQL injection via f-string interpolation of req.query_params is identified as a finding", "passed": true, "evidence": "Section 2 explicitly names f-string interpolation of req.query_params.get('since') as SQL injection"},
+    {"text": "The verb in URL (`/listAllUsers`) is identified — should be `GET /admin/users`", "passed": true, "evidence": "Item 5: '`/admin/listAllUsers` should be `GET /admin/users`'"},
+    {"text": "The missing pagination is identified (design says 'paginated')", "passed": true, "evidence": "Item 6: 'No pagination. Design says \"paginated\" — current implementation returns every matching row'"},
+    {"text": "The missing admin permission check is identified (design says 'requires admin permission')", "passed": true, "evidence": "Section 3: 'No admin permission check. The design says \"requires admin permission\" but the handler accepts anyone'"},
+    {"text": "Findings are ordered by severity, highest first (no Low listed before a High)", "passed": true, "evidence": "Critical-severity issues appear in '## Critical issues', followed by '## Other problems', and the naming nit is last; no inversion of severity ordering"},
+    {"text": "Each finding includes a file path with a line number reference, severity in backticks, Problem/Why/Source of truth/Proposed fix structure", "passed": false, "evidence": "Findings have no backtick severity tags, no explicit Source-of-truth line, and no consistent Problem/Why/Source/Fix structure; line numbers appear in some items but not all"},
+    {"text": "Output does not cite this skill by name (no 'structured-code-review', 'per the skill', 'as required by the skill')", "passed": true, "evidence": "No occurrences of 'structured-code-review' or skill self-reference in the output"}
+  ],
+  "summary": {"passed": 7, "failed": 6, "total": 13, "pass_rate": 0.54}
+}

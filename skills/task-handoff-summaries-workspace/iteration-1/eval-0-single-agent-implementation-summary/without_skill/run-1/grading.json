@@ -1,0 +1,16 @@
+{
+  "expectations": [
+    {"text": "Output uses the implementation summary format (not the worker handoff or closeout format)", "passed": true, "evidence": "Title 'Implementation Summary — task-101'; structured as a pre-review implementation report, not a worker handoff or closeout."},
+    {"text": "All 7 fields appear in order: Process Used, Execution Context, Task Scope, Implementation Outcome, Behavioral Impact, Risks/Gaps, File Reference Summary, Governance Status", "passed": false, "evidence": "Sections are Overview, Branch, What Changed, Files Changed, Tests & Checks, Migrations/Config, Notes for the Reviewer. Process Used, Execution Context, Task Scope (as a labeled field), Behavioral Impact, Risks/Gaps, and Governance Status field labels are absent."},
+    {"text": "Process Used: Full process", "passed": false, "evidence": "No 'Process Used' field present in the output."},
+    {"text": "Execution Context: Single-agent", "passed": false, "evidence": "No 'Execution Context' field present in the output."},
+    {"text": "Task Scope names task-101 explicitly", "passed": true, "evidence": "Title and overview both reference task-101 explicitly."},
+    {"text": "Implementation Outcome includes the active branch (feature/task-101-admin-users) and the integration target (develop)", "passed": true, "evidence": "Branch section: 'Working branch: feature/task-101-admin-users' and 'Target branch: develop'."},
+    {"text": "Quality gate results are concrete (8 unit tests passing, typecheck clean, lint clean) — not vague claims like 'all gates passed'", "passed": true, "evidence": "'Unit tests: 8 added, 8 passing. Typecheck: clean. Lint: clean.'"},
+    {"text": "Governance Status indicates the work is awaiting code review (pre-commit; commit/push haven't happened yet)", "passed": true, "evidence": "Final line: 'Ready for review prior to commit.' indicates awaiting review, pre-commit."},
+    {"text": "File Reference Summary names the 4 files changed without dumping a full changelog", "passed": true, "evidence": "Files Changed section lists exactly the 4 files."},
+    {"text": "Output does not cite this skill by name (no 'task-handoff-summaries', 'this skill', 'as required')", "passed": true, "evidence": "No mention of the skill name."},
+    {"text": "Output does not falsely claim commit, push, or merge happened (those steps haven't run yet)", "passed": true, "evidence": "Says 'Ready for review prior to commit'; does not claim commit/push/merge happened."}
+  ],
+  "summary": {"passed": 8, "failed": 3, "total": 11, "pass_rate": 0.73}
+}

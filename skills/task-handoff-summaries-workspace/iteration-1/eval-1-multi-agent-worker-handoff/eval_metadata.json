@@ -1,0 +1,9 @@
+{
+  "id": 1,
+  "name": "multi-agent-worker-handoff",
+  "skill": "task-handoff-summaries",
+  "skill_path": "/Users/torr/Projects/agent-skills/plugins/task-handoff-summaries/skills/task-handoff-summaries/SKILL.md",
+  "prompt": "I'm a multi-agent worker. I finished my slice of bead proj-42-w2 (staging-branch source-ref enforcement workflow). Branch is feature/proj-42-w2_staging-source-ref. The branch is published to remote. Commit SHA at handoff: 7a3f9b1. Quality gates: lint passed (0 errors), typecheck passed, unit tests 142/142 passing. The intended integration target is the parent integration branch integration/proj-42_staging-bringup. One area to watch in integration: the source-ref check job uses `${{ github.head_ref }}` which works for PR events but not for direct branch pushes — the parent epic doesn't allow direct pushes to staging/main so this should be fine, but the orchestrator should confirm. No known issues otherwise. Write the worker handoff summary for the orchestrator.",
+  "iteration": 1,
+  "runs_per_arm": 1
+}
