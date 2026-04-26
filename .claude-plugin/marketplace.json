@@ -29,7 +29,12 @@
     {
       "name": "multi-agent-git-workflow",
       "source": "./plugins/multi-agent-git-workflow",
-      "description": "Git workflow discipline for multi-agent work — worktree-per-agent topology, orchestrator vs. worker roles, branch hierarchy (main / develop / integration/* / feature/*), merge authority (workers don't merge their own branches), acceptance/rejection rules — plus universal commit discipline (Conventional Commits, task ID required, co-author line, UAT gate ceremony, no silent amends). Composes with task-handoff-summaries."
+      "description": "Git workflow discipline for multi-agent work: worktree-per-agent topology, orchestrator vs. worker roles, branch hierarchy (main / develop / integration/* / feature/*), merge authority (workers don't merge their own branches), acceptance/rejection rules, plus universal commit discipline (Conventional Commits, task ID required, co-author line, UAT gate ceremony, no silent amends). Composes with task-handoff-summaries."
+    },
+    {
+      "name": "branch-promotion-discipline",
+      "source": "./plugins/branch-promotion-discipline",
+      "description": "3-tier long-lived branch hierarchy (develop / uat / main), one-way promotion (develop to uat to main), per-tier CI gate matrix, source-ref enforcement, hotfix flow with forward-merge to develop, branch protection ruleset, pre-commit hook setup. Layer above multi-agent-git-workflow."
     }
   ]
 }
