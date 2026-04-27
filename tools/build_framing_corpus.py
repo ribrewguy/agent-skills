@@ -580,7 +580,7 @@ OTHER REAL BUGS:
 D6 = {
     "name": "diff-6-ts-control-no-bug",
     "lang": "TypeScript",
-    "scope": "medium (~70 lines, single file) — CONTROL diff with no planted bug",
+    "scope": "medium (~70 lines, single file). CONTROL diff with no planted bug.",
     "framing_topic": "implementation correctness",
     "design": """\
 # Email template renderer

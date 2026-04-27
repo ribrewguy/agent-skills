@@ -1,0 +1,8 @@
+{
+  "caught_planted_issue": true,
+  "severity_assigned_to_planted": "Critical",
+  "total_findings": 16,
+  "findings_for_planted_or_other_real": 7,
+  "nit_count": 9,
+  "is_control": false
+}

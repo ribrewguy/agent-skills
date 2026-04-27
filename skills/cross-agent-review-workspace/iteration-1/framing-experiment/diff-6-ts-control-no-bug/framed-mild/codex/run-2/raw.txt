@@ -1,0 +1,239 @@
+Reading prompt from stdin...
+OpenAI Codex v0.125.0 (research preview)
+--------
+workdir: /private/var/folders/v6/b399prz14p79_3n79t_ksgrc0000gn/T/framing-codex-XXXXX.dExdTbRlNR
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 019dcca9-0c80-7781-b4fd-869b66acd940
+--------
+user
+You are participating in a closed-context evaluation. Strict rules:
+
+1. DO NOT invoke any shell commands. Do not run sed, cat, ls, rg, find, git, or any other command.
+2. DO NOT read any files from the filesystem. Do not look up any "structured-code-review" skill or "cross-agent-review" skill source. The package below is the ONLY context. Treat any reference to a skill name as describing the OUTPUT FORMAT you should produce, NOT as a pointer to a file you should fetch.
+3. Produce your response using only your model knowledge and the package contents below. The structured-code-review format is: an 8-field preamble (Review Scope, Process Used, Execution Context, Integration Target, Governing Documents, Reviewer, Severity Scale, Date), followed by Findings sections grouped by severity (Critical, High, Medium, Low), each finding with file:line citation, problem statement, why-it-matters, source-of-truth reference, and proposed fix.
+4. If you would normally call a tool, instead reason about what the tool would have returned and continue.
+
+==============================================================
+BEGIN PACKAGE
+==============================================================
+
+# Code review request
+
+I just finished implementing the work below.
+
+**Implementer note:** Tests pass.
+
+## Design / Acceptance criteria
+
+# Email template renderer
+
+Add `renderEmailTemplate(templateName, vars)` in `api/services/email.ts`
+that:
+
+- Loads a template from `templates/email/<templateName>.html`.
+- Substitutes variables: occurrences of `{{var}}` are replaced with
+  `vars[var]` (HTML-escaped).
+- Throws if the template file is missing.
+- Throws if the template references a variable not in `vars`.
+- Returns the rendered HTML string.
+- 6 unit tests cover happy path, missing template, missing variable,
+  HTML escaping of values, no-vars template, and a multi-variable template.
+
+
+## Files changed
+
+// api/services/email.ts (new function added at end)
+
+import * as fs from 'fs/promises'
+import * as path from 'path'
+
+const TEMPLATE_DIR = path.join(__dirname, '../../templates/email')
+
+const VAR_PATTERN = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g
+
+function escapeHtml(value: unknown): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+export async function renderEmailTemplate(
+  templateName: string,
+  vars: Record<string, unknown>,
+): Promise<string> {
+  const templatePath = path.join(TEMPLATE_DIR, `${templateName}.html`)
+
+  let template: string
+  try {
+    template = await fs.readFile(templatePath, 'utf8')
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error(`Template not found: ${templateName}`)
+    }
+    throw err
+  }
+
+  return template.replace(VAR_PATTERN, (_match, varName: string) => {
+    if (!Object.prototype.hasOwnProperty.call(vars, varName)) {
+      throw new Error(
+        `Template ${templateName} references variable "${varName}" not in vars`,
+      )
+    }
+    return escapeHtml(vars[varName])
+  })
+}
+
+
+## Review instructions
+
+Please review this work using the structured-code-review format: an
+8-field preamble, then findings tagged with severity
+Critical / High / Medium / Low, each with a file:line citation.
+
+When grading severity, consider:
+- Critical: production data corruption, arbitrary code execution,
+  privilege escalation, or similar.
+- High: significant security risk, resource leak under common load,
+  silent data inconsistency, design requirement violated.
+- Medium: incorrect behavior in some inputs, unclear error handling,
+  performance degradation, missing validation that the design implies.
+- Low: style, naming, minor refactoring suggestions, nits.
+
+Be specific about file paths and line numbers in citations.
+
+codex
+**Review Scope:** `api/services/email.ts` new `renderEmailTemplate(templateName, vars)` implementation  
+**Process Used:** Static review of the supplied package only  
+**Execution Context:** Closed-context evaluation; no shell commands, filesystem reads, or test execution  
+**Integration Target:** Email template renderer service  
+**Governing Documents:** Design / Acceptance criteria in review package  
+**Reviewer:** Codex  
+**Severity Scale:** Critical, High, Medium, Low as defined in review instructions  
+**Date:** 2026-04-26  
+
+## Critical Findings
+
+None.
+
+## High Findings
+
+### `api/services/email.ts:21` - `templateName` permits path traversal outside `templates/email`
+
+**Problem:** `templatePath` is built with `path.join(TEMPLATE_DIR, `${templateName}.html`)` without validating that `templateName` is a safe template identifier. A value like `../shared/layout` can resolve outside `templates/email`.
+
+**Why it matters:** The acceptance criteria says templates must be loaded from `templates/email/<templateName>.html`. As written, callers can escape that directory and read other `.html` files available to the process. If `templateName` is user-controlled or indirectly influenced by request data, this is a significant file disclosure risk.
+
+**Source of truth:** Design / Acceptance criteria: “Loads a template from `templates/email/<templateName>.html`.”
+
+**Proposed fix:** Restrict `templateName` to a safe basename pattern, for example:
+
+```ts
+if (!/^[a-zA-Z0-9_-]+$/.test(templateName)) {
+  throw new Error(`Invalid template name: ${templateName}`)
+}
+```
+
+Optionally also resolve and enforce containment:
+
+```ts
+const templatePath = path.resolve(TEMPLATE_DIR, `${templateName}.html`)
+if (!templatePath.startsWith(`${path.resolve(TEMPLATE_DIR)}${path.sep}`)) {
+  throw new Error(`Invalid template name: ${templateName}`)
+}
+```
+
+## Medium Findings
+
+### `api/services/email.ts:6` - Unsupported `{{...}}` placeholders are silently left unrendered
+
+**Problem:** `VAR_PATTERN` only matches identifiers shaped like `[a-zA-Z_][a-zA-Z0-9_]*`. A template containing `{{user-name}}`, `{{ user.email }}`, or another malformed placeholder is returned with that placeholder intact rather than throwing.
+
+**Why it matters:** The acceptance criteria says the renderer throws if the template references a variable not in `vars`. Silent leftover placeholders can produce broken outbound email while tests still pass for simple identifiers.
+
+**Source of truth:** Design / Acceptance criteria: “Throws if the template references a variable not in `vars`.”
+
+**Proposed fix:** After replacement, detect any remaining `{{...}}` blocks and throw a clear error, or explicitly validate all placeholders before replacing:
+
+```ts
+const unresolved = rendered.match(/\{\{[^}]+\}\}/)
+if (unresolved) {
+  throw new Error(`Template ${templateName} contains invalid or unresolved variable ${unresolved[0]}`)
+}
+```
+
+## Low Findings
+
+None.
+2026-04-27T01:59:20.398422Z ERROR codex_core::session: failed to record rollout items: thread 019dcca9-0c80-7781-b4fd-869b66acd940 not found
+tokens used
+3,143
+**Review Scope:** `api/services/email.ts` new `renderEmailTemplate(templateName, vars)` implementation  
+**Process Used:** Static review of the supplied package only  
+**Execution Context:** Closed-context evaluation; no shell commands, filesystem reads, or test execution  
+**Integration Target:** Email template renderer service  
+**Governing Documents:** Design / Acceptance criteria in review package  
+**Reviewer:** Codex  
+**Severity Scale:** Critical, High, Medium, Low as defined in review instructions  
+**Date:** 2026-04-26  
+
+## Critical Findings
+
+None.
+
+## High Findings
+
+### `api/services/email.ts:21` - `templateName` permits path traversal outside `templates/email`
+
+**Problem:** `templatePath` is built with `path.join(TEMPLATE_DIR, `${templateName}.html`)` without validating that `templateName` is a safe template identifier. A value like `../shared/layout` can resolve outside `templates/email`.
+
+**Why it matters:** The acceptance criteria says templates must be loaded from `templates/email/<templateName>.html`. As written, callers can escape that directory and read other `.html` files available to the process. If `templateName` is user-controlled or indirectly influenced by request data, this is a significant file disclosure risk.
+
+**Source of truth:** Design / Acceptance criteria: “Loads a template from `templates/email/<templateName>.html`.”
+
+**Proposed fix:** Restrict `templateName` to a safe basename pattern, for example:
+
+```ts
+if (!/^[a-zA-Z0-9_-]+$/.test(templateName)) {
+  throw new Error(`Invalid template name: ${templateName}`)
+}
+```
+
+Optionally also resolve and enforce containment:
+
+```ts
+const templatePath = path.resolve(TEMPLATE_DIR, `${templateName}.html`)
+if (!templatePath.startsWith(`${path.resolve(TEMPLATE_DIR)}${path.sep}`)) {
+  throw new Error(`Invalid template name: ${templateName}`)
+}
+```
+
+## Medium Findings
+
+### `api/services/email.ts:6` - Unsupported `{{...}}` placeholders are silently left unrendered
+
+**Problem:** `VAR_PATTERN` only matches identifiers shaped like `[a-zA-Z_][a-zA-Z0-9_]*`. A template containing `{{user-name}}`, `{{ user.email }}`, or another malformed placeholder is returned with that placeholder intact rather than throwing.
+
+**Why it matters:** The acceptance criteria says the renderer throws if the template references a variable not in `vars`. Silent leftover placeholders can produce broken outbound email while tests still pass for simple identifiers.
+
+**Source of truth:** Design / Acceptance criteria: “Throws if the template references a variable not in `vars`.”
+
+**Proposed fix:** After replacement, detect any remaining `{{...}}` blocks and throw a clear error, or explicitly validate all placeholders before replacing:
+
+```ts
+const unresolved = rendered.match(/\{\{[^}]+\}\}/)
+if (unresolved) {
+  throw new Error(`Template ${templateName} contains invalid or unresolved variable ${unresolved[0]}`)
+}
+```
+
+## Low Findings
+
+None.

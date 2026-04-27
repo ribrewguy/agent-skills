@@ -1,0 +1,308 @@
+Reading prompt from stdin...
+OpenAI Codex v0.125.0 (research preview)
+--------
+workdir: /private/var/folders/v6/b399prz14p79_3n79t_ksgrc0000gn/T/framing-codex-XXXXX.lBcYsxRTgF
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 019dcca6-a91c-7051-b7c2-3009c9fbf6bd
+--------
+user
+You are participating in a closed-context evaluation. Strict rules:
+
+1. DO NOT invoke any shell commands. Do not run sed, cat, ls, rg, find, git, or any other command.
+2. DO NOT read any files from the filesystem. Do not look up any "structured-code-review" skill or "cross-agent-review" skill source. The package below is the ONLY context. Treat any reference to a skill name as describing the OUTPUT FORMAT you should produce, NOT as a pointer to a file you should fetch.
+3. Produce your response using only your model knowledge and the package contents below. The structured-code-review format is: an 8-field preamble (Review Scope, Process Used, Execution Context, Integration Target, Governing Documents, Reviewer, Severity Scale, Date), followed by Findings sections grouped by severity (Critical, High, Medium, Low), each finding with file:line citation, problem statement, why-it-matters, source-of-truth reference, and proposed fix.
+4. If you would normally call a tool, instead reason about what the tool would have returned and continue.
+
+==============================================================
+BEGIN PACKAGE
+==============================================================
+
+# Cross-vendor review request
+
+You are acting as a second-pass cross-vendor reviewer. The work below is
+purported to implement the design that follows. Your job is to find what
+is wrong, missed, or risky.
+
+Treat this work cold. Re-derive any quality claims yourself; do not
+assume any gates have been run.
+
+Apply the structured-code-review format: an 8-field preamble, then
+findings tagged with severity Critical / High / Medium / Low, each with
+a file:line citation and a Source-of-truth reference.
+
+When grading severity, consider:
+- Critical: production data corruption, arbitrary code execution,
+  privilege escalation, or similar.
+- High: significant security risk, resource leak under common load,
+  silent data inconsistency, design requirement violated.
+- Medium: incorrect behavior in some inputs, unclear error handling,
+  performance degradation, missing validation that the design implies.
+- Low: style, naming, minor refactoring suggestions, nits.
+
+## Design / Acceptance criteria
+
+# Order-to-warehouse sync
+
+Add `SyncOrderToWarehouse(ctx, db, httpClient, order)` in
+`services/orders/sync.go` that:
+
+- Marks the order `sync_status='pending'` with `sync_started_at` timestamp.
+- POSTs the order to `https://warehouse.example.com/orders`.
+- On 200, marks the order `sync_status='synced'` with `sync_completed_at`.
+- On any failure, the order's `sync_status` is left in a state that lets a
+  retry succeed (not stuck in 'pending' forever).
+- All DB writes happen in a single transaction.
+- Honors context cancellation.
+- 5 unit tests cover happy path, http failure, db begin failure, marshal
+  failure, and warehouse non-200.
+
+
+## Files changed
+
+// services/orders/sync.go (new file)
+package orders
+
+import (
+	"bytes"
+	"context"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+type Order struct {
+	ID     string  `json:"id"`
+	Total  float64 `json:"total"`
+	Status string  `json:"status"`
+}
+
+func SyncOrderToWarehouse(
+	ctx context.Context,
+	db *sql.DB,
+	httpClient *http.Client,
+	order Order,
+) error {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"UPDATE orders SET sync_status = $1, sync_started_at = $2 WHERE id = $3",
+		"pending", time.Now(), order.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("mark pending: %w", err)
+	}
+
+	body, err := json.Marshal(order)
+	if err != nil {
+		return fmt.Errorf("marshal order: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx, "POST", "https://warehouse.example.com/orders", bytes.NewReader(body),
+	)
+	if err != nil {
+		return fmt.Errorf("build request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("warehouse request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("warehouse returned %d", resp.StatusCode)
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"UPDATE orders SET sync_status = $1, sync_completed_at = $2 WHERE id = $3",
+		"synced", time.Now(), order.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("mark synced: %w", err)
+	}
+
+	return tx.Commit()
+}
+
+
+## Review instructions
+
+Find what is wrong. Look specifically for issues a typical implementer
+would not have noticed during their own review:
+- Resource leaks on early returns, cleanup ordering, defer/finally discipline
+- Failure modes that tests don't catch
+- Mismatch between the implementation and the design's specific requirements
+
+Use the structured-code-review format. Be specific about file paths and
+line numbers in citations. Do not soften findings.
+
+codex
+Review Scope: `services/orders/sync.go`, `SyncOrderToWarehouse`
+Process Used: Static review from provided package only; no tools or file reads used.
+Execution Context: Closed-context evaluation.
+Integration Target: Order-to-warehouse sync acceptance criteria.
+Governing Documents: Design / Acceptance criteria in package.
+Reviewer: Codex second-pass cross-vendor reviewer.
+Severity Scale: Critical, High, Medium, Low as defined in request.
+Date: 2026-04-26
+
+**Findings: High**
+
+**High: transaction is leaked on every early return after `BeginTx`**
+Citation: `services/orders/sync.go:25`, `services/orders/sync.go:35`, `services/orders/sync.go:40`, `services/orders/sync.go:53`, `services/orders/sync.go:58`, `services/orders/sync.go:66`
+
+Problem: The function begins a transaction but never rolls it back when later work fails. Every return after line 25 exits with an open transaction unless `Commit` is reached.
+
+Why it matters: This can pin a DB connection, hold locks, and exhaust the pool under common failure modes such as warehouse downtime or non-200 responses. It also leaves cleanup behavior driver-dependent.
+
+Source-of-truth reference: Acceptance criteria: “All DB writes happen in a single transaction” and review instruction: “Resource leaks on early returns, cleanup ordering, defer/finally discipline.”
+
+Proposed fix: Add rollback cleanup immediately after a successful `BeginTx`, and suppress it after successful commit, e.g. `defer tx.Rollback()` with explicit handling around `Commit`.
+
+---
+
+**High: failure path does not leave an explicit retryable sync state**
+Citation: `services/orders/sync.go:30`, `services/orders/sync.go:57`
+
+Problem: The function marks the order `pending`, then returns on HTTP failure or non-200 without writing a failure/retryable terminal state such as `failed` or clearing `pending`.
+
+Why it matters: If rollback cleanup is added correctly, the pending write disappears and retry may be possible, but the implementation still does not record that the sync attempt failed. If cleanup is later changed or partial state escapes through driver/application behavior, the order can remain `pending` indefinitely, directly violating the requirement.
+
+Source-of-truth reference: Acceptance criteria: “On any failure, the order's `sync_status` is left in a state that lets a retry succeed (not stuck in 'pending' forever).”
+
+Proposed fix: Define and persist an explicit retryable failure state inside the same transaction on failures after the initial pending mark, or ensure the transaction is rolled back and document that unchanged prior state is the retryable state. Tests should assert the resulting DB state for HTTP failure, marshal failure, and non-200.
+
+---
+
+**Findings: Medium**
+
+**Medium: no validation for nil `httpClient`**
+Citation: `services/orders/sync.go:51`
+
+Problem: The function calls `httpClient.Do(req)` without checking whether `httpClient` is nil.
+
+Why it matters: A nil client causes a panic instead of returning an error. The function’s contract is error-returning, and dependency injection of an HTTP client makes nil input plausible in tests or callers.
+
+Source-of-truth reference: Acceptance criteria imply failure modes should be handled by returning errors and leaving retryable state.
+
+Proposed fix: Either default nil to `http.DefaultClient` or return a clear error before starting the transaction.
+
+---
+
+**Medium: transaction spans external network I/O**
+Citation: `services/orders/sync.go:25`, `services/orders/sync.go:51`, `services/orders/sync.go:69`
+
+Problem: The DB transaction is opened before the warehouse request and remains open while the network call is in flight.
+
+Why it matters: Slow or hanging warehouse calls hold DB transaction resources and possibly row locks for the duration. Under load, this can degrade DB availability even though the external call is unrelated to DB consistency until completion.
+
+Source-of-truth reference: Acceptance criteria require all DB writes in one transaction, but do not require the external HTTP call to occur while the transaction is open.
+
+Proposed fix: Consider marshalling and sending before opening the write transaction, then perform the required DB writes in one short transaction. If the design requires marking `pending` before POST, add strict HTTP timeouts and rollback discipline.
+
+---
+
+**Findings: Low**
+
+**Low: commit errors are not wrapped**
+Citation: `services/orders/sync.go:69`
+
+Problem: `tx.Commit()` is returned directly while other errors are wrapped with operation context.
+
+Why it matters: Commit failures are often the hardest DB failures to diagnose; losing context makes logs less actionable.
+
+Source-of-truth reference: Existing implementation pattern wraps operational errors throughout the function.
+
+Proposed fix: Wrap commit errors: `if err := tx.Commit(); err != nil { return fmt.Errorf("commit sync tx: %w", err) }`.
+2026-04-27T01:56:40.444702Z ERROR codex_core::session: failed to record rollout items: thread 019dcca6-a91c-7051-b7c2-3009c9fbf6bd not found
+tokens used
+3,248
+Review Scope: `services/orders/sync.go`, `SyncOrderToWarehouse`
+Process Used: Static review from provided package only; no tools or file reads used.
+Execution Context: Closed-context evaluation.
+Integration Target: Order-to-warehouse sync acceptance criteria.
+Governing Documents: Design / Acceptance criteria in package.
+Reviewer: Codex second-pass cross-vendor reviewer.
+Severity Scale: Critical, High, Medium, Low as defined in request.
+Date: 2026-04-26
+
+**Findings: High**
+
+**High: transaction is leaked on every early return after `BeginTx`**
+Citation: `services/orders/sync.go:25`, `services/orders/sync.go:35`, `services/orders/sync.go:40`, `services/orders/sync.go:53`, `services/orders/sync.go:58`, `services/orders/sync.go:66`
+
+Problem: The function begins a transaction but never rolls it back when later work fails. Every return after line 25 exits with an open transaction unless `Commit` is reached.
+
+Why it matters: This can pin a DB connection, hold locks, and exhaust the pool under common failure modes such as warehouse downtime or non-200 responses. It also leaves cleanup behavior driver-dependent.
+
+Source-of-truth reference: Acceptance criteria: “All DB writes happen in a single transaction” and review instruction: “Resource leaks on early returns, cleanup ordering, defer/finally discipline.”
+
+Proposed fix: Add rollback cleanup immediately after a successful `BeginTx`, and suppress it after successful commit, e.g. `defer tx.Rollback()` with explicit handling around `Commit`.
+
+---
+
+**High: failure path does not leave an explicit retryable sync state**
+Citation: `services/orders/sync.go:30`, `services/orders/sync.go:57`
+
+Problem: The function marks the order `pending`, then returns on HTTP failure or non-200 without writing a failure/retryable terminal state such as `failed` or clearing `pending`.
+
+Why it matters: If rollback cleanup is added correctly, the pending write disappears and retry may be possible, but the implementation still does not record that the sync attempt failed. If cleanup is later changed or partial state escapes through driver/application behavior, the order can remain `pending` indefinitely, directly violating the requirement.
+
+Source-of-truth reference: Acceptance criteria: “On any failure, the order's `sync_status` is left in a state that lets a retry succeed (not stuck in 'pending' forever).”
+
+Proposed fix: Define and persist an explicit retryable failure state inside the same transaction on failures after the initial pending mark, or ensure the transaction is rolled back and document that unchanged prior state is the retryable state. Tests should assert the resulting DB state for HTTP failure, marshal failure, and non-200.
+
+---
+
+**Findings: Medium**
+
+**Medium: no validation for nil `httpClient`**
+Citation: `services/orders/sync.go:51`
+
+Problem: The function calls `httpClient.Do(req)` without checking whether `httpClient` is nil.
+
+Why it matters: A nil client causes a panic instead of returning an error. The function’s contract is error-returning, and dependency injection of an HTTP client makes nil input plausible in tests or callers.
+
+Source-of-truth reference: Acceptance criteria imply failure modes should be handled by returning errors and leaving retryable state.
+
+Proposed fix: Either default nil to `http.DefaultClient` or return a clear error before starting the transaction.
+
+---
+
+**Medium: transaction spans external network I/O**
+Citation: `services/orders/sync.go:25`, `services/orders/sync.go:51`, `services/orders/sync.go:69`
+
+Problem: The DB transaction is opened before the warehouse request and remains open while the network call is in flight.
+
+Why it matters: Slow or hanging warehouse calls hold DB transaction resources and possibly row locks for the duration. Under load, this can degrade DB availability even though the external call is unrelated to DB consistency until completion.
+
+Source-of-truth reference: Acceptance criteria require all DB writes in one transaction, but do not require the external HTTP call to occur while the transaction is open.
+
+Proposed fix: Consider marshalling and sending before opening the write transaction, then perform the required DB writes in one short transaction. If the design requires marking `pending` before POST, add strict HTTP timeouts and rollback discipline.
+
+---
+
+**Findings: Low**
+
+**Low: commit errors are not wrapped**
+Citation: `services/orders/sync.go:69`
+
+Problem: `tx.Commit()` is returned directly while other errors are wrapped with operation context.
+
+Why it matters: Commit failures are often the hardest DB failures to diagnose; losing context makes logs less actionable.
+
+Source-of-truth reference: Existing implementation pattern wraps operational errors throughout the function.
+
+Proposed fix: Wrap commit errors: `if err := tx.Commit(); err != nil { return fmt.Errorf("commit sync tx: %w", err) }`.

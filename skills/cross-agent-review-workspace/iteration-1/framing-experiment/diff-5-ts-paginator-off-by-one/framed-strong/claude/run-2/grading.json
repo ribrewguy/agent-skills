@@ -1,0 +1,8 @@
+{
+  "caught_planted_issue": true,
+  "severity_assigned_to_planted": "High",
+  "total_findings": 10,
+  "findings_for_planted_or_other_real": 9,
+  "nit_count": 1,
+  "is_control": false
+}

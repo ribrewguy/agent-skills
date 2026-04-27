@@ -1,0 +1,213 @@
+Reading prompt from stdin...
+OpenAI Codex v0.125.0 (research preview)
+--------
+workdir: /private/var/folders/v6/b399prz14p79_3n79t_ksgrc0000gn/T/framing-codex-XXXXX.MBlhlkcFSZ
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 019dcca6-374f-7d33-8729-9a48542b7c5a
+--------
+user
+You are participating in a closed-context evaluation. Strict rules:
+
+1. DO NOT invoke any shell commands. Do not run sed, cat, ls, rg, find, git, or any other command.
+2. DO NOT read any files from the filesystem. Do not look up any "structured-code-review" skill or "cross-agent-review" skill source. The package below is the ONLY context. Treat any reference to a skill name as describing the OUTPUT FORMAT you should produce, NOT as a pointer to a file you should fetch.
+3. Produce your response using only your model knowledge and the package contents below. The structured-code-review format is: an 8-field preamble (Review Scope, Process Used, Execution Context, Integration Target, Governing Documents, Reviewer, Severity Scale, Date), followed by Findings sections grouped by severity (Critical, High, Medium, Low), each finding with file:line citation, problem statement, why-it-matters, source-of-truth reference, and proposed fix.
+4. If you would normally call a tool, instead reason about what the tool would have returned and continue.
+
+==============================================================
+BEGIN PACKAGE
+==============================================================
+
+# Code review request
+
+I just finished implementing the work below.
+
+**Implementer note:** Tests pass.
+
+## Design / Acceptance criteria
+
+# Login endpoint
+
+Add `POST /auth/login` to `api/routes/auth.py`.
+
+## Acceptance criteria
+
+- Accepts JSON body: `{ email: string, password: string }`.
+- On valid credentials, returns 200 with `{ token: <jwt> }`.
+- On invalid credentials, returns 401 with the standard error envelope
+  `{ code: string, message: string, requestId: string }`.
+- The endpoint must NOT leak whether an email is registered. Treat
+  "no such user" and "wrong password" identically from the client's perspective.
+- 6 unit tests cover valid login, wrong password, unknown email,
+  malformed body, missing field, and rate-limiting interaction.
+
+
+## Files changed
+
+# api/routes/auth.py (new file)
+
+from fastapi import APIRouter, HTTPException
+from api.db import db
+from api.auth import verify_password, issue_token
+from api.schemas import LoginBody
+
+router = APIRouter()
+
+
+@router.post('/auth/login')
+async def login(body: LoginBody):
+    user = await db.users.find_one({'email': body.email})
+    if not user:
+        raise HTTPException(status_code=404, detail='No user with that email')
+    if not verify_password(body.password, user['password_hash']):
+        raise HTTPException(status_code=401, detail='Incorrect password')
+    return {'token': issue_token(user)}
+
+
+## Review instructions
+
+Please review this work using the structured-code-review format: an
+8-field preamble, then findings tagged with severity
+Critical / High / Medium / Low, each with a file:line citation.
+
+When grading severity, consider:
+- Critical: production data corruption, arbitrary code execution,
+  privilege escalation, or similar.
+- High: significant security risk, resource leak under common load,
+  silent data inconsistency, design requirement violated.
+- Medium: incorrect behavior in some inputs, unclear error handling,
+  performance degradation, missing validation that the design implies.
+- Low: style, naming, minor refactoring suggestions, nits.
+
+Be specific about file paths and line numbers in citations.
+
+codex
+Review Scope: `POST /auth/login` implementation in `api/routes/auth.py`  
+Process Used: Static review of the provided diff only; no tools or filesystem access used  
+Execution Context: Closed-context package review  
+Integration Target: Login endpoint acceptance criteria  
+Governing Documents: Provided design / acceptance criteria  
+Reviewer: Codex  
+Severity Scale: Critical, High, Medium, Low as provided  
+Date: 2026-04-27
+
+## High Findings
+
+### High: Unknown email leaks account registration state
+
+Citation: `api/routes/auth.py:12-13`
+
+Problem statement: When no user is found, the endpoint returns `404` with `detail='No user with that email'`.
+
+Why it matters: The acceptance criteria explicitly require that “no such user” and “wrong password” be treated identically from the client’s perspective. Returning `404` and a specific message lets clients enumerate registered emails.
+
+Source-of-truth reference: “The endpoint must NOT leak whether an email is registered. Treat ‘no such user’ and ‘wrong password’ identically from the client’s perspective.”
+
+Proposed fix: Return the same `401` response for both unknown email and wrong password, using the standard error envelope:
+
+```python
+raise HTTPException(
+    status_code=401,
+    detail={"code": "invalid_credentials", "message": "Invalid email or password", "requestId": request_id},
+)
+```
+
+Or use the project’s existing standard error helper if one exists.
+
+### High: Invalid credential responses do not use the standard error envelope
+
+Citation: `api/routes/auth.py:13` and `api/routes/auth.py:15`
+
+Problem statement: Invalid credentials currently raise `HTTPException` with string details: `'No user with that email'` and `'Incorrect password'`.
+
+Why it matters: The acceptance criteria require invalid credentials to return `{ code: string, message: string, requestId: string }`. FastAPI will serialize these as `{"detail": "..."}`, which does not match the required envelope and omits `requestId`.
+
+Source-of-truth reference: “On invalid credentials, returns 401 with the standard error envelope `{ code: string, message: string, requestId: string }`.”
+
+Proposed fix: Use the application’s standard error response mechanism for auth failures. If none exists in this file, inject or obtain the request ID and return a uniform `401` envelope for both failure branches.
+
+## Medium Findings
+
+### Medium: Malformed and missing-field validation likely does not use the standard envelope
+
+Citation: `api/routes/auth.py:10`
+
+Problem statement: The endpoint relies directly on `LoginBody` request parsing. FastAPI’s default validation errors usually return a `422` response with its own validation shape, not the standard `{ code, message, requestId }` envelope.
+
+Why it matters: The acceptance criteria require tests for malformed body and missing field. If the API has a global validation-error handler this may be fine, but nothing in this implementation shows that malformed login requests conform to the service’s error format.
+
+Source-of-truth reference: “6 unit tests cover valid login, wrong password, unknown email, malformed body, missing field, and rate-limiting interaction.”
+
+Proposed fix: Confirm the app has a global validation exception handler that wraps malformed body and missing-field errors consistently. If not, add one or handle login validation errors through the existing standard envelope path.
+
+## Low Findings
+
+No Low findings.
+2026-04-27T01:56:06.073249Z ERROR codex_core::session: failed to record rollout items: thread 019dcca6-374f-7d33-8729-9a48542b7c5a not found
+tokens used
+16,854
+Review Scope: `POST /auth/login` implementation in `api/routes/auth.py`  
+Process Used: Static review of the provided diff only; no tools or filesystem access used  
+Execution Context: Closed-context package review  
+Integration Target: Login endpoint acceptance criteria  
+Governing Documents: Provided design / acceptance criteria  
+Reviewer: Codex  
+Severity Scale: Critical, High, Medium, Low as provided  
+Date: 2026-04-27
+
+## High Findings
+
+### High: Unknown email leaks account registration state
+
+Citation: `api/routes/auth.py:12-13`
+
+Problem statement: When no user is found, the endpoint returns `404` with `detail='No user with that email'`.
+
+Why it matters: The acceptance criteria explicitly require that “no such user” and “wrong password” be treated identically from the client’s perspective. Returning `404` and a specific message lets clients enumerate registered emails.
+
+Source-of-truth reference: “The endpoint must NOT leak whether an email is registered. Treat ‘no such user’ and ‘wrong password’ identically from the client’s perspective.”
+
+Proposed fix: Return the same `401` response for both unknown email and wrong password, using the standard error envelope:
+
+```python
+raise HTTPException(
+    status_code=401,
+    detail={"code": "invalid_credentials", "message": "Invalid email or password", "requestId": request_id},
+)
+```
+
+Or use the project’s existing standard error helper if one exists.
+
+### High: Invalid credential responses do not use the standard error envelope
+
+Citation: `api/routes/auth.py:13` and `api/routes/auth.py:15`
+
+Problem statement: Invalid credentials currently raise `HTTPException` with string details: `'No user with that email'` and `'Incorrect password'`.
+
+Why it matters: The acceptance criteria require invalid credentials to return `{ code: string, message: string, requestId: string }`. FastAPI will serialize these as `{"detail": "..."}`, which does not match the required envelope and omits `requestId`.
+
+Source-of-truth reference: “On invalid credentials, returns 401 with the standard error envelope `{ code: string, message: string, requestId: string }`.”
+
+Proposed fix: Use the application’s standard error response mechanism for auth failures. If none exists in this file, inject or obtain the request ID and return a uniform `401` envelope for both failure branches.
+
+## Medium Findings
+
+### Medium: Malformed and missing-field validation likely does not use the standard envelope
+
+Citation: `api/routes/auth.py:10`
+
+Problem statement: The endpoint relies directly on `LoginBody` request parsing. FastAPI’s default validation errors usually return a `422` response with its own validation shape, not the standard `{ code, message, requestId }` envelope.
+
+Why it matters: The acceptance criteria require tests for malformed body and missing field. If the API has a global validation-error handler this may be fine, but nothing in this implementation shows that malformed login requests conform to the service’s error format.
+
+Source-of-truth reference: “6 unit tests cover valid login, wrong password, unknown email, malformed body, missing field, and rate-limiting interaction.”
+
+Proposed fix: Confirm the app has a global validation exception handler that wraps malformed body and missing-field errors consistently. If not, add one or handle login validation errors through the existing standard envelope path.
+
+## Low Findings
+
+No Low findings.

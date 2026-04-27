@@ -1,0 +1,233 @@
+Reading prompt from stdin...
+OpenAI Codex v0.125.0 (research preview)
+--------
+workdir: /private/var/folders/v6/b399prz14p79_3n79t_ksgrc0000gn/T/framing-codex-XXXXX.TtTDzQGHjz
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: high
+reasoning summaries: none
+session id: 019dcca5-c5e2-7f01-a022-4402d8f292f6
+--------
+user
+You are participating in a closed-context evaluation. Strict rules:
+
+1. DO NOT invoke any shell commands. Do not run sed, cat, ls, rg, find, git, or any other command.
+2. DO NOT read any files from the filesystem. Do not look up any "structured-code-review" skill or "cross-agent-review" skill source. The package below is the ONLY context. Treat any reference to a skill name as describing the OUTPUT FORMAT you should produce, NOT as a pointer to a file you should fetch.
+3. Produce your response using only your model knowledge and the package contents below. The structured-code-review format is: an 8-field preamble (Review Scope, Process Used, Execution Context, Integration Target, Governing Documents, Reviewer, Severity Scale, Date), followed by Findings sections grouped by severity (Critical, High, Medium, Low), each finding with file:line citation, problem statement, why-it-matters, source-of-truth reference, and proposed fix.
+4. If you would normally call a tool, instead reason about what the tool would have returned and continue.
+
+==============================================================
+BEGIN PACKAGE
+==============================================================
+
+# Cross-vendor review request
+
+You are acting as a second-pass cross-vendor reviewer. The work below is
+purported to implement the design that follows. Your job is to find what
+is wrong, missed, or risky.
+
+Treat this work cold. Re-derive any quality claims yourself; do not
+assume any gates have been run.
+
+Apply the structured-code-review format: an 8-field preamble, then
+findings tagged with severity Critical / High / Medium / Low, each with
+a file:line citation and a Source-of-truth reference.
+
+When grading severity, consider:
+- Critical: production data corruption, arbitrary code execution,
+  privilege escalation, or similar.
+- High: significant security risk, resource leak under common load,
+  silent data inconsistency, design requirement violated.
+- Medium: incorrect behavior in some inputs, unclear error handling,
+  performance degradation, missing validation that the design implies.
+- Low: style, naming, minor refactoring suggestions, nits.
+
+## Design / Acceptance criteria
+
+# Bead claim API
+
+Add a `claimBead(beadId, workerId)` function to `api/services/beads.ts` that
+atomically claims a ready bead for a worker.
+
+## Acceptance criteria
+
+- Returns `{ success: true, beadId, assignee: workerId }` if the bead was claimable
+  AND the claim succeeded.
+- Returns `{ success: false, reason: 'not_found' }` if the bead doesn't exist.
+- Returns `{ success: false, reason: 'unavailable' }` if the bead exists but is
+  not `ready` or already has an assignee.
+- The claim must be atomic: under concurrent calls for the same beadId, exactly
+  one caller gets `success: true`. The others get `success: false` with reason
+  `unavailable`.
+- After a successful claim, the bead's `status` is `in_progress`, `assignee` is
+  the workerId, and `claimedAt` is the current time.
+- 8 unit tests cover not_found, unavailable, successful claim, idempotency of
+  repeat calls, and 4 edge cases.
+
+
+## Files changed
+
+// api/services/beads.ts (new function added at end of file)
+
+export interface ClaimResult {
+  success: boolean
+  reason?: 'not_found' | 'unavailable'
+  beadId?: string
+  assignee?: string
+}
+
+export async function claimBead(
+  beadId: string,
+  workerId: string,
+): Promise<ClaimResult> {
+  const bead = await db.beads.findOne({ id: beadId })
+  if (!bead) {
+    return { success: false, reason: 'not_found' }
+  }
+  if (bead.status !== 'ready' || bead.assignee !== null) {
+    return { success: false, reason: 'unavailable' }
+  }
+
+  // Bead is available, claim it
+  await db.beads.update(
+    { id: beadId },
+    {
+      status: 'in_progress',
+      assignee: workerId,
+      claimedAt: new Date(),
+    },
+  )
+
+  return { success: true, beadId, assignee: workerId }
+}
+
+
+## Review instructions
+
+Find what is wrong. Look specifically for issues a typical implementer
+would not have noticed during their own review:
+- Race conditions, atomicity violations, behavior under concurrent calls
+- Failure modes that tests don't catch
+- Mismatch between the implementation and the design's specific requirements
+
+Use the structured-code-review format. Be specific about file paths and
+line numbers in citations. Do not soften findings.
+
+codex
+**Review Scope:** `api/services/beads.ts`, new `claimBead(beadId, workerId)` implementation  
+**Process Used:** Closed-context static review against supplied design and acceptance criteria only  
+**Execution Context:** No commands run, no filesystem reads, no external context used  
+**Integration Target:** Bead claim API service function  
+**Governing Documents:** Package “Design / Acceptance criteria” for Bead claim API  
+**Reviewer:** Codex second-pass reviewer  
+**Severity Scale:** Critical / High / Medium / Low as defined in request  
+**Date:** 2026-04-26
+
+## Critical Findings
+
+None.
+
+## High Findings
+
+### High: Claim is not atomic under concurrent callers
+
+**Citation:** `api/services/beads.ts:12`, `api/services/beads.ts:21`
+
+**Problem:** The function performs a separate `findOne` availability check before calling `update` by `id` only. Two concurrent callers can both read the bead as `ready` with no assignee, both update it, and both return `{ success: true }`.
+
+**Why it matters:** This directly violates the core acceptance criterion: “under concurrent calls for the same beadId, exactly one caller gets `success: true`; the others get `success: false` with reason `unavailable`.” The current implementation can silently double-claim work.
+
+**Source-of-truth reference:** Design / Acceptance criteria: “The claim must be atomic…”
+
+**Proposed fix:** Use a single conditional atomic update, e.g. update where `{ id: beadId, status: 'ready', assignee: null }`, then inspect affected row count. If affected count is `1`, return success. If `0`, do a follow-up existence check to distinguish `not_found` from `unavailable`.
+
+### High: Update result is ignored, so failed claims can still return success
+
+**Citation:** `api/services/beads.ts:21`, `api/services/beads.ts:30`
+
+**Problem:** The function does not verify whether `db.beads.update(...)` actually modified a row. If the row is changed, deleted, or otherwise not updated between the read and update, the function still returns success.
+
+**Why it matters:** This can produce false-success responses where the bead was not actually claimed. That violates the requirement that success is returned only “if the bead was claimable AND the claim succeeded.”
+
+**Source-of-truth reference:** Acceptance criteria: “Returns `{ success: true, beadId, assignee: workerId }` if the bead was claimable AND the claim succeeded.”
+
+**Proposed fix:** Require the update call to return affected/matched row count, and only return success when exactly one row was updated. Otherwise classify the result as `not_found` or `unavailable`.
+
+## Medium Findings
+
+### Medium: Availability check treats only `null` as unassigned
+
+**Citation:** `api/services/beads.ts:16`
+
+**Problem:** The implementation checks `bead.assignee !== null`. If existing data represents an unassigned bead as `undefined`, missing, or another falsy empty value, this function will treat it as unavailable.
+
+**Why it matters:** The design says unavailable applies when the bead “already has an assignee.” It does not specify that unassigned must be encoded strictly as `null`. This can reject otherwise claimable ready beads depending on storage shape.
+
+**Source-of-truth reference:** Acceptance criteria: “Returns `{ success: false, reason: 'unavailable' }` if the bead exists but is not `ready` or already has an assignee.”
+
+**Proposed fix:** Align with the persisted schema. If unassigned is guaranteed `null`, enforce that invariant elsewhere and in tests. If not, use the repository’s canonical unassigned predicate in both the conditional update and any fallback checks.
+
+## Low Findings
+
+None.
+2026-04-27T01:55:38.993999Z ERROR codex_core::session: failed to record rollout items: thread 019dcca5-c5e2-7f01-a022-4402d8f292f6 not found
+tokens used
+17,241
+**Review Scope:** `api/services/beads.ts`, new `claimBead(beadId, workerId)` implementation  
+**Process Used:** Closed-context static review against supplied design and acceptance criteria only  
+**Execution Context:** No commands run, no filesystem reads, no external context used  
+**Integration Target:** Bead claim API service function  
+**Governing Documents:** Package “Design / Acceptance criteria” for Bead claim API  
+**Reviewer:** Codex second-pass reviewer  
+**Severity Scale:** Critical / High / Medium / Low as defined in request  
+**Date:** 2026-04-26
+
+## Critical Findings
+
+None.
+
+## High Findings
+
+### High: Claim is not atomic under concurrent callers
+
+**Citation:** `api/services/beads.ts:12`, `api/services/beads.ts:21`
+
+**Problem:** The function performs a separate `findOne` availability check before calling `update` by `id` only. Two concurrent callers can both read the bead as `ready` with no assignee, both update it, and both return `{ success: true }`.
+
+**Why it matters:** This directly violates the core acceptance criterion: “under concurrent calls for the same beadId, exactly one caller gets `success: true`; the others get `success: false` with reason `unavailable`.” The current implementation can silently double-claim work.
+
+**Source-of-truth reference:** Design / Acceptance criteria: “The claim must be atomic…”
+
+**Proposed fix:** Use a single conditional atomic update, e.g. update where `{ id: beadId, status: 'ready', assignee: null }`, then inspect affected row count. If affected count is `1`, return success. If `0`, do a follow-up existence check to distinguish `not_found` from `unavailable`.
+
+### High: Update result is ignored, so failed claims can still return success
+
+**Citation:** `api/services/beads.ts:21`, `api/services/beads.ts:30`
+
+**Problem:** The function does not verify whether `db.beads.update(...)` actually modified a row. If the row is changed, deleted, or otherwise not updated between the read and update, the function still returns success.
+
+**Why it matters:** This can produce false-success responses where the bead was not actually claimed. That violates the requirement that success is returned only “if the bead was claimable AND the claim succeeded.”
+
+**Source-of-truth reference:** Acceptance criteria: “Returns `{ success: true, beadId, assignee: workerId }` if the bead was claimable AND the claim succeeded.”
+
+**Proposed fix:** Require the update call to return affected/matched row count, and only return success when exactly one row was updated. Otherwise classify the result as `not_found` or `unavailable`.
+
+## Medium Findings
+
+### Medium: Availability check treats only `null` as unassigned
+
+**Citation:** `api/services/beads.ts:16`
+
+**Problem:** The implementation checks `bead.assignee !== null`. If existing data represents an unassigned bead as `undefined`, missing, or another falsy empty value, this function will treat it as unavailable.
+
+**Why it matters:** The design says unavailable applies when the bead “already has an assignee.” It does not specify that unassigned must be encoded strictly as `null`. This can reject otherwise claimable ready beads depending on storage shape.
+
+**Source-of-truth reference:** Acceptance criteria: “Returns `{ success: false, reason: 'unavailable' }` if the bead exists but is not `ready` or already has an assignee.”
+
+**Proposed fix:** Align with the persisted schema. If unassigned is guaranteed `null`, enforce that invariant elsewhere and in tests. If not, use the repository’s canonical unassigned predicate in both the conditional update and any fallback checks.
+
+## Low Findings
+
+None.
