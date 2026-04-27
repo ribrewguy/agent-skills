@@ -50,6 +50,26 @@ exclude:
   - plugins/
   - "plugins/**/evals/"
   - "**/.claude-plugin/"
+  # Eval workspace markdown is model-generated and frequently contains
+  # `{{var}}` strings (e.g., reviewing a Liquid-style template renderer)
+  # that crash Jekyll's Liquid parser. Exclude all .md / .json / .txt
+  # files in the workspaces; only the review.html viewers need to be
+  # served by Pages, and they're plain HTML with no Liquid issues.
+  # Workspace markdown files are linked via GitHub URLs from the eval
+  # docs pages, not via the Pages site.
+  - "skills/cross-agent-review-workspace/**/*.md"
+  - "skills/cross-agent-review-workspace/**/*.json"
+  - "skills/cross-agent-review-workspace/**/*.txt"
+  - "skills/multi-agent-git-workflow-workspace/**/*.md"
+  - "skills/multi-agent-git-workflow-workspace/**/*.json"
+  - "skills/rest-api-design-workspace/**/*.md"
+  - "skills/rest-api-design-workspace/**/*.json"
+  - "skills/structured-code-review-workspace/**/*.md"
+  - "skills/structured-code-review-workspace/**/*.json"
+  - "skills/task-handoff-summaries-workspace/**/*.md"
+  - "skills/task-handoff-summaries-workspace/**/*.json"
+  - "skills/branch-promotion-discipline-workspace/**/*.md"
+  - "skills/branch-promotion-discipline-workspace/**/*.json"
 
 markdown: kramdown
 kramdown:
