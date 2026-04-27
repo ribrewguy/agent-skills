@@ -25,6 +25,12 @@ Smaller headline (+16pp) because three of four evals had a strong baseline. The 
 
 The two non-discriminating evals are flagged for redesign in iteration-2. The current prompts contain enough policy framing that the baseline gets there too.
 
+## Going deeper: the framing-anchors-review-outcome experiment
+
+The four evals above test whether the skill produces correct artifacts. A separate, larger experiment tests whether the *redaction intervention* changes downstream review outcomes: 6 diffs (5 with planted bugs + 1 control) × 4 conditions (redacted + 3 framing intensities) × 2 reviewer providers (Claude, Codex) × 2 runs = 96 cells. Real signals on severity downgrading and false-positive tolerance under framing.
+
+**[Read the framing-anchors-review-outcome writeup](cross-agent-review-framing)** for results.
+
 ## Browse the full data
 
 - **[Interactive review viewer](https://ribrewguy.github.io/agent-skills/skills/cross-agent-review-workspace/iteration-1/review.html)**: side-by-side outputs with per-assertion grading evidence.
