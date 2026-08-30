@@ -17,6 +17,7 @@ The catalog. Each skill has its own page with a summary, its key opinions, insta
 - **[cross-agent-review](cross-agent-review)**: workflow for routine cross-vendor agent peer review (Claude reviews Codex's work; Codex reviews Claude's). The handoff package with self-assessment redacted, the cold-review discipline, the disagreement protocol, the bounded iteration loop.
 - **[multi-agent-git-workflow](multi-agent-git-workflow)**: git discipline for multi-agent work. Branch hierarchy, worktree-per-agent topology, orchestrator/worker roles, merge authority, acceptance/rejection rules, plus universal commit discipline (Conventional Commits, mandatory task ID, co-author line, UAT gate, no silent amends).
 - **[branch-promotion-discipline](branch-promotion-discipline)**: the layer above multi-agent-git-workflow. 3-tier `develop` to `uat` to `main` promotion, UAT branch as a long-lived environment, per-tier CI gate matrix, source-ref enforcement, hotfix flow with forward-merge, branch protection ruleset, pre-commit hook setup.
+- **[throughline](throughline)**: the lifecycle spine — requirements to architecture to task to implementation to commit to merge to closeout. Owns the Kickoff Declaration, the three completion phases and the source-of-truth ladder; dispatches everything else to the skill that owns it.
 
 ## How skills are evaluated
 
