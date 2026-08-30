@@ -74,7 +74,28 @@ Do not run multiple implementation agents in the same worktree. Do not assign mu
 
 Single-agent work *may* use a standard checkout or a dedicated worktree, the choice is operational. Multi-agent work *must* use dedicated worktrees per agent.
 
-The skill doesn't mandate a specific filesystem location for worktrees. If the user or repo tooling doesn't specify a path convention, pick a location outside other worktrees and outside generated output (e.g., `../<repo>-<task_id>/` or a sibling `worktrees/` directory).
+**Default location: `.worktrees/<short_name>/` at the project root.** Keeping
+them in one place under the repo keeps worktrees out of each other and out of
+generated output, and makes them trivially enumerable for cleanup. A repo whose
+tooling specifies a different convention wins; absent one, use this. Add
+`.worktrees/` to `.gitignore`.
+
+### Run commands from the worktree that owns the work
+
+Most dev and stack tooling resolves its config by walking up from the **current
+directory**, so the identical command means different things depending on where
+you run it — and its output usually doesn't say which one it picked. Two
+consequences:
+
+- **Two shell invocations is the bug.** `cd .worktrees/<short>` in one tool call
+  and `<command>` in the next runs in the main checkout: an agent's working
+  directory does not survive between tool calls. Write it as ONE command:
+  `cd /abs/path/to/repo/.worktrees/<short> && <command>`. This is the actual
+  failure mode; it is not forgetfulness, and re-reading the rule does not
+  prevent it.
+- **The main checkout is not a launch surface** while worktree work is in
+  flight. A dev server started there will also drag every sibling worktree under
+  `.worktrees/` into its file scans, which is its own resource problem.
 
 ## Multi-agent roles
 
@@ -110,9 +131,37 @@ The merge-authority rules are the load-bearing discipline of multi-agent topolog
   - `develop`
   - `main`
 - **Only the orchestrator** merges accepted worker branches into the coordinated integration branch.
-- **For single-agent work**, the implementing agent is also the integrator for that single branch and may merge `feature/*` → `develop` after governance requirements pass.
+- **For single-agent work**, the implementing agent is also the integrator for that single branch and may merge `feature/*` → `develop` once governance requirements pass **and the user has accepted the work** (see below).
 
 The reason workers can't merge themselves is the same reason any code-review system has authors-not-merging-their-own-PRs: integration topology is a coordinated decision, not a per-worker one. Workers integrating themselves leads to silent re-orderings, conflict-mediation drift, and lost orchestrator visibility into what landed when.
+
+### The user's acceptance is a separate gate
+
+**Nothing merges into the integration trunk (`develop`, or `main` in a
+single-trunk repo) without the user's explicit acceptance.** Unconditional, every
+time, whether or not the change is externally visible.
+
+None of the following is acceptance:
+
+- Passing quality gates, CI, or a review
+- The user approving the task at kickoff
+- The user acknowledging your summary, or asking a follow-up question about it
+- A closed task in the tracker
+- Being the person authorized to perform the merge
+
+Having merge *authority* is the ABILITY to merge; it is never the AUTHORITY to
+decide it is time. Deliver the implementation summary, state that the branch is
+ready to merge, and **stop until the user says to merge it**.
+
+**Orchestrator acceptance is not the user's acceptance.** When an orchestrator
+accepts a worker branch, that authorizes exactly one thing: integrating that
+branch into the epic `integration/*` branch and cleaning up that worker's branch
+and worktree. Merging the epic into the trunk still requires the user's explicit
+acceptance.
+
+When a merge is gated on UAT, UAT runs on an isolated environment or a preview
+deploy **before** the merge — never by merging first and verifying on the trunk
+afterwards.
 
 ## Acceptance and rejection
 
@@ -217,9 +266,69 @@ Examples:
 
 Substitute the actual model name/version in use. The vendor email is the canonical contact for the model, not a personal email.
 
-### Merge commit exception
+### Merge commits along the integration path
 
-Merge commits MAY use the default message Git produces. This is the only exception to Conventional Commits and Task ID requirements.
+A merge into the integration trunk is the **tip commit of a deployment**. Most
+hosting platforms show that subject line as the deployment's name, and it is the
+raw material release notes are assembled from. Write it for someone scanning a
+list of deployments, not for someone reading `git log` with the branch graph in
+front of them.
+
+**Subject line:**
+
+```
+<concise noun phrase naming the primary work> (<primary task id>)
+```
+
+- **Noun phrase, not a sentence.** Name the thing that shipped.
+- **Capitalize the first word; no trailing period.** Proper nouns and acronyms
+  keep their own case.
+- **Target 50 characters, hard cap 72** — including the trailing task id. Past
+  that the deployment list truncates, and the task id is what disappears.
+- **Never prefix with `merge`, and never name the branch.** Git already records
+  both parents; the branch name belongs in the body.
+- **No Conventional Commits type prefix** (`feat:`, `fix:`, …). Types stay on the
+  feature commits being merged. This is the sole exemption from the Conventional
+  Commits rule above — it is *not* an exemption from task-id traceability.
+- **Exactly ONE task id in the subject**: the primary one, in parentheses at the
+  end. Every other id in the merge goes in the body.
+- **Name the merge's primary work, not the branch's last commit.** A branch that
+  fixed three things gets a subject naming the one that matters, never a
+  concatenation of all three.
+
+| Instead of | Write |
+|---|---|
+| `merge feature/t-4821_save-commit-ux — a committed change hides at once, the list refreshes once, and a clean save closes the form (t-4821)` | `Inline row detachment handling (t-4821)` |
+| `merge feature/t-5107_assoc-row-shape — association rows display like every other row (t-5107)` | `Association row shape alignment (t-5107)` |
+| `merge fix/t-6620_admin-reset-send — the admin-triggered password reset actually sends the email (t-6620)` | `Admin-triggered password reset delivery (t-6620)` |
+
+**Body (required).** The detail the subject dropped moves to the body:
+
+```
+Inline row detachment handling (t-4821)
+
+Branch: feature/t-4821_save-commit-ux
+Tasks: t-4821, t-4822
+
+- A committed change hides at once (t-4821)
+- The list refreshes once, not per row (t-4821)
+- A clean save closes the form (t-4822)
+```
+
+- The body MUST list **every** task id carried by the merge. An id reachable in
+  neither subject nor body is a traceability violation, not a shortened message.
+- One bullet per distinct outcome, phrased as the result.
+
+**Scope.** This format applies to merges you author along the integration path
+(`feature/*` → `integration/*`, `feature/*` → trunk, `integration/*` → trunk).
+
+It does **not** apply to:
+
+- **Bookkeeping merges** — pulling the trunk down into a working branch, or any
+  fast-forward. Leave Git's generated message exactly as-is: those commits are
+  never a deployment tip, and rewriting them adds noise without traceability.
+- **Promotion merges** between long-lived tiers, which are PR-gated and carry a
+  release subject instead (see `branch-promotion-discipline`).
 
 ### No silent amends
 
@@ -248,8 +357,8 @@ If your project doesn't have a long-lived UAT environment, the UAT gate ceremony
 - After UAT approval, publish the working branch when remote visibility is required and verify parity for any published branch.
 - In multi-agent workloads, workers commit on their local `feature/*` branches for orchestrator review; they don't merge those branches forward themselves.
 - The orchestrator MUST publish the coordinated `integration/*` branch when it's the shared integration target.
-- For single-agent work, merge the `feature/*` branch into `develop` after all governance requirements pass.
-- For epic work, merge accepted worker branches into the epic `integration/*` branch, then merge the integration branch into `develop`.
+- For single-agent work, merge the `feature/*` branch into `develop` after all governance requirements pass **and the user accepts the work**.
+- For epic work, merge accepted worker branches into the epic `integration/*` branch, then — **once the user accepts the epic** — merge the integration branch into `develop`.
 - Never merge a `feature/*` directly to `main`. Never merge an epic `integration/*` directly to `main`. The 3-tier promotion that prevents this is in `branch-promotion-discipline`; the rule applies regardless.
 
 ## Close-out rules
@@ -260,22 +369,47 @@ Orchestrator close-out for epic work ends after:
 
 - All accepted worker branches are merged into the epic `integration/*` branch
 - Integrated gates pass on the epic integration branch
+- The user has accepted the epic
 - The epic integration branch is merged into `develop`
 - Branch cleanup is complete
 
 Single-agent close-out ends after:
 
+- The user has accepted the work
 - The `feature/*` branch is merged into `develop`
 - Branch cleanup is complete
 
 ### Branch cleanup
 
-After close-out:
+Clean up in the **same** close-out as the merge — the merge already carried the
+user's acceptance, so nothing is left to hold the environment for. Deferred
+cleanup is what leaves worktrees, branches, and disposable stacks strewn across
+sessions.
 
-- Verify the branch has been fully merged into its integration target
-- Delete the local branch
-- Delete the remote branch if it was published
-- Remove the dedicated worktree if no longer needed
+Tear down in this order:
+
+1. Any disposable environment the branch owned (database stack, preview deploy)
+2. Verify the branch has been fully merged into its integration target
+3. **Remove the dedicated worktree**
+4. Delete the local branch
+5. Delete the remote branch if it was published
+
+**Worktree removal MUST come before branch deletion.** Git refuses to delete a
+branch a worktree still has checked out (`error: cannot delete branch '<x>' used
+by worktree at '<path>'`), so the reverse order fails every time.
+
+**Never use a bare `git worktree remove` when the worktree ran long-lived
+processes.** It deletes the directory and leaves that worktree's dev servers
+running, holding recursive filesystem watchers on paths that no longer exist.
+The bill is paid later, machine-wide, by an unrelated command dying with
+`EMFILE: too many open files, watch`. Use the project's wrapper if it has one
+(it should stop the processes first and refuse a dirty worktree); otherwise stop
+the processes yourself, then remove.
+
+Retaining an environment past close-out is the **exception** and requires an
+explicit request from the user. You may propose it with a concrete reason; you
+may not take it unilaterally. When retained, report it — path, branch, what is
+running — so it stays visible instead of becoming cruft.
 
 The orchestrator is responsible for deleting accepted worker `feature/*` branches during cleanup, both locally and on remote when those branches were published.
 
@@ -289,6 +423,8 @@ The orchestrator is responsible for deleting accepted worker `feature/*` branche
 - **No silent amends.** Hook failures mean the commit didn't happen, make a new commit, don't amend.
 - **No "ready to push when you are."** If push is policy-allowed and approved, perform it.
 - **No bypassing quality gates** on the integration target.
+- **Nothing merges to the trunk without the user's explicit acceptance.** Passing gates are not acceptance.
+- **Worktree removal precedes branch deletion.** The reverse order is refused by git.
 
 ## Don't cite this skill in the output
 

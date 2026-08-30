@@ -84,7 +84,14 @@ Governance Status:
    "awaiting merge to develop", "awaiting approved PR from develop to uat">
 ```
 
-The summary is written *before* commit and push. Don't claim those steps happened until they have.
+The summary is written *before* commit and push. Don't claim those steps
+happened until they have.
+
+**This summary is the artifact the user reads before accepting the work for
+merge.** When the branch is ready, it MUST say so and stop there — "ready to
+merge into `develop`, awaiting your acceptance". The merge does not follow
+automatically, and delivering this summary is not itself acceptance. See the
+user-acceptance gate in `multi-agent-git-workflow`.
 
 ## Format 2: Worker handoff summary
 
@@ -120,6 +127,10 @@ A user-facing implementation summary is **not required** for worker work by defa
 
 Produced after completion, when the work has reached its integration target and any required cleanup is done. This is the final externally-visible record. It does **not** replace governance steps, evidence blocks, quality gates, UAT gates, commit/push requirements, or task state transitions; it summarizes them.
 
+This summary reports a merge that **already happened**, which means the user had
+already accepted the work before it. The summary is never the thing that
+authorizes a merge — the implementation summary is what precedes acceptance.
+
 ```
 ## Closeout Summary
 
@@ -142,6 +153,15 @@ Evidence:
   Branch status: <e.g., "merged to develop, local + remote deleted">
   Promotion: <e.g., "stopped at orchestrator handoff", "reached develop",
               "reached uat", "PR open from uat to main">
+  Acceptance: <how and when the user accepted the work for merge>
+
+Cleanup Status:
+  <branch deleted local + remote; worktree removed; disposable environment
+   torn down>
+  <if an environment was RETAINED: name the explicit request that authorized
+   it, and report what is standing — path, branch, stack id / ports, and
+   whether its processes are running>
+  <or "No dedicated environment was used.">
 
 Behavioral Impact:
   <user-visible or system-visible effect>
@@ -163,6 +183,8 @@ If a step required by the project's process didn't happen, say so plainly in the
 - **Don't use the summary to hide failed checks, skipped steps, or unresolved governance requirements.** If the summary feels like it's trying to make incomplete work look complete, the format isn't doing its job.
 - **Don't mark work "done" if the closeout step list isn't actually complete.** If implementation is complete but closure is blocked (waiting on review, on a deploy gate, on a third party), summarize the implementation separately from the blocked governance step. Don't conflate them.
 - **Don't omit Process Used, Task Scope, or Execution Context.** "No task was worked on." is a valid value; *missing* is not. Same for Process Used.
+- **Don't report a closeout for work the user never accepted for merge.** If the branch is ready but unaccepted, deliver the implementation summary instead and stop there. A closeout summary for an unauthorized merge documents a governance breach; it does not cure one.
+- **Don't leave cleanup unreported or unperformed.** An environment retained without an explicit request from the user is cruft, not caution.
 - **Factual, concise, externally legible.** No motivational language ("we crushed it"), no self-congratulation ("solid work"), no vague claims ("looks good"). Optimize for fast verification by the reader.
 
 ## Don't cite this skill in the output
