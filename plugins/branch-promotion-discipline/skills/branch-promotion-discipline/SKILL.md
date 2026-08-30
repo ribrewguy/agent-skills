@@ -107,17 +107,47 @@ If the team has fast e2e (under 5 min) and budget to run it per-merge, promote i
 
 ## Hotfix flow
 
-When a production bug needs a fix faster than the normal `develop` to `uat` to `main` cadence:
+When a defect needs a fix faster than the normal `develop` to `uat` to `main`
+cadence, a **hotfix branches from the tier it must reach**
+(`hotfix/<task_id>_<short_name>`) and PRs directly into it:
 
-1. Branch from `uat` (NOT from `main`): `git checkout -b hotfix/<task_id>_<short_name> uat`.
-   - Why uat: hotfixes still need stakeholder acceptance before production. Branching from `uat` ensures the fix is testable in the UAT environment.
-   - If the bug only exists on `main` (e.g., a regression introduced in the most recent uat-to-main promotion), branch from `main` instead and skip the uat acceptance step with explicit user / stakeholder approval.
-2. Implement the fix on the hotfix branch.
-3. PR `hotfix/*` to `uat`. Source-ref check accepts `hotfix/*` as a valid source for `uat`.
-4. After acceptance, PR `uat` to `main`. Hotfix reaches production.
-5. **Forward-merge `uat` to `develop`** to keep them in sync. Otherwise `develop` will reintroduce the bug at the next promotion.
+- **`hotfix/*` to `uat`** for a UAT-blocking defect. The fix still gets
+  stakeholder acceptance in the UAT environment before production.
+- **`hotfix/*` to `main`** for a **production P0**. Routing a live incident
+  through a full `uat` promotion costs a cycle the incident cannot afford.
 
-The forward-merge is the load-bearing step. Skipping it produces drift: `main` is fixed, `develop` still has the bug, the next `develop` to `uat` to `main` cycle reintroduces the bug. This pattern is the most common failure mode of 3-tier flows.
+Source-ref enforcement accepts `hotfix/*` as a valid source for both tiers.
+
+### A hotfix does not get weaker gates
+
+`main` still requires the same required status checks, and CI does not test a
+hotfix less than anything else. A check that reported green having run less would
+be worse than no check at all — precisely on the change going to production
+fastest. What a hotfix may legitimately get is *speed*: drop work that is not a
+correctness signal (coverage instrumentation, non-blocking scans) from the
+critical path, never the checks themselves.
+
+When a gate genuinely must be skipped, make it an explicit, attributed act: name
+**one** team as the sole bypass actor on the `uat` and `main` rulesets, so every
+bypass lands in the PR timeline and the audit log. **Never disable a ruleset to
+ship a hotfix** — that is unrecorded, easy to misconfigure under pressure, and
+easy to leave switched off afterwards.
+
+### Every hotfix carries a forward-merge obligation
+
+A hotfix lands on a tier ahead of the ones below it, so it must be walked back
+down:
+
+- landed in `uat` → forward-merge `uat` to `develop`
+- landed in `main` → forward-merge `main` to `uat`, **then** `uat` to `develop`
+
+The forward-merge is the load-bearing step. Skipping it produces drift: `main` is
+fixed, `develop` still has the bug, and the next `develop` to `uat` to `main`
+cycle reintroduces it — leaving whoever cuts that release to resolve a conflict
+they did not create. This is the most common failure mode of 3-tier flows.
+
+The forward-merge is a PR *into* `develop` (or `uat`), which source-ref
+enforcement deliberately does not gate.
 
 ## Branch protection rules
 
