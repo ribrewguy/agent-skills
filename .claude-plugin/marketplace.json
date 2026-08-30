@@ -19,7 +19,7 @@
     {
       "name": "task-handoff-summaries",
       "source": "./plugins/task-handoff-summaries",
-      "description": "Three rigorous structured report formats: implementation summary (before commit, single-agent or orchestrator), worker handoff summary (multi-agent worker → orchestrator), closeout summary (after completion). Hard rules against using the summary to mask incomplete work."
+      "description": "Three rigorous structured report formats: implementation summary (before commit, single-agent or orchestrator), worker handoff summary (multi-agent worker \u2192 orchestrator), closeout summary (after completion). Hard rules against using the summary to mask incomplete work."
     },
     {
       "name": "cross-agent-review",
@@ -35,6 +35,11 @@
       "name": "branch-promotion-discipline",
       "source": "./plugins/branch-promotion-discipline",
       "description": "3-tier long-lived branch hierarchy (develop / uat / main), one-way promotion (develop to uat to main), per-tier CI gate matrix, source-ref enforcement, hotfix flow with forward-merge to develop, branch protection ruleset, pre-commit hook setup. Layer above multi-agent-git-workflow."
+    },
+    {
+      "name": "throughline",
+      "source": "./plugins/throughline",
+      "description": "Lifecycle dispatcher: requirements to architecture to task to implementation to commit to merge to closeout. Owns the Kickoff Declaration, the three completion phases, the source-of-truth ladder, and epic scaffolding order. Delegates to multi-agent-git-workflow, branch-promotion-discipline, task-handoff-summaries and structured-code-review; bundles feature governance, procedural memory, MCP parity and Beads mechanics."
     }
   ]
 }
