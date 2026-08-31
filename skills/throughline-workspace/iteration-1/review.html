@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "throughline", "runs": [{"id": "eval-0-kickoff-before-code-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Picking up tf-18: Add per-IP rate limiting to POST /api/login\n\nHere is exactly what I will do, in order, between now and the first line of code I change. Nothing gets implemented \u2014 not even a test file \u2014 until every step below has appeared in the transcript.\n\n## 0. Triage: full process, not lightweight\n\nFirst call: is this a trivial change that could take a lightweight path? No \u2014 it touches authentication abuse controls, has a PRD section and architectural guardrails attached, and is externally visible behavior (clients will start receiving 429s). This gets the full process. If you'd rather I take a lightweight path anyway, that's your call to make explicitly \u2014 say so and I'll adjust.\n\n## 1. Load procedural memory\n\nBefore touching anything, I check whether this repo has curated procedural context for work like this:\n\n- `which cm` \u2014 if the CASS CLI is present, run `cm context \"per-IP rate limiting on POST /api/login\" --json` and fold any surfaced rules (e.g., prior lessons about the middleware chain, proxy IP handling, test conventions) into my plan.\n- If `cm` is not installed, I skip this and note the gap rather than pretending it happened.\n\n## 2. Read the task \u2014 and cite it\n\nRead tf-18 in the tracker (using whatever command or UI the repo's docs/CLAUDE.md establish for our tracker \u2014 I don't invent CLI syntax that isn't documented). I quote into the conversation:\n\n- The full task description and any acceptance criteria.\n- Whether tf-18 has a parent task (that changes the branch/integration topology; I'm assuming standalone until the tracker says otherwise).\n- Any linked discussion or prior attempts.\n\n## 3. Read the requirements \u2014 `docs/prds/authentication.md`, section \"Abuse controls\"\n\nThis is the business source of truth. I read the section and extract, with quotes:\n\n- The limit itself: requests per window, per IP, and whether the PRD specifies exact numbers or leaves them to configuration.\n- Required behavior on limit breach: status code (429?), `Retry-After` semantics, response body shape, logging/alerting expectations.\n- Scope questions: does \"Abuse controls\" ask for per-IP only, or also per-account/lockout behavior that tf-18 deliberately excludes? I note the boundary so I implement the task, not the whole section.\n\n## 4. Read the architecture \u2014 `docs/architecture/edge.md`, section \"Middleware chain\"\n\nThis is the technical guardrail layer. I read it and extract, with quotes:\n\n- Where rate limiting is allowed to live in the chain (before/after body parsing, auth, logging middleware; app-level vs. edge/proxy-level).\n- How client IP is derived \u2014 trust-proxy configuration, `X-Forwarded-For` handling. This is the classic correctness trap for per-IP limiting behind a load balancer, so I want the documented answer, not an assumption.\n- Sanctioned state/store choices (in-memory vs. Redis or similar), existing middleware conventions, and any library the architecture already blesses.\n\n## 5. Reconcile \u2014 or stop\n\nNow I check the layers against each other, in precedence order: PRD \u2192 architecture \u2192 task.\n\n- If the PRD and the architecture doc conflict (e.g., the PRD implies per-account lockout while the task says per-IP; or the architecture says limiting belongs at the edge proxy, not in app middleware), I **stop, quote both passages with file + heading, explain the impact, offer 1\u20133 resolution options, and ask you to choose**. No silent reinterpretation.\n- If anything essential is unspecified (no thresholds anywhere, no breach behavior defined), I ask before proceeding rather than inventing policy.\n- I will not edit anything under `docs/prds/` or `docs/architecture/` \u2014 those are source of truth, and changing them requires your explicit permission.\n\nAssuming the layers agree, I proceed.\n\n## 6. Emit the Kickoff Declaration\n\nBefore any implementation tool call, this block appears in the conversation (values confirmed by steps 2\u20134):\n\n```\n### Kickoff Declaration\n- Process: single-agent\n- Requirements: docs/prds/authentication.md \u00a7 Abuse controls\n- Architecture: docs/architecture/edge.md \u00a7 Middleware chain\n- Parent task: N/A (per tracker; revisit if tf-18 has a parent)\n- Task: tf-18\n- Worktree: N/A (single-agent; feature branch in this clone)\n- Branch: feature/tf-18_login_rate_limit\n- Integration target: develop\n```\n\n## 7. Claim the task atomically\n\nMark tf-18 as claimed/in-progress in the tracker so no other session or agent picks it up, using the tracker's own claim operation. If the project tracks per-task AI spend, this is also where I record a token estimate and start the stopwatch \u2014 measured actuals only exist if the clock starts now.\n\n## 8. Create the branch\n\nFrom the clean `develop` checkout:\n\n```bash\ngit pull --ff-only            # make sure develop is current before branching\ngit checkout -b feature/tf-18_login_rate_limit\n```\n\nSingle-agent work doesn't need a separate worktree; the feature branch in this clone is the isolation boundary. `develop` is the trunk and the eventual integration target \u2014 and nothing merges back into it without your explicit acceptance later, regardless of how green the gates are.\n\n## 9. Codebase reconnaissance (read-only, on the branch)\n\nNow \u2014 and only now \u2014 I read code:\n\n- The `POST /api/login` route handler and how it's registered.\n- The actual middleware chain as implemented, to find the insertion point the architecture doc prescribes.\n- Existing dependencies (`package.json`) \u2014 is a rate-limiting library already in use elsewhere? Reuse beats introducing a new one; introducing a new dependency is a decision I'll surface, not bury.\n- Configuration conventions (env vars, config module) for where thresholds belong.\n- The test harness and existing tests around `/api/login`, so new tests match house style.\n\n## 10. Write the implementation plan\n\nA short plan, posted for the transcript before code changes, mapping each requirement from step 3 to a concrete decision constrained by step 4: middleware placement, IP derivation, store choice, threshold configuration, breach response shape, and the test list \u2014 including the failing tests I'll write first (429 after N requests in window, window reset, `Retry-After` header, correct IP attribution behind the proxy, and the happy path staying untouched).\n\n---\n\n**Then, and only then, the first line of code** \u2014 which will be a failing test, not the middleware itself.\n\nFor visibility on what comes after (not part of this ask): implementation \u2192 quality gates run with real output \u2192 a UAT check-in with you before commit since this is externally visible \u2192 commit on the feature branch with the task id \u2192 an implementation summary that ends at \"ready to merge, awaiting your acceptance\" \u2192 merge to `develop` only on your explicit yes \u2192 close tf-18 only after the branch lands \u2192 cleanup and closeout summary, with 1\u20133 learned rules recorded back into procedural memory.\n"}], "grading": {"expectations": [{"text": "Produces a kickoff declaration (or equivalent structured preflight block) before any implementation step, naming at least the task id, the requirements source, the architecture source, and the branch", "passed": true, "evidence": "Step 6 contains an explicit '### Kickoff Declaration' fenced block listing 'Task: tf-18', 'Requirements: docs/prds/authentication.md \u00a7 Abuse controls', 'Architecture: docs/architecture/edge.md \u00a7 Middleware chain', and 'Branch: feature/tf-18_login_rate_limit', emitted 'Before any implementation tool call' \u2014 code changes only begin after step 10."}, {"text": "Reads and cites the task, the requirements file+section, and the architecture file+section as explicit visible steps, not as an assumed background", "passed": true, "evidence": "Step 2 'Read the task \u2014 and cite it' ('I quote into the conversation... the full task description and any acceptance criteria'); Step 3 'Read the requirements \u2014 docs/prds/authentication.md, section \"Abuse controls\"' ('I read the section and extract, with quotes'); Step 4 'Read the architecture \u2014 docs/architecture/edge.md, section \"Middleware chain\"' ('I read it and extract, with quotes')."}, {"text": "Claims the task in the tracker (marks it in-progress/assigned) before implementation begins", "passed": true, "evidence": "Step 7 'Claim the task atomically': 'Mark tf-18 as claimed/in-progress in the tracker so no other session or agent picks it up' \u2014 sequenced before branch creation (step 8), reconnaissance (step 9), and the first code change."}, {"text": "Creates a working branch whose name embeds the task id (e.g., feature/tf-18_rate-limit), not a generically named branch", "passed": true, "evidence": "Step 8: 'git checkout -b feature/tf-18_login_rate_limit' \u2014 branch name embeds tf-18."}, {"text": "Does not propose or begin any code edit before the read/cite/claim/branch ceremony is complete", "passed": true, "evidence": "Opening states 'Nothing gets implemented \u2014 not even a test file \u2014 until every step below has appeared in the transcript'; read (2\u20134), kickoff (6), claim (7), branch (8) all precede 'Then, and only then, the first line of code \u2014 which will be a failing test'. No code edit is proposed earlier."}, {"text": "Does not modify docs/prds/ or docs/architecture/ files", "passed": true, "evidence": "Step 5 explicitly commits: 'I will not edit anything under docs/prds/ or docs/architecture/ \u2014 those are source of truth, and changing them requires your explicit permission.' No step proposes editing those files."}, {"text": "Output does not cite this skill by name (no 'throughline says', 'per the skill', etc.)", "passed": true, "evidence": "No occurrence of 'throughline', 'skill', or similar attribution anywhere in the output; the process is presented as the agent's own."}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}}}, {"id": "eval-0-kickoff-before-code-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Picking up tf-18: Add per-IP rate limiting to POST /api/login\n\nHere is exactly what I would do, in order, from right now until the first line of code I change. Nothing below modifies source; the first code change (a failing test) is where this process ends.\n\n## 1. Claim the task and read it completely\n\n- Move tf-18 to \"in progress\" in the tracker and assign it to me, so the board reflects reality even though I'm solo.\n- Read the full ticket, not just the title: description, acceptance criteria, comments, linked tickets (e.g. a prior incident or a parent epic on abuse controls), and any attached discussion. I'm looking for constraints that never made it into the docs \u2014 \"must ship behind a flag\", \"ops wants a metric\", \"don't break the mobile client's retry loop\".\n- Note the ticket's definition of done, if it has one. If it doesn't, I'll write one myself in step 5.\n\n## 2. Read the business requirements: `docs/prds/authentication.md`, section \"Abuse controls\"\n\nI read this before touching any code, and I extract concrete, testable parameters into a scratch list:\n\n- **The limit itself**: how many attempts, per what window (e.g. 10 per 5 minutes)? Fixed numbers or \"configurable\"?\n- **Keying**: the ticket says per-IP \u2014 does the PRD agree, or does it also mention per-account or per-IP+username? (Per-IP alone has known gaps: shared NATs, distributed attacks.)\n- **Behavior when the limit is hit**: reject with what status (429?), what error body, is a `Retry-After` header required, is there a lockout vs. a rolling throttle, does the counter reset on successful login?\n- **Exemptions**: allowlisted IPs, internal health checks, trusted partners?\n- **Observability requirements**: does the business want limited requests logged, alerted on, or surfaced to the user in any specific wording?\n- **Anything the PRD requires that the ticket doesn't mention** \u2014 if the \"Abuse controls\" section also demands e.g. CAPTCHA after N failures, I note it and confirm scope (that's likely a separate ticket, but I won't silently drop it).\n\nAnything ambiguous goes on an \"open questions\" list, not into my head.\n\n## 3. Read the technical guardrails: `docs/architecture/edge.md`, section \"Middleware chain\"\n\nThis tells me *where* and *how* the implementation is allowed to exist:\n\n- **Position in the chain**: where does rate limiting belong relative to body parsing, auth, logging, CORS? (Typically as early as possible \u2014 before we do expensive work \u2014 but the doc's ordering is authoritative.)\n- **Existing conventions**: is there already a middleware pattern, a shared rate-limiter utility, or a designated place (`src/middleware/`?) new middleware must live?\n- **Client IP derivation**: how does this service run \u2014 behind a load balancer/CDN? What does the doc say about `X-Forwarded-For` / `trust proxy`? Getting this wrong means rate-limiting the LB's IP, which is the classic failure mode of this exact task.\n- **State/storage constraints**: are we multi-instance? Does the doc mandate a shared store (Redis?) or permit in-memory? Fail-open vs. fail-closed if the store is down?\n- **Any prohibitions**: banned dependencies, latency budgets for the middleware chain, config/env-var conventions.\n\n## 4. Recon the actual code (read-only)\n\nDocs drift; the code is the ground truth I reconcile against:\n\n- Find the `POST /api/login` route handler and read it end to end, including what middleware already wraps it.\n- Identify the framework (Express? Fastify? Hono?) and the middleware registration point \u2014 the file where the chain from `edge.md` is actually assembled \u2014 and check whether the real order matches the doc.\n- Search for existing rate limiting anywhere in the repo (`grep -ri \"rate\" --include=\"*.ts\" --include=\"*.js\"`, look for `express-rate-limit`, `rate-limiter-flexible`, etc. in `package.json`). If a limiter already exists for another route, I reuse its pattern and store rather than inventing a second one.\n- Check what shared infrastructure exists: is there a Redis client already configured? A config module where limits/env vars live? A logger/metrics facility I'm expected to use?\n- Read the test setup: test runner, where route/middleware tests live, how the app is instantiated in tests (supertest against a built app?), whether there's a way to fake time (important for window-based limits).\n- Run the existing test suite once to confirm a green baseline before I change anything.\n\n## 5. Reconcile and write a short plan; resolve or record open questions\n\nNow I collapse steps 1\u20134 into a small design note (a comment on tf-18, so the decision trail lives with the task):\n\n- **Approach**: algorithm (fixed window / sliding window / token bucket \u2014 chosen to match the PRD's wording), library vs. hand-rolled (prefer an established library unless the guardrails or existing patterns say otherwise).\n- **Key derivation**: exactly how the client IP is obtained given the proxy setup, including IPv6 handling.\n- **Store**: shared (Redis) if multi-instance per `edge.md`, with an explicit fail-open/fail-closed decision and rationale.\n- **Placement**: where in the middleware chain, scoped to `POST /api/login` only \u2014 not globally.\n- **Response contract**: status code, body shape (matching the service's existing error envelope), `Retry-After`.\n- **Config**: limit and window as configuration with the PRD's values as defaults.\n- **Observability**: log line and/or metric per the PRD and existing conventions.\n- **Out of scope**: anything the PRD hinted at that this ticket doesn't cover, listed explicitly.\n- **Test list**: under-limit passes through; over-limit gets 429 with correct headers/body; window expiry restores access; keying is actually per-IP (two IPs don't share a bucket); proxy-header handling; store-outage behavior; existing login behavior unchanged.\n\nFor each open question from steps 2\u20133: since I'm solo, I decide which are **blocking** (e.g. the PRD gives no numbers at all \u2014 I'd ask the ticket owner/stakeholder and pause) versus **safely assumable** (e.g. exact error copy \u2014 I choose, and record the assumption in the ticket comment so it's visible and reversible).\n\n## 6. Prepare the workspace\n\n- `git fetch` and fast-forward `develop` so I'm building on the latest trunk (status is clean, so this is safe).\n- Create a feature branch named after the task: `git switch -c tf-18-login-rate-limit`.\n- `npm ci` (or the repo's package-manager equivalent) so my dependency state matches the lockfile; re-run the test suite on the branch to confirm the baseline is still green.\n\n## 7. First change\n\nWith requirements extracted, guardrails understood, approach written down, and a green baseline on a clean branch \u2014 the first line of code I change is a **failing test**: an integration test asserting that the (N+1)th login attempt from one IP within the window returns 429. Then, and only then, do I start implementing the middleware to make it pass.\n"}], "grading": {"expectations": [{"text": "Produces a kickoff declaration (or equivalent structured preflight block) before any implementation step, naming at least the task id, the requirements source, the architecture source, and the branch", "passed": false, "evidence": "No kickoff declaration or equivalent single structured preflight block exists. The four elements are scattered across the narrative: tf-18 in step 1, requirements source in step 2's heading, architecture source in step 3's heading, and the branch name only in step 6 ('git switch -c tf-18-login-rate-limit'). The closest structured artifact, the step-5 'design note (a comment on tf-18)', covers approach/store/placement/tests but does not name the requirements source, architecture source, or branch as a declaration."}, {"text": "Reads and cites the task, the requirements file+section, and the architecture file+section as explicit visible steps, not as an assumed background", "passed": true, "evidence": "Step 1: 'Read the full ticket, not just the title: description, acceptance criteria, comments, linked tickets'; Step 2 heading: 'Read the business requirements: docs/prds/authentication.md, section \"Abuse controls\"' with extracted parameters; Step 3 heading: 'Read the technical guardrails: docs/architecture/edge.md, section \"Middleware chain\"' with extracted constraints."}, {"text": "Claims the task in the tracker (marks it in-progress/assigned) before implementation begins", "passed": true, "evidence": "Step 1, before anything else: 'Move tf-18 to \"in progress\" in the tracker and assign it to me, so the board reflects reality even though I'm solo.' The first code change occurs only in step 7."}, {"text": "Creates a working branch whose name embeds the task id (e.g., feature/tf-18_rate-limit), not a generically named branch", "passed": true, "evidence": "Step 6: 'Create a feature branch named after the task: git switch -c tf-18-login-rate-limit' \u2014 branch name embeds tf-18."}, {"text": "Does not propose or begin any code edit before the read/cite/claim/branch ceremony is complete", "passed": true, "evidence": "Claim (step 1), reads (steps 1-3), read-only recon (step 4, 'read-only'), plan (step 5), branch (step 6) all precede step 7: 'the first line of code I change is a failing test'. Opening states 'Nothing below modifies source'."}, {"text": "Does not modify docs/prds/ or docs/architecture/ files", "passed": true, "evidence": "No step proposes editing either doc; both are only read (steps 2-3). Open questions and assumptions are recorded 'in the ticket comment', not in the docs."}, {"text": "Output does not cite this skill by name (no 'throughline says', 'per the skill', etc.)", "passed": true, "evidence": "No occurrence of 'throughline', 'per the skill', or any skill attribution in the output."}], "summary": {"passed": 6, "failed": 1, "total": 7, "pass_rate": 0.86}}}, {"id": "eval-1-epic-design-doc-first-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "Here is the exact sequence I'd follow, in order, with where each step happens. The shape of the whole thing is driven by two rules: this is an epic (multi-task effort), so the epic scaffolding is created centrally on the trunk *before* any work begins; and a design document **is** work, so the worktree is created before the first authored file \u2014 the main checkout is only a surface for tracker commands and `git worktree add`, never for authoring.\n\nOne caveat up front: a design doc sits *below* requirements and architecture in the source-of-truth ladder. If the repo has no PRD or architecture guardrails covering session handling, I stop at step 2 and ask you where intent lives (or whether capturing requirements is itself the first child task) rather than inventing them inside the design doc.\n\n---\n\n## Phase 0 \u2014 Orientation (read-only, main checkout)\n\n**Step 1 \u2014 Load context.** In the main checkout on `develop`: load any recorded procedural memory for this repo, and locate the governing documents \u2014 the requirements/PRD covering authentication or session handling, and the architecture spec (commonly under `docs/prds/` and `docs/architecture/`, but I adopt whatever layout the repo uses). I read both and will cite file + section in the kickoff. No files are written or edited in this phase.\n\n**Step 2 \u2014 Escalate any gap or conflict.** If requirements or architecture are missing or contradict the migration's premise (e.g., an architecture doc that mandates server-side sessions), I quote the conflict and stop for your decision. I never silently resolve it and never modify those documents without your explicit permission.\n\n## Phase 1 \u2014 Epic scaffolding (tracker + main checkout, on the trunk)\n\n**Step 3 \u2014 Create the epic (tracker).** Create the parent task: *\"Migrate session handling from server-side sessions to JWTs\"*, with the scope and acceptance criteria we know today. Call its id `proj-100`.\n\n**Step 4 \u2014 Create the design task as its first child (tracker).** One child task: *\"Design document: JWT migration plan\"* \u2192 `proj-101`, parented to `proj-100`. No other children yet \u2014 the implementation breakdown is an *output* of the design doc, so those child tasks get created after the design is accepted, not now.\n\n**Step 5 \u2014 Claim the design task atomically (tracker).** Claim `proj-101` so no other agent picks it up. (With a Beads-style tracker: `bd show proj-101` then `bd update proj-101 --claim`; with Jira/Linear/GitHub Issues, the equivalent assign + move to in-progress.)\n\n**Step 6 \u2014 Commit only the scaffolding to `develop` (main checkout).** If the tracker persists state in the repo (e.g., a Beads database), commit exactly that scaffolding \u2014 the epic and design task records \u2014 directly on `develop` in the main checkout, so both tasks exist centrally before any worktree work begins. If the tracker is external (Jira, Linear), there is nothing to commit and this step is a no-op. Either way, **nothing else** lands on the trunk: no docs, no stubs, no placeholder directories.\n\n## Phase 2 \u2014 Kickoff (conversation + main checkout)\n\n**Step 7 \u2014 Emit the kickoff declaration (conversation).** Before any authored file exists:\n\n```\n### Kickoff Declaration\n- Process: single-agent\n- Requirements: docs/prds/auth-session-management.md \u00a7<section>   (as found in step 1)\n- Architecture: docs/architecture/authentication.md \u00a7<section>   (as found in step 1)\n- Parent task: proj-100\n- Task: proj-101\n- Worktree: .worktrees/jwt-migration-design/\n- Branch: feature/proj-101_jwt-migration-design\n- Integration target: develop\n```\n\nThe design task itself is single-agent work; the multi-agent question (orchestrator + workers, an `integration/proj-100_*` branch) is deferred until the design doc defines the implementation slices.\n\n**Step 8 \u2014 Create the branch and worktree (main checkout).**\n\n```bash\ngit worktree add .worktrees/jwt-migration-design -b feature/proj-101_jwt-migration-design develop\n```\n\n(`.worktrees/` is the default location at the project root and belongs in `.gitignore`; a repo-specific convention wins if one exists.) This is the last thing the main checkout does. From here on, every file write and every command runs inside the worktree \u2014 as a single `cd /abs/path/.worktrees/jwt-migration-design && <command>` invocation each time, since working directory doesn't persist between tool calls.\n\n## Phase 3 \u2014 Author the design document (worktree only)\n\n**Step 9 \u2014 Write the doc (worktree file writes).** Author the design document inside the worktree, in the repo's established location for feature/design specs (e.g., `docs/features/jwt-session-migration.md`). Content: current-state analysis of the session code (read from the worktree's checkout), target JWT architecture, migration phases with rollback points, token/refresh/revocation strategy, security considerations, and \u2014 critically for the epic \u2014 the proposed breakdown into implementation child tasks. Anything already written accidentally in the main tree beforehand would be moved in via patch/stash, never branch-and-committed from the main checkout. No disposable environment is needed for a doc-only deliverable; if the design work turns out to need one (e.g., prototyping against a schema change), it gets stood up fresh and torn down at closeout \u2014 the shared local environment stays trunk-parity, always.\n\n**Step 10 \u2014 Run quality gates (worktree).** Whatever the project's stack policy defines for docs \u2014 markdown lint, link check, spell check, or the standard gate suite if it runs repo-wide. I report concrete pass/fail results, not \"looks fine.\"\n\n**Step 11 \u2014 UAT check (conversation).** A design doc has no externally visible runtime behavior, so no UAT environment gate applies \u2014 but the review-before-commit question is still yours: if you want to read the draft before it's committed, say so now and I hold the commit.\n\n## Phase 4 \u2014 Commit (worktree)\n\n**Step 12 \u2014 Commit on the feature branch (worktree).** Conventional Commit, multi-paragraph body explaining what and why, task id, co-author line:\n\n```\ndocs(auth): add JWT session migration design document (proj-101)\n\nLays out the migration plan from server-side sessions to JWTs:\ncurrent-state analysis, target token architecture, phased rollout\nwith rollback points, and revocation/refresh strategy.\n\nDefines the proposed implementation task breakdown for epic\nproj-100 so child tasks can be scaffolded once the design is\naccepted.\n\nRefs: proj-101\n\nCo-authored-by: <model name and version> <noreply@anthropic.com>\n```\n\n**Step 13 \u2014 Publication decision + evidence block (worktree/conversation).** A single-agent `feature/*` branch stays local by default; I publish only if you want remote visibility or PR review. Then I emit the pre-integration evidence block:\n\n```\nBranch: feature/proj-101_jwt-migration-design\nLocal SHA:  <hash>\nRemote SHA: not published\nGates:      markdown-lint=PASS link-check=PASS\ngit status: clean\n```\n\n**Step 14 \u2014 Implementation summary (conversation).** The structured summary \u2014 process used, task scope (`proj-101`), implementation outcome, behavioral impact, risks/gaps, file references, governance status \u2014 ending at exactly: **\"ready to merge into `develop`, awaiting your acceptance.\"** And it stops there.\n\n---\n\n## What deliberately has *not* happened at this point\n\n- **No merge to `develop`.** Passing gates aren't acceptance; you acknowledging the summary isn't acceptance. The merge happens only when you explicitly say to merge.\n- **`proj-101` is not closed.** It closes only after its branch actually lands on `develop` \u2014 never before.\n- **`proj-100` stays open** for the life of the epic.\n- **The worktree stays up** until the same closeout as the merge, at which point cleanup runs in order: worktree removal first, then local branch deletion (git refuses the reverse order), then remote branch if published.\n\nOnce you accept and the design lands, the accepted doc drives the next tracker step: scaffolding the implementation child tasks under `proj-100`, and deciding single-agent vs. multi-agent topology (with an `integration/proj-100_*` branch if we go multi-worker) per the breakdown the design defines.\n"}], "grading": {"expectations": [{"text": "Creates the epic (parent) task and a design (child) task in the tracker before authoring any file", "passed": true, "evidence": "Phase 1 Steps 3-4 create the epic ('proj-100') and the child design task ('proj-101', parented to proj-100) in the tracker; authoring does not begin until Phase 3 Step 9. Opening paragraph states 'the epic scaffolding is created centrally on the trunk *before* any work begins'."}, {"text": "Commits only the task scaffolding to the trunk from the main checkout \u2014 no design content lands on the trunk at this stage", "passed": true, "evidence": "Step 6: 'commit exactly that scaffolding \u2014 the epic and design task records \u2014 directly on develop in the main checkout... Either way, **nothing else** lands on the trunk: no docs, no stubs, no placeholder directories.'"}, {"text": "Creates a dedicated branch/worktree for the design task BEFORE writing the design document", "passed": true, "evidence": "Step 8 runs 'git worktree add .worktrees/jwt-migration-design -b feature/proj-101_jwt-migration-design develop' before Step 9 authors the doc; the intro states 'the worktree is created before the first authored file'."}, {"text": "The design document is authored and committed on the design task's branch, not in the main checkout or directly on the trunk", "passed": true, "evidence": "Step 9 (Phase 3, 'worktree only'): 'Author the design document inside the worktree'; Step 12 commits on feature/proj-101_jwt-migration-design in the worktree. 'What deliberately has not happened': 'No merge to develop.'"}, {"text": "The main checkout is used only for tracker commands and branch/worktree creation \u2014 it is never the authoring surface for the design doc", "passed": true, "evidence": "Line 1: 'the main checkout is only a surface for tracker commands and git worktree add, never for authoring.' Step 8: '(worktree add) is the last thing the main checkout does. From here on, every file write and every command runs inside the worktree.' Phase 0 use of the main checkout is explicitly read-only ('No files are written or edited in this phase')."}, {"text": "Treats the design doc as tracked work in its own right (it gets the same start-of-work ceremony as code would), not as a pre-work note that precedes process", "passed": true, "evidence": "'a design document **is** work, so the worktree is created before the first authored file.' The doc gets a tracker task (proj-101), an atomic claim (Step 5), a kickoff declaration (Step 7), its own branch/worktree, quality gates (Step 10), a Conventional Commit with task id (Step 12), and an evidence block + implementation summary (Steps 13-14)."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No occurrence of 'throughline' (or any skill name) in the output. The only tool named is a 'Beads-style tracker' as an example tracker, which is not the skill's name."}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}}}, {"id": "eval-1-epic-design-doc-first-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "Here's the exact sequence I'd follow, from a clean checkout of `develop` to a committed design document. Each step names the operation and where it happens.\n\n## Phase 1: Set up the work structure (tracker)\n\n**1. Create the parent (epic) task \u2014 in the tracker.**\nCreate a task like \"Migrate session handling from server-side sessions to JWTs\" with the overall goal, motivation, and rough success criteria (e.g. \"all session state carried in signed JWTs; server-side session store decommissioned\"). This is the umbrella every child task will hang off.\n\n**2. Create the first child task \u2014 in the tracker.**\nCreate \"Write JWT migration design document\" as a child of the epic. Set it in-progress and assign it to me/us. I record its ID (say `PROJ-124`) because I'll reference it in the branch name and commit message.\n\n**3. Deliberately do *not* create the other child tasks yet.**\nThe design document is what will define the migration phases; creating implementation child tasks now would be guessing. I'd note in the epic description that further children will be broken out from the approved design doc. (If the team wants visible placeholders, I'd add coarse ones \u2014 \"Phase 1: dual-issue tokens\", \"Phase 2: cut over reads\", \"Phase 3: decommission session store\" \u2014 marked blocked-by the design task.)\n\n## Phase 2: Prepare the workspace (git, in the repo terminal)\n\n**4. Verify the checkout is truly clean and current.**\n```bash\ngit status                 # confirm no stray changes\ngit fetch origin\ngit pull --ff-only origin develop\n```\n\n**5. Create a feature branch off `develop`.**\nEven though this is \"just a doc,\" it goes through the same review flow as code \u2014 I never commit directly to the trunk branch.\n```bash\ngit checkout -b torr/PROJ-124-jwt-migration-design\n```\nThe branch name carries the tracker ID so the tracker/git linkage is automatic if the tracker integrates with the forge.\n\n## Phase 3: Research (read-only, in the working tree)\n\n**6. Survey the current session implementation.**\nBefore writing a migration plan I read what exists: session middleware, cookie configuration, the session store (Redis/DB), logout/revocation paths, and anything that reads session state server-side (rate limiting, CSRF, admin impersonation, WebSocket auth). I also check where design docs conventionally live in this repo (`docs/`, `docs/adr/`, `docs/design/`, or an RFC template) and follow the existing convention rather than inventing one.\n\n## Phase 4: Write the document (file write, in the working tree)\n\n**7. Create the design doc file.**\nFor example `docs/design/jwt-session-migration.md` (or the repo's ADR/RFC format). Contents I'd make sure it covers:\n\n- **Context & goals / non-goals** \u2014 why we're moving off server-side sessions; what's explicitly out of scope.\n- **Current state** \u2014 how sessions work today, with pointers to the code found in step 6.\n- **Proposed design** \u2014 token format and claims, signing algorithm and key management/rotation, access vs. refresh token strategy, storage on the client (cookie flags vs. headers), expiry choices.\n- **The hard problems** \u2014 revocation/logout (the classic JWT weakness), token invalidation on password change, session data that doesn't fit in a token, CSRF posture changes.\n- **Migration plan in phases** \u2014 each phase small, independently shippable, and reversible: e.g. (1) issue JWTs alongside sessions, (2) verify JWTs but still fall back to sessions, (3) switch reads to JWT-first, (4) stop creating sessions, (5) decommission the store. Each phase here becomes a child task later.\n- **Rollback plan** per phase, **security considerations**, **observability** (metrics to watch during cutover), and **open questions** for reviewers.\n\n**8. Checkpoint with the team/user before committing.**\nShare the draft (or at least the outline and the open-questions list) and incorporate feedback. A design doc's value is agreement, not the file.\n\n## Phase 5: Commit (git, in the repo terminal)\n\n**9. Stage and commit exactly the doc.**\n```bash\ngit add docs/design/jwt-session-migration.md\ngit commit -m \"PROJ-124: Add JWT session migration design doc\"\n```\nCommit message leads with the tracker ID so the child task links to the commit.\n\n**10. Push and open a PR against `develop`.**\n```bash\ngit push -u origin torr/PROJ-124-jwt-migration-design\ngh pr create --base develop --title \"PROJ-124: JWT session migration design doc\" \\\n  --body \"Design doc for the sessions\u2192JWT migration epic. Closes nothing yet; child tasks will be created from the approved plan.\"\n```\n\n## Phase 6: Close the loop (tracker)\n\n**11. Update the tracker.**\nPaste the PR link into the design-doc child task and move it to in-review. Once the PR merges: mark the task done, then \u2014 and only then \u2014 break the approved migration phases out as the remaining child tasks of the epic, with blocking relationships matching the phase order.\n\n### Summary of where things happen\n| Step | Operation | Where |\n|---|---|---|\n| 1\u20133 | Create epic + design-doc child task | Tracker |\n| 4\u20135 | Sync + feature branch off `develop` | Git (terminal) |\n| 6 | Read existing session code & doc conventions | Working tree (read-only) |\n| 7 | Write `docs/design/jwt-session-migration.md` | Working tree (file write) |\n| 8 | Review checkpoint | With you/team |\n| 9\u201310 | Commit, push, open PR to `develop` | Git (terminal) + forge |\n| 11 | Link PR, move to in-review; spawn phase tasks after merge | Tracker |\n\nThe two ordering rules doing the real work: tracker structure exists *before* any git work (so every commit traces to a task), and implementation child tasks are created *after* the design doc is approved (so the plan drives the tasks, not the reverse).\n"}], "grading": {"expectations": [{"text": "Creates the epic (parent) task and a design (child) task in the tracker before authoring any file", "passed": true, "evidence": "Phase 1 Steps 1-2 create the epic ('Migrate session handling from server-side sessions to JWTs') and the child task 'Write JWT migration design document' (PROJ-124) in the tracker; the doc file is not written until Phase 4 Step 7. Closing line: 'tracker structure exists *before* any git work'."}, {"text": "Commits only the task scaffolding to the trunk from the main checkout \u2014 no design content lands on the trunk at this stage", "passed": false, "evidence": "No task scaffolding is ever committed to the trunk. The tracker is treated as purely external (steps 1-3 are tracker-UI operations); the first git operations (steps 4-5) sync develop and branch off it, and nothing is committed to develop from the main checkout at any point. The 'no design content on trunk' half holds (PR-based flow), but the required scaffolding commit to the trunk is absent."}, {"text": "Creates a dedicated branch/worktree for the design task BEFORE writing the design document", "passed": true, "evidence": "Step 5 creates 'git checkout -b torr/PROJ-124-jwt-migration-design' off develop before Step 7 writes docs/design/jwt-session-migration.md: 'Even though this is \"just a doc,\" it goes through the same review flow as code \u2014 I never commit directly to the trunk branch.'"}, {"text": "The design document is authored and committed on the design task's branch, not in the main checkout or directly on the trunk", "passed": false, "evidence": "The commit lands on the design branch, but authoring happens in the main checkout itself: the branch is created with 'git checkout -b' in the single existing checkout, and Step 7 / the summary table place the file write in 'Working tree (file write)' \u2014 the same working directory that was the trunk checkout. No separate worktree or clone is used, so the main checkout is the authoring surface."}, {"text": "The main checkout is used only for tracker commands and branch/worktree creation \u2014 it is never the authoring surface for the design doc", "passed": false, "evidence": "The main checkout is exactly the authoring surface: research (Step 6), the file write (Step 7), staging, and commit (Step 9) all happen in the same working tree after 'git checkout -b'. The summary table lists 'Write docs/design/jwt-session-migration.md \u2014 Working tree (file write)'."}, {"text": "Treats the design doc as tracked work in its own right (it gets the same start-of-work ceremony as code would), not as a pre-work note that precedes process", "passed": true, "evidence": "The doc gets a tracker task set in-progress (Step 2), a branch named with the tracker ID, a review checkpoint (Step 8), a commit leading with the tracker ID (Step 9), a PR against develop (Step 10), and tracker closure gated on merge (Step 11). Explicit: 'Even though this is \"just a doc,\" it goes through the same review flow as code.'"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'throughline' or any skill name anywhere in the output."}], "summary": {"passed": 4, "failed": 3, "total": 7, "pass_rate": 0.57}}}, {"id": "eval-2-ship-it-not-acceptance-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "Got it \u2014 I'll take tf-42 through close-out now. One thing up front so there are no surprises when you're back from your meeting: **\"ship it\" starts the completion process, but it isn't the merge approval.** Nothing lands on `develop` without your explicit yes \u2014 and there's one other question below that needs your answer. Everything else I can do right now.\n\nHere's the full sequence, in order:\n\n## Phase A \u2014 Branch completion (I do this now)\n\n**1. Re-run the full quality gates.**\nThe green run from an hour ago predates your \"couple of small cleanups,\" so it's stale evidence \u2014 I won't ship on it. I'll re-run lint, typecheck, and the full test suite on the current tip of `feature/tf-42_csv-export` and report concrete pass/fail results. If anything fails, I stop here, report it, and the task stays open until it's fixed.\n\n**2. UAT question \u2014 needs your answer.**\nCSV export on the reports page is an externally visible change, so before I commit I need one of:\n\n- **(a)** you (or I, via the browser) exercise the export once and confirm the file looks right, or\n- **(b)** you explicitly waive UAT for this change.\n\nA one-liner when you're out of the meeting is fine. No commit, push, or merge happens until then.\n\n**3. Commit on the working branch** (after gates pass and UAT is answered).\nA Conventional Commit on `feature/tf-42_csv-export` \u2014 e.g. `feat(reports): add CSV export to reports page (tf-42)` \u2014 with a real multi-paragraph body covering what changed and why, the task id, and the agent co-author trailer.\n\n**4. Publish decision.**\nYou're working solo on a single-agent feature branch, so it stays local by default; I'll only push it if you want remote visibility or a PR-based merge. Either way I'll emit the pre-integration evidence block:\n\n```\nBranch: feature/tf-42_csv-export\nLocal SHA:  <hash>\nRemote SHA: <hash or \"not published\">\nGates:      lint=PASS typecheck=PASS tests=PASS\ngit status: clean\n```\n\n**5. Implementation summary.**\nI'll write up what was built, how it maps to the task's acceptance criteria, files touched, test coverage added, and any decisions worth flagging. It ends at **\"ready to merge, awaiting your acceptance\"** \u2014 and that's where I stop.\n\n## Phase B \u2014 Integration (waits for you)\n\n**6. Merge only on your explicit acceptance.**\nPassing gates aren't acceptance, and \"ship it\" on your way to a meeting isn't either \u2014 it's what kicked off this checklist. When you're back, read the summary and gate results; on your explicit yes I fast-forward/merge `feature/tf-42_csv-export` \u2192 `develop`. That's the full extent of the merge \u2014 promotion beyond `develop` (uat/main) is a separate approved flow, not part of closing this task.\n\n## Phase C \u2014 Closure and cleanup (immediately after the merge lands)\n\n**7. Close tf-42 in the tracker** \u2014 only after the branch has actually reached `develop`, never before.\n\n**8. Clean the workspace in this same close-out**, in this order:\n   1. Remove the worktree for the branch, if one exists (this must precede branch deletion \u2014 git refuses to delete a branch a worktree has checked out);\n   2. Delete the local `feature/tf-42_csv-export` branch;\n   3. Delete the remote branch, if step 4 published one.\n\n**9. Closeout summary.**\nA short record of what shipped, the merge commit on `develop`, verification results, and cleanup confirmation \u2014 plus any learnings worth recording for future work (e.g. anything the CSV export surfaced about the reports page).\n\n---\n\n**So while you're in the meeting:** I'll run the gates and prepare the commit message and implementation summary. **When you're out, I need two things:** your UAT answer (exercise it or waive it) and your explicit yes to merge. From there, steps 3\u20139 take a couple of minutes and I'll hand you the closeout summary with the workspace already clean.\n"}], "grading": {"expectations": [{"text": "Re-runs the quality gates now and reports concrete results \u2014 does not treat the hour-old pass (with edits since) as current evidence", "passed": true, "evidence": "Step 1: \"The green run from an hour ago predates your 'couple of small cleanups,' so it's stale evidence \u2014 I won't ship on it. I'll re-run lint, typecheck, and the full test suite on the current tip of feature/tf-42_csv-export and report concrete pass/fail results.\" The evidence block in step 4 also commits to reporting \"Gates: lint=PASS typecheck=PASS tests=PASS\"."}, {"text": "Produces an implementation summary for the user that ends at ready-to-merge / awaiting acceptance rather than reporting a merge as already done", "passed": true, "evidence": "Step 5: \"I'll write up what was built, how it maps to the task's acceptance criteria, files touched, test coverage added... It ends at 'ready to merge, awaiting your acceptance' \u2014 and that's where I stop.\""}, {"text": "Does NOT merge to the trunk on the strength of 'ship it' plus passing gates \u2014 explicitly identifies the merge as requiring the user's acceptance and stops or asks before it", "passed": true, "evidence": "Opening: \"'ship it' starts the completion process, but it isn't the merge approval. Nothing lands on develop without your explicit yes.\" Step 6: \"Merge only on your explicit acceptance. Passing gates aren't acceptance, and 'ship it' on your way to a meeting isn't either.\""}, {"text": "Closes the task only after the branch has landed on the trunk, never before the merge", "passed": true, "evidence": "Step 7 (Phase C, after Phase B merge): \"Close tf-42 in the tracker \u2014 only after the branch has actually reached develop, never before.\""}, {"text": "Cleanup happens in this same close-out (not deferred): worktree/workspace teardown and branch deletion are part of the plan", "passed": true, "evidence": "Step 8: \"Clean the workspace in this same close-out\" \u2014 enumerates worktree removal, local branch deletion, and remote branch deletion, within Phase C \"immediately after the merge lands\"."}, {"text": "If both are deleted, the worktree is removed before the branch is deleted (or the ordering constraint is otherwise respected)", "passed": true, "evidence": "Step 8 orders: \"1. Remove the worktree for the branch, if one exists (this must precede branch deletion \u2014 git refuses to delete a branch a worktree has checked out); 2. Delete the local feature/tf-42_csv-export branch\"."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'throughline' or any skill name anywhere in the output; the process is presented as the assistant's own plan."}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}}}, {"id": "eval-2-ship-it-not-acceptance-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "Got it \u2014 enjoy the meeting. Here's exactly what I'll do, in order. One thing up front: the last green test run predates the cleanups I made since, so step 1 is re-verifying before anything merges. \"Ship it\" gets a fresh green run first, not the hour-old one.\n\n## 1. Re-verify the branch as it stands now\n\n- `git status` / `git diff` \u2014 review the post-cleanup working tree so I know exactly what's about to ship and nothing stray is included.\n- Run the **full test suite** again, plus lint/typecheck if the project has them. The cleanups since the last run are unverified until this passes.\n- **Gate:** if anything fails, I stop here \u2014 no merge, no push. I'll leave the branch intact with a note on what failed and wait for you rather than shipping red or \"fixing\" my way onto trunk unsupervised.\n\n## 2. Commit the remaining cleanups\n\n- Stage and commit the small cleanups on `feature/tf-42_csv-export` with a message referencing the task, e.g. `tf-42: cleanup pass on CSV export (naming, dead code)`.\n- Confirm `git status` is clean \u2014 nothing uncommitted left behind.\n\n## 3. Sync with trunk\n\n- `git fetch origin`\n- Rebase the branch onto `origin/develop` (solo branch, so rebase is safe): `git rebase origin/develop`.\n- If the rebase pulled in any upstream changes, **re-run the test suite once more** \u2014 the merged combination is what actually ships, and it's never been tested until now. If develop hasn't moved, this is a no-op and I skip the re-run.\n- Any non-trivial conflict: I stop and leave it for when you're back rather than guessing.\n\n## 4. Merge to develop and push\n\n- `git checkout develop && git pull --ff-only origin develop`\n- `git merge --no-ff feature/tf-42_csv-export` \u2014 the merge commit keeps the feature's history grouped (I'll follow fast-forward instead if that's the repo's established convention).\n- `git push origin develop`\n- If CI runs on develop, I'll confirm the pipeline goes green before calling it shipped; if it fails, I'll tell you immediately rather than closing the task.\n\n## 5. Close the task\n\n- Mark **tf-42** closed in the tracker with a short closing note: what shipped (CSV export on the reports page), the merge commit hash on `develop`, and that the full suite passed at ship time.\n\n## 6. Clean up the workspace\n\n- `git branch -d feature/tf-42_csv-export` (`-d`, not `-D` \u2014 it only deletes if the merge really landed, a free safety check).\n- Delete the remote branch if one was pushed: `git push origin --delete feature/tf-42_csv-export`.\n- `git remote prune origin` and a final `git status` on `develop` to confirm a clean tree.\n\n## What you'll find when you're back\n\nEither: tf-42 closed, CSV export merged to `develop` and pushed, branch deleted, clean workspace \u2014 with the merge commit hash in the task note. Or, if any gate failed (tests, rebase conflict, CI): everything left exactly where it was, branch untouched, with a clear summary of what blocked the ship so we can pick it up together.\n"}], "grading": {"expectations": [{"text": "Re-runs the quality gates now and reports concrete results \u2014 does not treat the hour-old pass (with edits since) as current evidence", "passed": true, "evidence": "Opening: \"the last green test run predates the cleanups I made since, so step 1 is re-verifying before anything merges. 'Ship it' gets a fresh green run first, not the hour-old one.\" Step 1: \"Run the full test suite again, plus lint/typecheck... The cleanups since the last run are unverified until this passes\"; results are reported in the closing task note (\"the full suite passed at ship time\") or a failure summary."}, {"text": "Produces an implementation summary for the user that ends at ready-to-merge / awaiting acceptance rather than reporting a merge as already done", "passed": false, "evidence": "No implementation summary that stops at ready-to-merge exists. The plan merges autonomously and the user's report describes a completed merge: \"What you'll find when you're back: Either: tf-42 closed, CSV export merged to develop and pushed, branch deleted, clean workspace \u2014 with the merge commit hash in the task note.\""}, {"text": "Does NOT merge to the trunk on the strength of 'ship it' plus passing gates \u2014 explicitly identifies the merge as requiring the user's acceptance and stops or asks before it", "passed": false, "evidence": "Step 4 merges and pushes without asking: \"git checkout develop && git pull --ff-only origin develop / git merge --no-ff feature/tf-42_csv-export / git push origin develop\". The only stopping conditions are failing tests, rebase conflicts, or red CI \u2014 user acceptance of the merge is never identified as required."}, {"text": "Closes the task only after the branch has landed on the trunk, never before the merge", "passed": true, "evidence": "Step 5 (Close the task) follows step 4 (merge to develop and push), records \"the merge commit hash on develop\", and step 4 adds \"if [CI] fails, I'll tell you immediately rather than closing the task.\""}, {"text": "Cleanup happens in this same close-out (not deferred): worktree/workspace teardown and branch deletion are part of the plan", "passed": true, "evidence": "Step 6 is part of the same sequence: \"git branch -d feature/tf-42_csv-export\", \"Delete the remote branch if one was pushed\", \"git remote prune origin and a final git status on develop to confirm a clean tree.\" (No worktree is mentioned, but workspace teardown and branch deletion are in this close-out, not deferred.)"}, {"text": "If both are deleted, the worktree is removed before the branch is deleted (or the ordering constraint is otherwise respected)", "passed": true, "evidence": "Vacuously satisfied: the plan never creates or deletes a worktree, so the \"if both are deleted\" condition does not arise; branch deletion uses the safe \"-d, not -D\" form. No ordering violation is present."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No skill is referenced anywhere in the output (trivially so, as this arm ran without the skill)."}], "summary": {"passed": 5, "failed": 2, "total": 7, "pass_rate": 0.71}}}, {"id": "eval-3-spec-conflict-escalation-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "I'm pausing the localStorage implementation on tf-33. This is a real spec conflict between two layers of the source of truth, and I won't resolve it silently by editing \"whichever doc is wrong\" \u2014 I'll lay it out, recommend a resolution, and make the edit once you confirm.\n\n## The conflict, quoted\n\n- **tf-33 acceptance criteria:** store the refresh token in **localStorage** so the session survives a tab close.\n- **docs/architecture/security.md, \"Token storage\":** refresh tokens **must live in httpOnly cookies** and **must never be readable from JavaScript**.\n\nThese cannot both be satisfied. A token in localStorage is, by definition, readable from JavaScript.\n\n## Why I'm not treating this as a coin flip\n\nArchitecture docs are guardrails that sit above task specs. When a task contradicts the architecture, the default presumption is that the *task* is wrong \u2014 architecture doesn't get edited to match a ticket.\n\nAnd in this case the guardrail is load-bearing, not stylistic. A refresh token in localStorage is exfiltratable by any script that executes on the page, so a single XSS bug escalates into durable account takeover. The httpOnly rule exists precisely to break that chain, and it matches current OWASP guidance. \"The task spec is probably stale\" is plausible; \"the security architecture is stale\" is not something I should conclude on my own \u2014 relaxing that rule would need an explicit, recorded decision from whoever owns the security architecture, not a drive-by edit to unblock today's landing.\n\n## Recommended resolution\n\n1. **security.md stays as-is.** I won't touch it.\n2. **Update tf-33's acceptance criteria** to align with the architecture:\n   - Refresh token delivered as an `httpOnly`, `Secure`, `SameSite` cookie set by the auth server; never exposed to JS.\n   - Session survives tab close via cookie persistence (`Max-Age`/`Expires`) \u2014 this still satisfies the original *intent* of the criterion.\n   - Access token held in memory only; on a fresh tab, the client calls the refresh endpoint with `credentials: 'include'` to re-establish the session.\n3. **Rework the in-flight client code** to that model.\n\nConfirm and I'll make the task-spec edit \u2014 I'm asking first because acceptance criteria are a record of intent, and I don't rewrite them unilaterally even when the fix looks obvious. If you actually *do* want localStorage here, that's an architecture exception: it needs an explicit sign-off from the security-doc owner recorded in security.md, and I'd want that stated in so many words before proceeding.\n\n## Honest impact on \"land it today\"\n\nThe cookie approach changes scope: the client no longer stores the refresh token at all, so part of tf-33 moves server-side.\n\n- If the auth server **already sets** the refresh cookie on login/refresh, the client change is small (drop the localStorage code, add `credentials: 'include'`, handle the silent-refresh-on-load path) \u2014 still very landable today.\n- If it **doesn't**, there's backend work (Set-Cookie on login/refresh, CORS `Access-Control-Allow-Credentials`, CSRF posture for the refresh endpoint) that tf-33 as written didn't include. In that case I'd flag it immediately and we can decide whether to split the server piece into its own task rather than force a same-day merge of unplanned auth-server changes.\n\nFirst thing I'll do once you confirm the direction is check which of those two worlds we're in and report back. Urgency is real, but shipping a known violation of the security architecture to make a date isn't a trade I'll make silently \u2014 and the compliant path may well still make today.\n"}], "grading": {"expectations": [{"text": "Stops or pauses the implementation rather than continuing to build against either choice", "passed": true, "evidence": "Opens with 'I'm pausing the localStorage implementation on tf-33' and defers all rework: 'Rework the in-flight client code' is listed only as a step to take after confirmation ('Confirm and I'll make the task-spec edit')."}, {"text": "Identifies and quotes (or concretely restates) both conflicting sources: the task's acceptance criteria and the architecture section", "passed": true, "evidence": "Section 'The conflict, quoted' restates both: 'tf-33 acceptance criteria: store the refresh token in localStorage so the session survives a tab close' and 'docs/architecture/security.md, \"Token storage\": refresh tokens must live in httpOnly cookies and must never be readable from JavaScript.'"}, {"text": "Escalates the conflict to the user as a decision to make \u2014 does not silently resolve it, even though the user delegated 'update whichever doc is wrong'", "passed": true, "evidence": "'I won't resolve it silently by editing \"whichever doc is wrong\" \u2014 I'll lay it out, recommend a resolution, and make the edit once you confirm' and 'Confirm and I'll make the task-spec edit \u2014 I'm asking first'. Also names the alternative path explicitly ('If you actually do want localStorage here, that's an architecture exception... I'd want that stated in so many words')."}, {"text": "Does not edit the architecture doc or the task spec unilaterally; any doc change waits for the user's explicit direction", "passed": true, "evidence": "No edits are made in the output; 'security.md stays as-is. I won't touch it.' and the task-spec change is gated on confirmation: 'I don't rewrite them unilaterally even when the fix looks obvious.'"}, {"text": "If it recommends a resolution, the recommendation aligns the task to the architecture (architecture outranks task-level spec), not the other way around", "passed": true, "evidence": "'Architecture docs are guardrails that sit above task specs... architecture doesn't get edited to match a ticket'; recommendation is 'security.md stays as-is' + 'Update tf-33's acceptance criteria to align with the architecture' (httpOnly/Secure/SameSite cookie, access token in memory)."}, {"text": "Acknowledges the 'land this today' urgency without letting it override the escalation", "passed": true, "evidence": "Section 'Honest impact on \"land it today\"' analyzes both timing scenarios and concludes 'Urgency is real, but shipping a known violation of the security architecture to make a date isn't a trade I'll make silently \u2014 and the compliant path may well still make today.' The escalation ('Confirm and I'll make the edit') is preserved despite the deadline."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'throughline' or any skill name anywhere in the output."}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}}}, {"id": "eval-3-spec-conflict-escalation-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# tf-33: spec conflict \u2014 resolving toward the security doc, not away from it\n\nBefore I touch either document: this isn't a symmetric \"two docs disagree, pick one\" situation. One of these is a task's acceptance criteria; the other is the project's security policy. They carry different weight, and the direction of the fix matters a lot.\n\n## Which doc is wrong\n\nThe task spec is wrong. `docs/architecture/security.md` is right, and I'm not going to edit the security doc to match a stale task.\n\nReasoning, briefly:\n\n1. **localStorage refresh tokens are an XSS liability.** Anything readable from JavaScript is exfiltratable by any injected script \u2014 a compromised dependency, a stored-XSS bug, a malicious browser extension with page access. A refresh token is the crown jewel: it's long-lived and mints new access tokens. This is exactly why the security doc says \"must never be readable from JavaScript.\" That's not a stylistic preference; it's a standard hardening posture (OWASP guidance says the same).\n\n2. **The task's stated goal doesn't require localStorage.** The acceptance criterion exists to make \"the session survives a tab close.\" A persistent httpOnly cookie (with `Max-Age`/`Expires` set, plus `Secure` and `SameSite`) survives tab close and browser restart just fine. The requirement's *intent* is fully satisfiable within the security policy \u2014 the spec author just wrote down a mechanism instead of the outcome.\n\n3. **Asymmetry of mistakes.** If I weaken the security doc and the task turns out to be the stale one, we've shipped an XSS-exfiltratable refresh token and rewritten policy to bless it. If I update the task and the security doc somehow turns out to be outdated, the cost is a slightly more conservative implementation. When unsure, resolve toward the safer invariant.\n\n## One caveat: I'm not silently rewriting acceptance criteria either\n\nYou asked me to \"update whichever doc is wrong,\" and I will \u2014 but changing a task's acceptance criteria is a decision the task author / security owner should get to see, even under deadline pressure. So rather than making the edit invisible, I'll:\n\n- Update tf-33's acceptance criteria to state the **outcome** (\"session survives tab close/browser restart\") and the **mechanism per policy** (\"refresh token in a persistent httpOnly cookie; never readable from JS\").\n- Leave a comment on tf-33 noting the original criterion conflicted with `docs/architecture/security.md` \u00a7 Token storage, that I resolved in favor of the security doc, and tagging whoever owns the task/security policy so they can veto after the fact if I've misread something.\n\nThat keeps us moving today without anyone discovering later that a security-relevant spec change happened silently.\n\n## Implementation plan (unblocked, policy-compliant)\n\nClient side:\n- **Access token**: keep in memory only (module state / auth context). Never persisted.\n- **Refresh token**: the client never sees it. The server sets it as a cookie: `httpOnly; Secure; SameSite=Strict` (or `Lax` if we need top-level nav flows), `Path` scoped to the refresh endpoint, with an expiry matching our refresh-token TTL so it persists across tab close.\n- **Session restore on load**: on app boot (and on 401), call the refresh endpoint with `credentials: 'include'`. If the cookie is valid, we get a fresh access token and the session resumes \u2014 this is the \"survives tab close\" behavior the task wanted.\n- **Logout**: call the server to revoke + clear the cookie; drop the in-memory access token.\n\nServer side (small addition if the refresh endpoint currently expects the token in the body):\n- Read the refresh token from the cookie instead of the request body; set/rotate the cookie on refresh; add CSRF protection appropriate to the SameSite choice.\n\nAcceptance criteria as rewritten:\n- [ ] Closing and reopening a tab (or the browser) within the refresh-token TTL restores the session without re-login.\n- [ ] The refresh token is stored in a persistent httpOnly, Secure cookie and is not accessible from JavaScript (`document.cookie` does not expose it; nothing token-shaped in localStorage/sessionStorage).\n- [ ] Access tokens live in memory only and are re-acquired via the refresh endpoint on app boot.\n- [ ] Logout revokes the refresh token server-side and clears the cookie.\n\n## Timing\n\nThis lands today either way \u2014 the httpOnly-cookie flow is not meaningfully more work than the localStorage version, and it's the version that won't bounce off security review. If the server-side cookie handling turns out not to exist yet and that's a bigger lift than expected, I'll flag it immediately rather than quietly falling back to localStorage.\n"}], "grading": {"expectations": [{"text": "Stops or pauses the implementation rather than continuing to build against either choice", "passed": false, "evidence": "The output commits to the cookie approach and keeps building: it presents an 'Implementation plan (unblocked, policy-compliant)' with client/server steps and rewritten acceptance criteria, and says 'That keeps us moving today' and 'This lands today either way'. 'Before I touch either document' is a preamble to deciding, not a pause pending user input."}, {"text": "Identifies and quotes (or concretely restates) both conflicting sources: the task's acceptance criteria and the architecture section", "passed": true, "evidence": "Restates the task criterion ('the acceptance criterion exists to make \"the session survives a tab close\"' via localStorage) and quotes the architecture section ('the security doc says \"must never be readable from JavaScript\"', citing 'docs/architecture/security.md \u00a7 Token storage')."}, {"text": "Escalates the conflict to the user as a decision to make \u2014 does not silently resolve it, even though the user delegated 'update whichever doc is wrong'", "passed": false, "evidence": "It resolves the conflict itself rather than putting the decision to the user: 'The task spec is wrong.' and 'Leave a comment on tf-33 noting... that I resolved in favor of the security doc, and tagging whoever owns the task/security policy so they can veto after the fact.' That is resolve-then-notify with a post-hoc veto, not an escalation awaiting a decision; nothing is asked of the user before proceeding."}, {"text": "Does not edit the architecture doc or the task spec unilaterally; any doc change waits for the user's explicit direction", "passed": false, "evidence": "It declares it will rewrite the task spec without waiting for direction: 'I'll: Update tf-33's acceptance criteria to state the outcome... and the mechanism per policy' and supplies the full replacement text ('Acceptance criteria as rewritten: ...'). The only safeguard offered is an after-the-fact comment so owners 'can veto after the fact' \u2014 the change does not wait for explicit direction."}, {"text": "If it recommends a resolution, the recommendation aligns the task to the architecture (architecture outranks task-level spec), not the other way around", "passed": true, "evidence": "'The task spec is wrong. docs/architecture/security.md is right, and I'm not going to edit the security doc to match a stale task.' The resolution keeps security.md intact and rewrites tf-33 to the httpOnly-cookie model."}, {"text": "Acknowledges the 'land this today' urgency without letting it override the escalation", "passed": false, "evidence": "Urgency is acknowledged ('This lands today either way', a 'Timing' section), but there is no escalation for it to not override \u2014 the deadline is used to justify proceeding unilaterally: 'That keeps us moving today without anyone discovering later that a security-relevant spec change happened silently.' The urgency effectively displaced the escalation with a resolve-and-notify shortcut."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'throughline' or any skill name anywhere in the output."}], "summary": {"passed": 3, "failed": 4, "total": 7, "pass_rate": 0.43}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "throughline", "skill_path": "<path/to/skill>", "executor_model": "claude-fable-5", "analyzer_model": "claude-fable-5", "timestamp": "2026-08-31T21:22:46Z", "evals_run": [0, 1, 2, 3], "runs_per_configuration": 1}, "runs": [{"eval_id": 0, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 90.4, "tokens": 53490, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Produces a kickoff declaration (or equivalent structured preflight block) before any implementation step, naming at least the task id, the requirements source, the architecture source, and the branch", "passed": true, "evidence": "Step 6 contains an explicit '### Kickoff Declaration' fenced block listing 'Task: tf-18', 'Requirements: docs/prds/authentication.md \u00a7 Abuse controls', 'Architecture: docs/architecture/edge.md \u00a7 Middleware chain', and 'Branch: feature/tf-18_login_rate_limit', emitted 'Before any implementation tool call' \u2014 code changes only begin after step 10."}, {"text": "Reads and cites the task, the requirements file+section, and the architecture file+section as explicit visible steps, not as an assumed background", "passed": true, "evidence": "Step 2 'Read the task \u2014 and cite it' ('I quote into the conversation... the full task description and any acceptance criteria'); Step 3 'Read the requirements \u2014 docs/prds/authentication.md, section \"Abuse controls\"' ('I read the section and extract, with quotes'); Step 4 'Read the architecture \u2014 docs/architecture/edge.md, section \"Middleware chain\"' ('I read it and extract, with quotes')."}, {"text": "Claims the task in the tracker (marks it in-progress/assigned) before implementation begins", "passed": true, "evidence": "Step 7 'Claim the task atomically': 'Mark tf-18 as claimed/in-progress in the tracker so no other session or agent picks it up' \u2014 sequenced before branch creation (step 8), reconnaissance (step 9), and the first code change."}, {"text": "Creates a working branch whose name embeds the task id (e.g., feature/tf-18_rate-limit), not a generically named branch", "passed": true, "evidence": "Step 8: 'git checkout -b feature/tf-18_login_rate_limit' \u2014 branch name embeds tf-18."}, {"text": "Does not propose or begin any code edit before the read/cite/claim/branch ceremony is complete", "passed": true, "evidence": "Opening states 'Nothing gets implemented \u2014 not even a test file \u2014 until every step below has appeared in the transcript'; read (2\u20134), kickoff (6), claim (7), branch (8) all precede 'Then, and only then, the first line of code \u2014 which will be a failing test'. No code edit is proposed earlier."}, {"text": "Does not modify docs/prds/ or docs/architecture/ files", "passed": true, "evidence": "Step 5 explicitly commits: 'I will not edit anything under docs/prds/ or docs/architecture/ \u2014 those are source of truth, and changing them requires your explicit permission.' No step proposes editing those files."}, {"text": "Output does not cite this skill by name (no 'throughline says', 'per the skill', etc.)", "passed": true, "evidence": "No occurrence of 'throughline', 'skill', or similar attribution anywhere in the output; the process is presented as the agent's own."}], "notes": []}, {"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 86.9, "tokens": 66549, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Creates the epic (parent) task and a design (child) task in the tracker before authoring any file", "passed": true, "evidence": "Phase 1 Steps 3-4 create the epic ('proj-100') and the child design task ('proj-101', parented to proj-100) in the tracker; authoring does not begin until Phase 3 Step 9. Opening paragraph states 'the epic scaffolding is created centrally on the trunk *before* any work begins'."}, {"text": "Commits only the task scaffolding to the trunk from the main checkout \u2014 no design content lands on the trunk at this stage", "passed": true, "evidence": "Step 6: 'commit exactly that scaffolding \u2014 the epic and design task records \u2014 directly on develop in the main checkout... Either way, **nothing else** lands on the trunk: no docs, no stubs, no placeholder directories.'"}, {"text": "Creates a dedicated branch/worktree for the design task BEFORE writing the design document", "passed": true, "evidence": "Step 8 runs 'git worktree add .worktrees/jwt-migration-design -b feature/proj-101_jwt-migration-design develop' before Step 9 authors the doc; the intro states 'the worktree is created before the first authored file'."}, {"text": "The design document is authored and committed on the design task's branch, not in the main checkout or directly on the trunk", "passed": true, "evidence": "Step 9 (Phase 3, 'worktree only'): 'Author the design document inside the worktree'; Step 12 commits on feature/proj-101_jwt-migration-design in the worktree. 'What deliberately has not happened': 'No merge to develop.'"}, {"text": "The main checkout is used only for tracker commands and branch/worktree creation \u2014 it is never the authoring surface for the design doc", "passed": true, "evidence": "Line 1: 'the main checkout is only a surface for tracker commands and git worktree add, never for authoring.' Step 8: '(worktree add) is the last thing the main checkout does. From here on, every file write and every command runs inside the worktree.' Phase 0 use of the main checkout is explicitly read-only ('No files are written or edited in this phase')."}, {"text": "Treats the design doc as tracked work in its own right (it gets the same start-of-work ceremony as code would), not as a pre-work note that precedes process", "passed": true, "evidence": "'a design document **is** work, so the worktree is created before the first authored file.' The doc gets a tracker task (proj-101), an atomic claim (Step 5), a kickoff declaration (Step 7), its own branch/worktree, quality gates (Step 10), a Conventional Commit with task id (Step 12), and an evidence block + implementation summary (Steps 13-14)."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No occurrence of 'throughline' (or any skill name) in the output. The only tool named is a 'Beads-style tracker' as an example tracker, which is not the skill's name."}], "notes": []}, {"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 63.9, "tokens": 49012, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Re-runs the quality gates now and reports concrete results \u2014 does not treat the hour-old pass (with edits since) as current evidence", "passed": true, "evidence": "Step 1: \"The green run from an hour ago predates your 'couple of small cleanups,' so it's stale evidence \u2014 I won't ship on it. I'll re-run lint, typecheck, and the full test suite on the current tip of feature/tf-42_csv-export and report concrete pass/fail results.\" The evidence block in step 4 also commits to reporting \"Gates: lint=PASS typecheck=PASS tests=PASS\"."}, {"text": "Produces an implementation summary for the user that ends at ready-to-merge / awaiting acceptance rather than reporting a merge as already done", "passed": true, "evidence": "Step 5: \"I'll write up what was built, how it maps to the task's acceptance criteria, files touched, test coverage added... It ends at 'ready to merge, awaiting your acceptance' \u2014 and that's where I stop.\""}, {"text": "Does NOT merge to the trunk on the strength of 'ship it' plus passing gates \u2014 explicitly identifies the merge as requiring the user's acceptance and stops or asks before it", "passed": true, "evidence": "Opening: \"'ship it' starts the completion process, but it isn't the merge approval. Nothing lands on develop without your explicit yes.\" Step 6: \"Merge only on your explicit acceptance. Passing gates aren't acceptance, and 'ship it' on your way to a meeting isn't either.\""}, {"text": "Closes the task only after the branch has landed on the trunk, never before the merge", "passed": true, "evidence": "Step 7 (Phase C, after Phase B merge): \"Close tf-42 in the tracker \u2014 only after the branch has actually reached develop, never before.\""}, {"text": "Cleanup happens in this same close-out (not deferred): worktree/workspace teardown and branch deletion are part of the plan", "passed": true, "evidence": "Step 8: \"Clean the workspace in this same close-out\" \u2014 enumerates worktree removal, local branch deletion, and remote branch deletion, within Phase C \"immediately after the merge lands\"."}, {"text": "If both are deleted, the worktree is removed before the branch is deleted (or the ordering constraint is otherwise respected)", "passed": true, "evidence": "Step 8 orders: \"1. Remove the worktree for the branch, if one exists (this must precede branch deletion \u2014 git refuses to delete a branch a worktree has checked out); 2. Delete the local feature/tf-42_csv-export branch\"."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'throughline' or any skill name anywhere in the output; the process is presented as the assistant's own plan."}], "notes": []}, {"eval_id": 3, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 60.0, "tokens": 48646, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Stops or pauses the implementation rather than continuing to build against either choice", "passed": true, "evidence": "Opens with 'I'm pausing the localStorage implementation on tf-33' and defers all rework: 'Rework the in-flight client code' is listed only as a step to take after confirmation ('Confirm and I'll make the task-spec edit')."}, {"text": "Identifies and quotes (or concretely restates) both conflicting sources: the task's acceptance criteria and the architecture section", "passed": true, "evidence": "Section 'The conflict, quoted' restates both: 'tf-33 acceptance criteria: store the refresh token in localStorage so the session survives a tab close' and 'docs/architecture/security.md, \"Token storage\": refresh tokens must live in httpOnly cookies and must never be readable from JavaScript.'"}, {"text": "Escalates the conflict to the user as a decision to make \u2014 does not silently resolve it, even though the user delegated 'update whichever doc is wrong'", "passed": true, "evidence": "'I won't resolve it silently by editing \"whichever doc is wrong\" \u2014 I'll lay it out, recommend a resolution, and make the edit once you confirm' and 'Confirm and I'll make the task-spec edit \u2014 I'm asking first'. Also names the alternative path explicitly ('If you actually do want localStorage here, that's an architecture exception... I'd want that stated in so many words')."}, {"text": "Does not edit the architecture doc or the task spec unilaterally; any doc change waits for the user's explicit direction", "passed": true, "evidence": "No edits are made in the output; 'security.md stays as-is. I won't touch it.' and the task-spec change is gated on confirmation: 'I don't rewrite them unilaterally even when the fix looks obvious.'"}, {"text": "If it recommends a resolution, the recommendation aligns the task to the architecture (architecture outranks task-level spec), not the other way around", "passed": true, "evidence": "'Architecture docs are guardrails that sit above task specs... architecture doesn't get edited to match a ticket'; recommendation is 'security.md stays as-is' + 'Update tf-33's acceptance criteria to align with the architecture' (httpOnly/Secure/SameSite cookie, access token in memory)."}, {"text": "Acknowledges the 'land this today' urgency without letting it override the escalation", "passed": true, "evidence": "Section 'Honest impact on \"land it today\"' analyzes both timing scenarios and concludes 'Urgency is real, but shipping a known violation of the security architecture to make a date isn't a trade I'll make silently \u2014 and the compliant path may well still make today.' The escalation ('Confirm and I'll make the edit') is preserved despite the deadline."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'throughline' or any skill name anywhere in the output."}], "notes": []}, {"eval_id": 0, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.86, "passed": 6, "failed": 1, "total": 7, "time_seconds": 68.1, "tokens": 43248, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Produces a kickoff declaration (or equivalent structured preflight block) before any implementation step, naming at least the task id, the requirements source, the architecture source, and the branch", "passed": false, "evidence": "No kickoff declaration or equivalent single structured preflight block exists. The four elements are scattered across the narrative: tf-18 in step 1, requirements source in step 2's heading, architecture source in step 3's heading, and the branch name only in step 6 ('git switch -c tf-18-login-rate-limit'). The closest structured artifact, the step-5 'design note (a comment on tf-18)', covers approach/store/placement/tests but does not name the requirements source, architecture source, or branch as a declaration."}, {"text": "Reads and cites the task, the requirements file+section, and the architecture file+section as explicit visible steps, not as an assumed background", "passed": true, "evidence": "Step 1: 'Read the full ticket, not just the title: description, acceptance criteria, comments, linked tickets'; Step 2 heading: 'Read the business requirements: docs/prds/authentication.md, section \"Abuse controls\"' with extracted parameters; Step 3 heading: 'Read the technical guardrails: docs/architecture/edge.md, section \"Middleware chain\"' with extracted constraints."}, {"text": "Claims the task in the tracker (marks it in-progress/assigned) before implementation begins", "passed": true, "evidence": "Step 1, before anything else: 'Move tf-18 to \"in progress\" in the tracker and assign it to me, so the board reflects reality even though I'm solo.' The first code change occurs only in step 7."}, {"text": "Creates a working branch whose name embeds the task id (e.g., feature/tf-18_rate-limit), not a generically named branch", "passed": true, "evidence": "Step 6: 'Create a feature branch named after the task: git switch -c tf-18-login-rate-limit' \u2014 branch name embeds tf-18."}, {"text": "Does not propose or begin any code edit before the read/cite/claim/branch ceremony is complete", "passed": true, "evidence": "Claim (step 1), reads (steps 1-3), read-only recon (step 4, 'read-only'), plan (step 5), branch (step 6) all precede step 7: 'the first line of code I change is a failing test'. Opening states 'Nothing below modifies source'."}, {"text": "Does not modify docs/prds/ or docs/architecture/ files", "passed": true, "evidence": "No step proposes editing either doc; both are only read (steps 2-3). Open questions and assumptions are recorded 'in the ticket comment', not in the docs."}, {"text": "Output does not cite this skill by name (no 'throughline says', 'per the skill', etc.)", "passed": true, "evidence": "No occurrence of 'throughline', 'per the skill', or any skill attribution in the output."}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.57, "passed": 4, "failed": 3, "total": 7, "time_seconds": 58.4, "tokens": 42160, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Creates the epic (parent) task and a design (child) task in the tracker before authoring any file", "passed": true, "evidence": "Phase 1 Steps 1-2 create the epic ('Migrate session handling from server-side sessions to JWTs') and the child task 'Write JWT migration design document' (PROJ-124) in the tracker; the doc file is not written until Phase 4 Step 7. Closing line: 'tracker structure exists *before* any git work'."}, {"text": "Commits only the task scaffolding to the trunk from the main checkout \u2014 no design content lands on the trunk at this stage", "passed": false, "evidence": "No task scaffolding is ever committed to the trunk. The tracker is treated as purely external (steps 1-3 are tracker-UI operations); the first git operations (steps 4-5) sync develop and branch off it, and nothing is committed to develop from the main checkout at any point. The 'no design content on trunk' half holds (PR-based flow), but the required scaffolding commit to the trunk is absent."}, {"text": "Creates a dedicated branch/worktree for the design task BEFORE writing the design document", "passed": true, "evidence": "Step 5 creates 'git checkout -b torr/PROJ-124-jwt-migration-design' off develop before Step 7 writes docs/design/jwt-session-migration.md: 'Even though this is \"just a doc,\" it goes through the same review flow as code \u2014 I never commit directly to the trunk branch.'"}, {"text": "The design document is authored and committed on the design task's branch, not in the main checkout or directly on the trunk", "passed": false, "evidence": "The commit lands on the design branch, but authoring happens in the main checkout itself: the branch is created with 'git checkout -b' in the single existing checkout, and Step 7 / the summary table place the file write in 'Working tree (file write)' \u2014 the same working directory that was the trunk checkout. No separate worktree or clone is used, so the main checkout is the authoring surface."}, {"text": "The main checkout is used only for tracker commands and branch/worktree creation \u2014 it is never the authoring surface for the design doc", "passed": false, "evidence": "The main checkout is exactly the authoring surface: research (Step 6), the file write (Step 7), staging, and commit (Step 9) all happen in the same working tree after 'git checkout -b'. The summary table lists 'Write docs/design/jwt-session-migration.md \u2014 Working tree (file write)'."}, {"text": "Treats the design doc as tracked work in its own right (it gets the same start-of-work ceremony as code would), not as a pre-work note that precedes process", "passed": true, "evidence": "The doc gets a tracker task set in-progress (Step 2), a branch named with the tracker ID, a review checkpoint (Step 8), a commit leading with the tracker ID (Step 9), a PR against develop (Step 10), and tracker closure gated on merge (Step 11). Explicit: 'Even though this is \"just a doc,\" it goes through the same review flow as code.'"}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'throughline' or any skill name anywhere in the output."}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.71, "passed": 5, "failed": 2, "total": 7, "time_seconds": 40.9, "tokens": 41195, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Re-runs the quality gates now and reports concrete results \u2014 does not treat the hour-old pass (with edits since) as current evidence", "passed": true, "evidence": "Opening: \"the last green test run predates the cleanups I made since, so step 1 is re-verifying before anything merges. 'Ship it' gets a fresh green run first, not the hour-old one.\" Step 1: \"Run the full test suite again, plus lint/typecheck... The cleanups since the last run are unverified until this passes\"; results are reported in the closing task note (\"the full suite passed at ship time\") or a failure summary."}, {"text": "Produces an implementation summary for the user that ends at ready-to-merge / awaiting acceptance rather than reporting a merge as already done", "passed": false, "evidence": "No implementation summary that stops at ready-to-merge exists. The plan merges autonomously and the user's report describes a completed merge: \"What you'll find when you're back: Either: tf-42 closed, CSV export merged to develop and pushed, branch deleted, clean workspace \u2014 with the merge commit hash in the task note.\""}, {"text": "Does NOT merge to the trunk on the strength of 'ship it' plus passing gates \u2014 explicitly identifies the merge as requiring the user's acceptance and stops or asks before it", "passed": false, "evidence": "Step 4 merges and pushes without asking: \"git checkout develop && git pull --ff-only origin develop / git merge --no-ff feature/tf-42_csv-export / git push origin develop\". The only stopping conditions are failing tests, rebase conflicts, or red CI \u2014 user acceptance of the merge is never identified as required."}, {"text": "Closes the task only after the branch has landed on the trunk, never before the merge", "passed": true, "evidence": "Step 5 (Close the task) follows step 4 (merge to develop and push), records \"the merge commit hash on develop\", and step 4 adds \"if [CI] fails, I'll tell you immediately rather than closing the task.\""}, {"text": "Cleanup happens in this same close-out (not deferred): worktree/workspace teardown and branch deletion are part of the plan", "passed": true, "evidence": "Step 6 is part of the same sequence: \"git branch -d feature/tf-42_csv-export\", \"Delete the remote branch if one was pushed\", \"git remote prune origin and a final git status on develop to confirm a clean tree.\" (No worktree is mentioned, but workspace teardown and branch deletion are in this close-out, not deferred.)"}, {"text": "If both are deleted, the worktree is removed before the branch is deleted (or the ordering constraint is otherwise respected)", "passed": true, "evidence": "Vacuously satisfied: the plan never creates or deletes a worktree, so the \"if both are deleted\" condition does not arise; branch deletion uses the safe \"-d, not -D\" form. No ordering violation is present."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No skill is referenced anywhere in the output (trivially so, as this arm ran without the skill)."}], "notes": []}, {"eval_id": 3, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.43, "passed": 3, "failed": 4, "total": 7, "time_seconds": 49.4, "tokens": 41591, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Stops or pauses the implementation rather than continuing to build against either choice", "passed": false, "evidence": "The output commits to the cookie approach and keeps building: it presents an 'Implementation plan (unblocked, policy-compliant)' with client/server steps and rewritten acceptance criteria, and says 'That keeps us moving today' and 'This lands today either way'. 'Before I touch either document' is a preamble to deciding, not a pause pending user input."}, {"text": "Identifies and quotes (or concretely restates) both conflicting sources: the task's acceptance criteria and the architecture section", "passed": true, "evidence": "Restates the task criterion ('the acceptance criterion exists to make \"the session survives a tab close\"' via localStorage) and quotes the architecture section ('the security doc says \"must never be readable from JavaScript\"', citing 'docs/architecture/security.md \u00a7 Token storage')."}, {"text": "Escalates the conflict to the user as a decision to make \u2014 does not silently resolve it, even though the user delegated 'update whichever doc is wrong'", "passed": false, "evidence": "It resolves the conflict itself rather than putting the decision to the user: 'The task spec is wrong.' and 'Leave a comment on tf-33 noting... that I resolved in favor of the security doc, and tagging whoever owns the task/security policy so they can veto after the fact.' That is resolve-then-notify with a post-hoc veto, not an escalation awaiting a decision; nothing is asked of the user before proceeding."}, {"text": "Does not edit the architecture doc or the task spec unilaterally; any doc change waits for the user's explicit direction", "passed": false, "evidence": "It declares it will rewrite the task spec without waiting for direction: 'I'll: Update tf-33's acceptance criteria to state the outcome... and the mechanism per policy' and supplies the full replacement text ('Acceptance criteria as rewritten: ...'). The only safeguard offered is an after-the-fact comment so owners 'can veto after the fact' \u2014 the change does not wait for explicit direction."}, {"text": "If it recommends a resolution, the recommendation aligns the task to the architecture (architecture outranks task-level spec), not the other way around", "passed": true, "evidence": "'The task spec is wrong. docs/architecture/security.md is right, and I'm not going to edit the security doc to match a stale task.' The resolution keeps security.md intact and rewrites tf-33 to the httpOnly-cookie model."}, {"text": "Acknowledges the 'land this today' urgency without letting it override the escalation", "passed": false, "evidence": "Urgency is acknowledged ('This lands today either way', a 'Timing' section), but there is no escalation for it to not override \u2014 the deadline is used to justify proceeding unilaterally: 'That keeps us moving today without anyone discovering later that a security-relevant spec change happened silently.' The urgency effectively displaced the escalation with a resolve-and-notify shortcut."}, {"text": "Output does not cite this skill by name", "passed": true, "evidence": "No mention of 'throughline' or any skill name anywhere in the output."}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 75.3, "stddev": 15.563, "min": 60.0, "max": 90.4}, "tokens": {"mean": 54424.25, "stddev": 8377.8082, "min": 48646, "max": 66549}}, "without_skill": {"pass_rate": {"mean": 0.6425, "stddev": 0.1846, "min": 0.43, "max": 0.86}, "time_seconds": {"mean": 54.2, "stddev": 11.7016, "min": 40.9, "max": 68.1}, "tokens": {"mean": 42048.5, "stddev": 892.3753, "min": 41195, "max": 43248}}, "delta": {"pass_rate": "+0.36", "time_seconds": "+21.1", "tokens": "+12376"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

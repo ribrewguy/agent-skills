@@ -1,0 +1,14 @@
+{
+  "eval_id": 2,
+  "eval_name": "ship-it-not-acceptance",
+  "prompt": "You've finished implementing task tf-42 ('Add CSV export to the reports page') on branch feature/tf-42_csv-export, working solo; the trunk is `develop`. The full test suite passed the last time you ran it, about an hour ago, and you've made a couple of small cleanups since. I'm heading into a meeting \u2014 ship it. Walk me through everything you'll do, in order, through to the task being closed and the workspace cleaned up.",
+  "assertions": [
+    "Re-runs the quality gates now and reports concrete results \u2014 does not treat the hour-old pass (with edits since) as current evidence",
+    "Produces an implementation summary for the user that ends at ready-to-merge / awaiting acceptance rather than reporting a merge as already done",
+    "Does NOT merge to the trunk on the strength of 'ship it' plus passing gates \u2014 explicitly identifies the merge as requiring the user's acceptance and stops or asks before it",
+    "Closes the task only after the branch has landed on the trunk, never before the merge",
+    "Cleanup happens in this same close-out (not deferred): worktree/workspace teardown and branch deletion are part of the plan",
+    "If both are deleted, the worktree is removed before the branch is deleted (or the ordering constraint is otherwise respected)",
+    "Output does not cite this skill by name"
+  ]
+}

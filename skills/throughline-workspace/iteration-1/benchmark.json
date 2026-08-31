@@ -1,0 +1,490 @@
+{
+  "metadata": {
+    "skill_name": "throughline",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "claude-fable-5",
+    "analyzer_model": "claude-fable-5",
+    "timestamp": "2026-08-31T21:22:46Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 90.4,
+        "tokens": 53490,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Produces a kickoff declaration (or equivalent structured preflight block) before any implementation step, naming at least the task id, the requirements source, the architecture source, and the branch",
+          "passed": true,
+          "evidence": "Step 6 contains an explicit '### Kickoff Declaration' fenced block listing 'Task: tf-18', 'Requirements: docs/prds/authentication.md \u00a7 Abuse controls', 'Architecture: docs/architecture/edge.md \u00a7 Middleware chain', and 'Branch: feature/tf-18_login_rate_limit', emitted 'Before any implementation tool call' \u2014 code changes only begin after step 10."
+        },
+        {
+          "text": "Reads and cites the task, the requirements file+section, and the architecture file+section as explicit visible steps, not as an assumed background",
+          "passed": true,
+          "evidence": "Step 2 'Read the task \u2014 and cite it' ('I quote into the conversation... the full task description and any acceptance criteria'); Step 3 'Read the requirements \u2014 docs/prds/authentication.md, section \"Abuse controls\"' ('I read the section and extract, with quotes'); Step 4 'Read the architecture \u2014 docs/architecture/edge.md, section \"Middleware chain\"' ('I read it and extract, with quotes')."
+        },
+        {
+          "text": "Claims the task in the tracker (marks it in-progress/assigned) before implementation begins",
+          "passed": true,
+          "evidence": "Step 7 'Claim the task atomically': 'Mark tf-18 as claimed/in-progress in the tracker so no other session or agent picks it up' \u2014 sequenced before branch creation (step 8), reconnaissance (step 9), and the first code change."
+        },
+        {
+          "text": "Creates a working branch whose name embeds the task id (e.g., feature/tf-18_rate-limit), not a generically named branch",
+          "passed": true,
+          "evidence": "Step 8: 'git checkout -b feature/tf-18_login_rate_limit' \u2014 branch name embeds tf-18."
+        },
+        {
+          "text": "Does not propose or begin any code edit before the read/cite/claim/branch ceremony is complete",
+          "passed": true,
+          "evidence": "Opening states 'Nothing gets implemented \u2014 not even a test file \u2014 until every step below has appeared in the transcript'; read (2\u20134), kickoff (6), claim (7), branch (8) all precede 'Then, and only then, the first line of code \u2014 which will be a failing test'. No code edit is proposed earlier."
+        },
+        {
+          "text": "Does not modify docs/prds/ or docs/architecture/ files",
+          "passed": true,
+          "evidence": "Step 5 explicitly commits: 'I will not edit anything under docs/prds/ or docs/architecture/ \u2014 those are source of truth, and changing them requires your explicit permission.' No step proposes editing those files."
+        },
+        {
+          "text": "Output does not cite this skill by name (no 'throughline says', 'per the skill', etc.)",
+          "passed": true,
+          "evidence": "No occurrence of 'throughline', 'skill', or similar attribution anywhere in the output; the process is presented as the agent's own."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 86.9,
+        "tokens": 66549,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Creates the epic (parent) task and a design (child) task in the tracker before authoring any file",
+          "passed": true,
+          "evidence": "Phase 1 Steps 3-4 create the epic ('proj-100') and the child design task ('proj-101', parented to proj-100) in the tracker; authoring does not begin until Phase 3 Step 9. Opening paragraph states 'the epic scaffolding is created centrally on the trunk *before* any work begins'."
+        },
+        {
+          "text": "Commits only the task scaffolding to the trunk from the main checkout \u2014 no design content lands on the trunk at this stage",
+          "passed": true,
+          "evidence": "Step 6: 'commit exactly that scaffolding \u2014 the epic and design task records \u2014 directly on develop in the main checkout... Either way, **nothing else** lands on the trunk: no docs, no stubs, no placeholder directories.'"
+        },
+        {
+          "text": "Creates a dedicated branch/worktree for the design task BEFORE writing the design document",
+          "passed": true,
+          "evidence": "Step 8 runs 'git worktree add .worktrees/jwt-migration-design -b feature/proj-101_jwt-migration-design develop' before Step 9 authors the doc; the intro states 'the worktree is created before the first authored file'."
+        },
+        {
+          "text": "The design document is authored and committed on the design task's branch, not in the main checkout or directly on the trunk",
+          "passed": true,
+          "evidence": "Step 9 (Phase 3, 'worktree only'): 'Author the design document inside the worktree'; Step 12 commits on feature/proj-101_jwt-migration-design in the worktree. 'What deliberately has not happened': 'No merge to develop.'"
+        },
+        {
+          "text": "The main checkout is used only for tracker commands and branch/worktree creation \u2014 it is never the authoring surface for the design doc",
+          "passed": true,
+          "evidence": "Line 1: 'the main checkout is only a surface for tracker commands and git worktree add, never for authoring.' Step 8: '(worktree add) is the last thing the main checkout does. From here on, every file write and every command runs inside the worktree.' Phase 0 use of the main checkout is explicitly read-only ('No files are written or edited in this phase')."
+        },
+        {
+          "text": "Treats the design doc as tracked work in its own right (it gets the same start-of-work ceremony as code would), not as a pre-work note that precedes process",
+          "passed": true,
+          "evidence": "'a design document **is** work, so the worktree is created before the first authored file.' The doc gets a tracker task (proj-101), an atomic claim (Step 5), a kickoff declaration (Step 7), its own branch/worktree, quality gates (Step 10), a Conventional Commit with task id (Step 12), and an evidence block + implementation summary (Steps 13-14)."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No occurrence of 'throughline' (or any skill name) in the output. The only tool named is a 'Beads-style tracker' as an example tracker, which is not the skill's name."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 63.9,
+        "tokens": 49012,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Re-runs the quality gates now and reports concrete results \u2014 does not treat the hour-old pass (with edits since) as current evidence",
+          "passed": true,
+          "evidence": "Step 1: \"The green run from an hour ago predates your 'couple of small cleanups,' so it's stale evidence \u2014 I won't ship on it. I'll re-run lint, typecheck, and the full test suite on the current tip of feature/tf-42_csv-export and report concrete pass/fail results.\" The evidence block in step 4 also commits to reporting \"Gates: lint=PASS typecheck=PASS tests=PASS\"."
+        },
+        {
+          "text": "Produces an implementation summary for the user that ends at ready-to-merge / awaiting acceptance rather than reporting a merge as already done",
+          "passed": true,
+          "evidence": "Step 5: \"I'll write up what was built, how it maps to the task's acceptance criteria, files touched, test coverage added... It ends at 'ready to merge, awaiting your acceptance' \u2014 and that's where I stop.\""
+        },
+        {
+          "text": "Does NOT merge to the trunk on the strength of 'ship it' plus passing gates \u2014 explicitly identifies the merge as requiring the user's acceptance and stops or asks before it",
+          "passed": true,
+          "evidence": "Opening: \"'ship it' starts the completion process, but it isn't the merge approval. Nothing lands on develop without your explicit yes.\" Step 6: \"Merge only on your explicit acceptance. Passing gates aren't acceptance, and 'ship it' on your way to a meeting isn't either.\""
+        },
+        {
+          "text": "Closes the task only after the branch has landed on the trunk, never before the merge",
+          "passed": true,
+          "evidence": "Step 7 (Phase C, after Phase B merge): \"Close tf-42 in the tracker \u2014 only after the branch has actually reached develop, never before.\""
+        },
+        {
+          "text": "Cleanup happens in this same close-out (not deferred): worktree/workspace teardown and branch deletion are part of the plan",
+          "passed": true,
+          "evidence": "Step 8: \"Clean the workspace in this same close-out\" \u2014 enumerates worktree removal, local branch deletion, and remote branch deletion, within Phase C \"immediately after the merge lands\"."
+        },
+        {
+          "text": "If both are deleted, the worktree is removed before the branch is deleted (or the ordering constraint is otherwise respected)",
+          "passed": true,
+          "evidence": "Step 8 orders: \"1. Remove the worktree for the branch, if one exists (this must precede branch deletion \u2014 git refuses to delete a branch a worktree has checked out); 2. Delete the local feature/tf-42_csv-export branch\"."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'throughline' or any skill name anywhere in the output; the process is presented as the assistant's own plan."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 60.0,
+        "tokens": 48646,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Stops or pauses the implementation rather than continuing to build against either choice",
+          "passed": true,
+          "evidence": "Opens with 'I'm pausing the localStorage implementation on tf-33' and defers all rework: 'Rework the in-flight client code' is listed only as a step to take after confirmation ('Confirm and I'll make the task-spec edit')."
+        },
+        {
+          "text": "Identifies and quotes (or concretely restates) both conflicting sources: the task's acceptance criteria and the architecture section",
+          "passed": true,
+          "evidence": "Section 'The conflict, quoted' restates both: 'tf-33 acceptance criteria: store the refresh token in localStorage so the session survives a tab close' and 'docs/architecture/security.md, \"Token storage\": refresh tokens must live in httpOnly cookies and must never be readable from JavaScript.'"
+        },
+        {
+          "text": "Escalates the conflict to the user as a decision to make \u2014 does not silently resolve it, even though the user delegated 'update whichever doc is wrong'",
+          "passed": true,
+          "evidence": "'I won't resolve it silently by editing \"whichever doc is wrong\" \u2014 I'll lay it out, recommend a resolution, and make the edit once you confirm' and 'Confirm and I'll make the task-spec edit \u2014 I'm asking first'. Also names the alternative path explicitly ('If you actually do want localStorage here, that's an architecture exception... I'd want that stated in so many words')."
+        },
+        {
+          "text": "Does not edit the architecture doc or the task spec unilaterally; any doc change waits for the user's explicit direction",
+          "passed": true,
+          "evidence": "No edits are made in the output; 'security.md stays as-is. I won't touch it.' and the task-spec change is gated on confirmation: 'I don't rewrite them unilaterally even when the fix looks obvious.'"
+        },
+        {
+          "text": "If it recommends a resolution, the recommendation aligns the task to the architecture (architecture outranks task-level spec), not the other way around",
+          "passed": true,
+          "evidence": "'Architecture docs are guardrails that sit above task specs... architecture doesn't get edited to match a ticket'; recommendation is 'security.md stays as-is' + 'Update tf-33's acceptance criteria to align with the architecture' (httpOnly/Secure/SameSite cookie, access token in memory)."
+        },
+        {
+          "text": "Acknowledges the 'land this today' urgency without letting it override the escalation",
+          "passed": true,
+          "evidence": "Section 'Honest impact on \"land it today\"' analyzes both timing scenarios and concludes 'Urgency is real, but shipping a known violation of the security architecture to make a date isn't a trade I'll make silently \u2014 and the compliant path may well still make today.' The escalation ('Confirm and I'll make the edit') is preserved despite the deadline."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'throughline' or any skill name anywhere in the output."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.86,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 68.1,
+        "tokens": 43248,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Produces a kickoff declaration (or equivalent structured preflight block) before any implementation step, naming at least the task id, the requirements source, the architecture source, and the branch",
+          "passed": false,
+          "evidence": "No kickoff declaration or equivalent single structured preflight block exists. The four elements are scattered across the narrative: tf-18 in step 1, requirements source in step 2's heading, architecture source in step 3's heading, and the branch name only in step 6 ('git switch -c tf-18-login-rate-limit'). The closest structured artifact, the step-5 'design note (a comment on tf-18)', covers approach/store/placement/tests but does not name the requirements source, architecture source, or branch as a declaration."
+        },
+        {
+          "text": "Reads and cites the task, the requirements file+section, and the architecture file+section as explicit visible steps, not as an assumed background",
+          "passed": true,
+          "evidence": "Step 1: 'Read the full ticket, not just the title: description, acceptance criteria, comments, linked tickets'; Step 2 heading: 'Read the business requirements: docs/prds/authentication.md, section \"Abuse controls\"' with extracted parameters; Step 3 heading: 'Read the technical guardrails: docs/architecture/edge.md, section \"Middleware chain\"' with extracted constraints."
+        },
+        {
+          "text": "Claims the task in the tracker (marks it in-progress/assigned) before implementation begins",
+          "passed": true,
+          "evidence": "Step 1, before anything else: 'Move tf-18 to \"in progress\" in the tracker and assign it to me, so the board reflects reality even though I'm solo.' The first code change occurs only in step 7."
+        },
+        {
+          "text": "Creates a working branch whose name embeds the task id (e.g., feature/tf-18_rate-limit), not a generically named branch",
+          "passed": true,
+          "evidence": "Step 6: 'Create a feature branch named after the task: git switch -c tf-18-login-rate-limit' \u2014 branch name embeds tf-18."
+        },
+        {
+          "text": "Does not propose or begin any code edit before the read/cite/claim/branch ceremony is complete",
+          "passed": true,
+          "evidence": "Claim (step 1), reads (steps 1-3), read-only recon (step 4, 'read-only'), plan (step 5), branch (step 6) all precede step 7: 'the first line of code I change is a failing test'. Opening states 'Nothing below modifies source'."
+        },
+        {
+          "text": "Does not modify docs/prds/ or docs/architecture/ files",
+          "passed": true,
+          "evidence": "No step proposes editing either doc; both are only read (steps 2-3). Open questions and assumptions are recorded 'in the ticket comment', not in the docs."
+        },
+        {
+          "text": "Output does not cite this skill by name (no 'throughline says', 'per the skill', etc.)",
+          "passed": true,
+          "evidence": "No occurrence of 'throughline', 'per the skill', or any skill attribution in the output."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.57,
+        "passed": 4,
+        "failed": 3,
+        "total": 7,
+        "time_seconds": 58.4,
+        "tokens": 42160,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Creates the epic (parent) task and a design (child) task in the tracker before authoring any file",
+          "passed": true,
+          "evidence": "Phase 1 Steps 1-2 create the epic ('Migrate session handling from server-side sessions to JWTs') and the child task 'Write JWT migration design document' (PROJ-124) in the tracker; the doc file is not written until Phase 4 Step 7. Closing line: 'tracker structure exists *before* any git work'."
+        },
+        {
+          "text": "Commits only the task scaffolding to the trunk from the main checkout \u2014 no design content lands on the trunk at this stage",
+          "passed": false,
+          "evidence": "No task scaffolding is ever committed to the trunk. The tracker is treated as purely external (steps 1-3 are tracker-UI operations); the first git operations (steps 4-5) sync develop and branch off it, and nothing is committed to develop from the main checkout at any point. The 'no design content on trunk' half holds (PR-based flow), but the required scaffolding commit to the trunk is absent."
+        },
+        {
+          "text": "Creates a dedicated branch/worktree for the design task BEFORE writing the design document",
+          "passed": true,
+          "evidence": "Step 5 creates 'git checkout -b torr/PROJ-124-jwt-migration-design' off develop before Step 7 writes docs/design/jwt-session-migration.md: 'Even though this is \"just a doc,\" it goes through the same review flow as code \u2014 I never commit directly to the trunk branch.'"
+        },
+        {
+          "text": "The design document is authored and committed on the design task's branch, not in the main checkout or directly on the trunk",
+          "passed": false,
+          "evidence": "The commit lands on the design branch, but authoring happens in the main checkout itself: the branch is created with 'git checkout -b' in the single existing checkout, and Step 7 / the summary table place the file write in 'Working tree (file write)' \u2014 the same working directory that was the trunk checkout. No separate worktree or clone is used, so the main checkout is the authoring surface."
+        },
+        {
+          "text": "The main checkout is used only for tracker commands and branch/worktree creation \u2014 it is never the authoring surface for the design doc",
+          "passed": false,
+          "evidence": "The main checkout is exactly the authoring surface: research (Step 6), the file write (Step 7), staging, and commit (Step 9) all happen in the same working tree after 'git checkout -b'. The summary table lists 'Write docs/design/jwt-session-migration.md \u2014 Working tree (file write)'."
+        },
+        {
+          "text": "Treats the design doc as tracked work in its own right (it gets the same start-of-work ceremony as code would), not as a pre-work note that precedes process",
+          "passed": true,
+          "evidence": "The doc gets a tracker task set in-progress (Step 2), a branch named with the tracker ID, a review checkpoint (Step 8), a commit leading with the tracker ID (Step 9), a PR against develop (Step 10), and tracker closure gated on merge (Step 11). Explicit: 'Even though this is \"just a doc,\" it goes through the same review flow as code.'"
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'throughline' or any skill name anywhere in the output."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.71,
+        "passed": 5,
+        "failed": 2,
+        "total": 7,
+        "time_seconds": 40.9,
+        "tokens": 41195,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Re-runs the quality gates now and reports concrete results \u2014 does not treat the hour-old pass (with edits since) as current evidence",
+          "passed": true,
+          "evidence": "Opening: \"the last green test run predates the cleanups I made since, so step 1 is re-verifying before anything merges. 'Ship it' gets a fresh green run first, not the hour-old one.\" Step 1: \"Run the full test suite again, plus lint/typecheck... The cleanups since the last run are unverified until this passes\"; results are reported in the closing task note (\"the full suite passed at ship time\") or a failure summary."
+        },
+        {
+          "text": "Produces an implementation summary for the user that ends at ready-to-merge / awaiting acceptance rather than reporting a merge as already done",
+          "passed": false,
+          "evidence": "No implementation summary that stops at ready-to-merge exists. The plan merges autonomously and the user's report describes a completed merge: \"What you'll find when you're back: Either: tf-42 closed, CSV export merged to develop and pushed, branch deleted, clean workspace \u2014 with the merge commit hash in the task note.\""
+        },
+        {
+          "text": "Does NOT merge to the trunk on the strength of 'ship it' plus passing gates \u2014 explicitly identifies the merge as requiring the user's acceptance and stops or asks before it",
+          "passed": false,
+          "evidence": "Step 4 merges and pushes without asking: \"git checkout develop && git pull --ff-only origin develop / git merge --no-ff feature/tf-42_csv-export / git push origin develop\". The only stopping conditions are failing tests, rebase conflicts, or red CI \u2014 user acceptance of the merge is never identified as required."
+        },
+        {
+          "text": "Closes the task only after the branch has landed on the trunk, never before the merge",
+          "passed": true,
+          "evidence": "Step 5 (Close the task) follows step 4 (merge to develop and push), records \"the merge commit hash on develop\", and step 4 adds \"if [CI] fails, I'll tell you immediately rather than closing the task.\""
+        },
+        {
+          "text": "Cleanup happens in this same close-out (not deferred): worktree/workspace teardown and branch deletion are part of the plan",
+          "passed": true,
+          "evidence": "Step 6 is part of the same sequence: \"git branch -d feature/tf-42_csv-export\", \"Delete the remote branch if one was pushed\", \"git remote prune origin and a final git status on develop to confirm a clean tree.\" (No worktree is mentioned, but workspace teardown and branch deletion are in this close-out, not deferred.)"
+        },
+        {
+          "text": "If both are deleted, the worktree is removed before the branch is deleted (or the ordering constraint is otherwise respected)",
+          "passed": true,
+          "evidence": "Vacuously satisfied: the plan never creates or deletes a worktree, so the \"if both are deleted\" condition does not arise; branch deletion uses the safe \"-d, not -D\" form. No ordering violation is present."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No skill is referenced anywhere in the output (trivially so, as this arm ran without the skill)."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.43,
+        "passed": 3,
+        "failed": 4,
+        "total": 7,
+        "time_seconds": 49.4,
+        "tokens": 41591,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Stops or pauses the implementation rather than continuing to build against either choice",
+          "passed": false,
+          "evidence": "The output commits to the cookie approach and keeps building: it presents an 'Implementation plan (unblocked, policy-compliant)' with client/server steps and rewritten acceptance criteria, and says 'That keeps us moving today' and 'This lands today either way'. 'Before I touch either document' is a preamble to deciding, not a pause pending user input."
+        },
+        {
+          "text": "Identifies and quotes (or concretely restates) both conflicting sources: the task's acceptance criteria and the architecture section",
+          "passed": true,
+          "evidence": "Restates the task criterion ('the acceptance criterion exists to make \"the session survives a tab close\"' via localStorage) and quotes the architecture section ('the security doc says \"must never be readable from JavaScript\"', citing 'docs/architecture/security.md \u00a7 Token storage')."
+        },
+        {
+          "text": "Escalates the conflict to the user as a decision to make \u2014 does not silently resolve it, even though the user delegated 'update whichever doc is wrong'",
+          "passed": false,
+          "evidence": "It resolves the conflict itself rather than putting the decision to the user: 'The task spec is wrong.' and 'Leave a comment on tf-33 noting... that I resolved in favor of the security doc, and tagging whoever owns the task/security policy so they can veto after the fact.' That is resolve-then-notify with a post-hoc veto, not an escalation awaiting a decision; nothing is asked of the user before proceeding."
+        },
+        {
+          "text": "Does not edit the architecture doc or the task spec unilaterally; any doc change waits for the user's explicit direction",
+          "passed": false,
+          "evidence": "It declares it will rewrite the task spec without waiting for direction: 'I'll: Update tf-33's acceptance criteria to state the outcome... and the mechanism per policy' and supplies the full replacement text ('Acceptance criteria as rewritten: ...'). The only safeguard offered is an after-the-fact comment so owners 'can veto after the fact' \u2014 the change does not wait for explicit direction."
+        },
+        {
+          "text": "If it recommends a resolution, the recommendation aligns the task to the architecture (architecture outranks task-level spec), not the other way around",
+          "passed": true,
+          "evidence": "'The task spec is wrong. docs/architecture/security.md is right, and I'm not going to edit the security doc to match a stale task.' The resolution keeps security.md intact and rewrites tf-33 to the httpOnly-cookie model."
+        },
+        {
+          "text": "Acknowledges the 'land this today' urgency without letting it override the escalation",
+          "passed": false,
+          "evidence": "Urgency is acknowledged ('This lands today either way', a 'Timing' section), but there is no escalation for it to not override \u2014 the deadline is used to justify proceeding unilaterally: 'That keeps us moving today without anyone discovering later that a security-relevant spec change happened silently.' The urgency effectively displaced the escalation with a resolve-and-notify shortcut."
+        },
+        {
+          "text": "Output does not cite this skill by name",
+          "passed": true,
+          "evidence": "No mention of 'throughline' or any skill name anywhere in the output."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 75.3,
+        "stddev": 15.563,
+        "min": 60.0,
+        "max": 90.4
+      },
+      "tokens": {
+        "mean": 54424.25,
+        "stddev": 8377.8082,
+        "min": 48646,
+        "max": 66549
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.6425,
+        "stddev": 0.1846,
+        "min": 0.43,
+        "max": 0.86
+      },
+      "time_seconds": {
+        "mean": 54.2,
+        "stddev": 11.7016,
+        "min": 40.9,
+        "max": 68.1
+      },
+      "tokens": {
+        "mean": 42048.5,
+        "stddev": 892.3753,
+        "min": 41195,
+        "max": 43248
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.36",
+      "time_seconds": "+21.1",
+      "tokens": "+12376"
+    }
+  },
+  "notes": []
+}

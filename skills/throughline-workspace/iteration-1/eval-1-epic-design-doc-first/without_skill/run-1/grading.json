@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Creates the epic (parent) task and a design (child) task in the tracker before authoring any file",
+      "passed": true,
+      "evidence": "Phase 1 Steps 1-2 create the epic ('Migrate session handling from server-side sessions to JWTs') and the child task 'Write JWT migration design document' (PROJ-124) in the tracker; the doc file is not written until Phase 4 Step 7. Closing line: 'tracker structure exists *before* any git work'."
+    },
+    {
+      "text": "Commits only the task scaffolding to the trunk from the main checkout — no design content lands on the trunk at this stage",
+      "passed": false,
+      "evidence": "No task scaffolding is ever committed to the trunk. The tracker is treated as purely external (steps 1-3 are tracker-UI operations); the first git operations (steps 4-5) sync develop and branch off it, and nothing is committed to develop from the main checkout at any point. The 'no design content on trunk' half holds (PR-based flow), but the required scaffolding commit to the trunk is absent."
+    },
+    {
+      "text": "Creates a dedicated branch/worktree for the design task BEFORE writing the design document",
+      "passed": true,
+      "evidence": "Step 5 creates 'git checkout -b torr/PROJ-124-jwt-migration-design' off develop before Step 7 writes docs/design/jwt-session-migration.md: 'Even though this is \"just a doc,\" it goes through the same review flow as code — I never commit directly to the trunk branch.'"
+    },
+    {
+      "text": "The design document is authored and committed on the design task's branch, not in the main checkout or directly on the trunk",
+      "passed": false,
+      "evidence": "The commit lands on the design branch, but authoring happens in the main checkout itself: the branch is created with 'git checkout -b' in the single existing checkout, and Step 7 / the summary table place the file write in 'Working tree (file write)' — the same working directory that was the trunk checkout. No separate worktree or clone is used, so the main checkout is the authoring surface."
+    },
+    {
+      "text": "The main checkout is used only for tracker commands and branch/worktree creation — it is never the authoring surface for the design doc",
+      "passed": false,
+      "evidence": "The main checkout is exactly the authoring surface: research (Step 6), the file write (Step 7), staging, and commit (Step 9) all happen in the same working tree after 'git checkout -b'. The summary table lists 'Write docs/design/jwt-session-migration.md — Working tree (file write)'."
+    },
+    {
+      "text": "Treats the design doc as tracked work in its own right (it gets the same start-of-work ceremony as code would), not as a pre-work note that precedes process",
+      "passed": true,
+      "evidence": "The doc gets a tracker task set in-progress (Step 2), a branch named with the tracker ID, a review checkpoint (Step 8), a commit leading with the tracker ID (Step 9), a PR against develop (Step 10), and tracker closure gated on merge (Step 11). Explicit: 'Even though this is \"just a doc,\" it goes through the same review flow as code.'"
+    },
+    {
+      "text": "Output does not cite this skill by name",
+      "passed": true,
+      "evidence": "No mention of 'throughline' or any skill name anywhere in the output."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 3,
+    "total": 7,
+    "pass_rate": 0.57
+  }
+}

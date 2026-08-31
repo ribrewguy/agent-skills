@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Produces a kickoff declaration (or equivalent structured preflight block) before any implementation step, naming at least the task id, the requirements source, the architecture source, and the branch",
+      "passed": false,
+      "evidence": "No kickoff declaration or equivalent single structured preflight block exists. The four elements are scattered across the narrative: tf-18 in step 1, requirements source in step 2's heading, architecture source in step 3's heading, and the branch name only in step 6 ('git switch -c tf-18-login-rate-limit'). The closest structured artifact, the step-5 'design note (a comment on tf-18)', covers approach/store/placement/tests but does not name the requirements source, architecture source, or branch as a declaration."
+    },
+    {
+      "text": "Reads and cites the task, the requirements file+section, and the architecture file+section as explicit visible steps, not as an assumed background",
+      "passed": true,
+      "evidence": "Step 1: 'Read the full ticket, not just the title: description, acceptance criteria, comments, linked tickets'; Step 2 heading: 'Read the business requirements: docs/prds/authentication.md, section \"Abuse controls\"' with extracted parameters; Step 3 heading: 'Read the technical guardrails: docs/architecture/edge.md, section \"Middleware chain\"' with extracted constraints."
+    },
+    {
+      "text": "Claims the task in the tracker (marks it in-progress/assigned) before implementation begins",
+      "passed": true,
+      "evidence": "Step 1, before anything else: 'Move tf-18 to \"in progress\" in the tracker and assign it to me, so the board reflects reality even though I'm solo.' The first code change occurs only in step 7."
+    },
+    {
+      "text": "Creates a working branch whose name embeds the task id (e.g., feature/tf-18_rate-limit), not a generically named branch",
+      "passed": true,
+      "evidence": "Step 6: 'Create a feature branch named after the task: git switch -c tf-18-login-rate-limit' — branch name embeds tf-18."
+    },
+    {
+      "text": "Does not propose or begin any code edit before the read/cite/claim/branch ceremony is complete",
+      "passed": true,
+      "evidence": "Claim (step 1), reads (steps 1-3), read-only recon (step 4, 'read-only'), plan (step 5), branch (step 6) all precede step 7: 'the first line of code I change is a failing test'. Opening states 'Nothing below modifies source'."
+    },
+    {
+      "text": "Does not modify docs/prds/ or docs/architecture/ files",
+      "passed": true,
+      "evidence": "No step proposes editing either doc; both are only read (steps 2-3). Open questions and assumptions are recorded 'in the ticket comment', not in the docs."
+    },
+    {
+      "text": "Output does not cite this skill by name (no 'throughline says', 'per the skill', etc.)",
+      "passed": true,
+      "evidence": "No occurrence of 'throughline', 'per the skill', or any skill attribution in the output."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 1,
+    "total": 7,
+    "pass_rate": 0.86
+  }
+}

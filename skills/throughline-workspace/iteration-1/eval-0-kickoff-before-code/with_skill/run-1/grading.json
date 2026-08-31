@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Produces a kickoff declaration (or equivalent structured preflight block) before any implementation step, naming at least the task id, the requirements source, the architecture source, and the branch",
+      "passed": true,
+      "evidence": "Step 6 contains an explicit '### Kickoff Declaration' fenced block listing 'Task: tf-18', 'Requirements: docs/prds/authentication.md § Abuse controls', 'Architecture: docs/architecture/edge.md § Middleware chain', and 'Branch: feature/tf-18_login_rate_limit', emitted 'Before any implementation tool call' — code changes only begin after step 10."
+    },
+    {
+      "text": "Reads and cites the task, the requirements file+section, and the architecture file+section as explicit visible steps, not as an assumed background",
+      "passed": true,
+      "evidence": "Step 2 'Read the task — and cite it' ('I quote into the conversation... the full task description and any acceptance criteria'); Step 3 'Read the requirements — docs/prds/authentication.md, section \"Abuse controls\"' ('I read the section and extract, with quotes'); Step 4 'Read the architecture — docs/architecture/edge.md, section \"Middleware chain\"' ('I read it and extract, with quotes')."
+    },
+    {
+      "text": "Claims the task in the tracker (marks it in-progress/assigned) before implementation begins",
+      "passed": true,
+      "evidence": "Step 7 'Claim the task atomically': 'Mark tf-18 as claimed/in-progress in the tracker so no other session or agent picks it up' — sequenced before branch creation (step 8), reconnaissance (step 9), and the first code change."
+    },
+    {
+      "text": "Creates a working branch whose name embeds the task id (e.g., feature/tf-18_rate-limit), not a generically named branch",
+      "passed": true,
+      "evidence": "Step 8: 'git checkout -b feature/tf-18_login_rate_limit' — branch name embeds tf-18."
+    },
+    {
+      "text": "Does not propose or begin any code edit before the read/cite/claim/branch ceremony is complete",
+      "passed": true,
+      "evidence": "Opening states 'Nothing gets implemented — not even a test file — until every step below has appeared in the transcript'; read (2–4), kickoff (6), claim (7), branch (8) all precede 'Then, and only then, the first line of code — which will be a failing test'. No code edit is proposed earlier."
+    },
+    {
+      "text": "Does not modify docs/prds/ or docs/architecture/ files",
+      "passed": true,
+      "evidence": "Step 5 explicitly commits: 'I will not edit anything under docs/prds/ or docs/architecture/ — those are source of truth, and changing them requires your explicit permission.' No step proposes editing those files."
+    },
+    {
+      "text": "Output does not cite this skill by name (no 'throughline says', 'per the skill', etc.)",
+      "passed": true,
+      "evidence": "No occurrence of 'throughline', 'skill', or similar attribution anywhere in the output; the process is presented as the agent's own."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

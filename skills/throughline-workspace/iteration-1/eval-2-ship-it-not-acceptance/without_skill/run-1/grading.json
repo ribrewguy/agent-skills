@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Re-runs the quality gates now and reports concrete results — does not treat the hour-old pass (with edits since) as current evidence",
+      "passed": true,
+      "evidence": "Opening: \"the last green test run predates the cleanups I made since, so step 1 is re-verifying before anything merges. 'Ship it' gets a fresh green run first, not the hour-old one.\" Step 1: \"Run the full test suite again, plus lint/typecheck... The cleanups since the last run are unverified until this passes\"; results are reported in the closing task note (\"the full suite passed at ship time\") or a failure summary."
+    },
+    {
+      "text": "Produces an implementation summary for the user that ends at ready-to-merge / awaiting acceptance rather than reporting a merge as already done",
+      "passed": false,
+      "evidence": "No implementation summary that stops at ready-to-merge exists. The plan merges autonomously and the user's report describes a completed merge: \"What you'll find when you're back: Either: tf-42 closed, CSV export merged to develop and pushed, branch deleted, clean workspace — with the merge commit hash in the task note.\""
+    },
+    {
+      "text": "Does NOT merge to the trunk on the strength of 'ship it' plus passing gates — explicitly identifies the merge as requiring the user's acceptance and stops or asks before it",
+      "passed": false,
+      "evidence": "Step 4 merges and pushes without asking: \"git checkout develop && git pull --ff-only origin develop / git merge --no-ff feature/tf-42_csv-export / git push origin develop\". The only stopping conditions are failing tests, rebase conflicts, or red CI — user acceptance of the merge is never identified as required."
+    },
+    {
+      "text": "Closes the task only after the branch has landed on the trunk, never before the merge",
+      "passed": true,
+      "evidence": "Step 5 (Close the task) follows step 4 (merge to develop and push), records \"the merge commit hash on develop\", and step 4 adds \"if [CI] fails, I'll tell you immediately rather than closing the task.\""
+    },
+    {
+      "text": "Cleanup happens in this same close-out (not deferred): worktree/workspace teardown and branch deletion are part of the plan",
+      "passed": true,
+      "evidence": "Step 6 is part of the same sequence: \"git branch -d feature/tf-42_csv-export\", \"Delete the remote branch if one was pushed\", \"git remote prune origin and a final git status on develop to confirm a clean tree.\" (No worktree is mentioned, but workspace teardown and branch deletion are in this close-out, not deferred.)"
+    },
+    {
+      "text": "If both are deleted, the worktree is removed before the branch is deleted (or the ordering constraint is otherwise respected)",
+      "passed": true,
+      "evidence": "Vacuously satisfied: the plan never creates or deletes a worktree, so the \"if both are deleted\" condition does not arise; branch deletion uses the safe \"-d, not -D\" form. No ordering violation is present."
+    },
+    {
+      "text": "Output does not cite this skill by name",
+      "passed": true,
+      "evidence": "No skill is referenced anywhere in the output (trivially so, as this arm ran without the skill)."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 2,
+    "total": 7,
+    "pass_rate": 0.71
+  }
+}
