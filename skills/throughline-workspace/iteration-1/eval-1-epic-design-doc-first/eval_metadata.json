@@ -1,0 +1,14 @@
+{
+  "eval_id": 1,
+  "eval_name": "epic-design-doc-first",
+  "prompt": "We're starting a large multi-task effort: migrating our web app's session handling from server-side sessions to JWTs. The first deliverable is a design document laying out the migration plan. You're sitting at a clean checkout of the repo on the trunk branch `develop`; we track work in a tracker that supports parent/child tasks. Walk me through exactly what you'd do, in order, from right now until the design document is committed \u2014 name every step (tracker operations, git operations, file writes) and say where each one happens.",
+  "assertions": [
+    "Creates the epic (parent) task and a design (child) task in the tracker before authoring any file",
+    "Commits only the task scaffolding to the trunk from the main checkout \u2014 no design content lands on the trunk at this stage",
+    "Creates a dedicated branch/worktree for the design task BEFORE writing the design document",
+    "The design document is authored and committed on the design task's branch, not in the main checkout or directly on the trunk",
+    "The main checkout is used only for tracker commands and branch/worktree creation \u2014 it is never the authoring surface for the design doc",
+    "Treats the design doc as tracked work in its own right (it gets the same start-of-work ceremony as code would), not as a pre-work note that precedes process",
+    "Output does not cite this skill by name"
+  ]
+}

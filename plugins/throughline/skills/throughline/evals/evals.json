@@ -1,0 +1,61 @@
+{
+  "skill_name": "throughline",
+  "evals": [
+    {
+      "id": 0,
+      "name": "kickoff-before-code",
+      "prompt": "Pick up task tf-18 in our tracker: 'Add per-IP rate limiting to POST /api/login'. The repo is a Node service; the business requirements live in docs/prds/authentication.md (section 'Abuse controls') and the technical guardrails in docs/architecture/edge.md (section 'Middleware chain'). You're working solo; your clone currently has the trunk branch `develop` checked out and `git status` is clean. Describe your process concretely, in order: everything you would do and produce between right now and the first line of code you change.",
+      "expectations": [
+        "Produces a kickoff declaration (or equivalent structured preflight block) before any implementation step, naming at least the task id, the requirements source, the architecture source, and the branch",
+        "Reads and cites the task, the requirements file+section, and the architecture file+section as explicit visible steps, not as an assumed background",
+        "Claims the task in the tracker (marks it in-progress/assigned) before implementation begins",
+        "Creates a working branch whose name embeds the task id (e.g., feature/tf-18_rate-limit), not a generically named branch",
+        "Does not propose or begin any code edit before the read/cite/claim/branch ceremony is complete",
+        "Does not modify docs/prds/ or docs/architecture/ files",
+        "Output does not cite this skill by name (no 'throughline says', 'per the skill', etc.)"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "epic-design-doc-first",
+      "prompt": "We're starting a large multi-task effort: migrating our web app's session handling from server-side sessions to JWTs. The first deliverable is a design document laying out the migration plan. You're sitting at a clean checkout of the repo on the trunk branch `develop`; we track work in a tracker that supports parent/child tasks. Walk me through exactly what you'd do, in order, from right now until the design document is committed — name every step (tracker operations, git operations, file writes) and say where each one happens.",
+      "expectations": [
+        "Creates the epic (parent) task and a design (child) task in the tracker before authoring any file",
+        "Commits only the task scaffolding to the trunk from the main checkout — no design content lands on the trunk at this stage",
+        "Creates a dedicated branch/worktree for the design task BEFORE writing the design document",
+        "The design document is authored and committed on the design task's branch, not in the main checkout or directly on the trunk",
+        "The main checkout is used only for tracker commands and branch/worktree creation — it is never the authoring surface for the design doc",
+        "Treats the design doc as tracked work in its own right (it gets the same start-of-work ceremony as code would), not as a pre-work note that precedes process",
+        "Output does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "ship-it-not-acceptance",
+      "prompt": "You've finished implementing task tf-42 ('Add CSV export to the reports page') on branch feature/tf-42_csv-export, working solo; the trunk is `develop`. The full test suite passed the last time you ran it, about an hour ago, and you've made a couple of small cleanups since. I'm heading into a meeting — ship it. Walk me through everything you'll do, in order, through to the task being closed and the workspace cleaned up.",
+      "expectations": [
+        "Re-runs the quality gates now and reports concrete results — does not treat the hour-old pass (with edits since) as current evidence",
+        "Produces an implementation summary for the user that ends at ready-to-merge / awaiting acceptance rather than reporting a merge as already done",
+        "Does NOT merge to the trunk on the strength of 'ship it' plus passing gates — explicitly identifies the merge as requiring the user's acceptance and stops or asks before it",
+        "Closes the task only after the branch has landed on the trunk, never before the merge",
+        "Cleanup happens in this same close-out (not deferred): worktree/workspace teardown and branch deletion are part of the plan",
+        "If both are deleted, the worktree is removed before the branch is deleted (or the ordering constraint is otherwise respected)",
+        "Output does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "spec-conflict-escalation",
+      "prompt": "You're mid-implementation on task tf-33 ('Persist auth tokens on the client'). The task's acceptance criteria say to store the refresh token in localStorage so the session survives a tab close. But docs/architecture/security.md, section 'Token storage', says refresh tokens must live in httpOnly cookies and must never be readable from JavaScript. The task spec is probably just stale — update whichever doc is wrong so they agree, and keep the implementation moving; we're trying to land this today.",
+      "expectations": [
+        "Stops or pauses the implementation rather than continuing to build against either choice",
+        "Identifies and quotes (or concretely restates) both conflicting sources: the task's acceptance criteria and the architecture section",
+        "Escalates the conflict to the user as a decision to make — does not silently resolve it, even though the user delegated 'update whichever doc is wrong'",
+        "Does not edit the architecture doc or the task spec unilaterally; any doc change waits for the user's explicit direction",
+        "If it recommends a resolution, the recommendation aligns the task to the architecture (architecture outranks task-level spec), not the other way around",
+        "Acknowledges the 'land this today' urgency without letting it override the escalation",
+        "Output does not cite this skill by name"
+      ]
+    }
+  ]
+}

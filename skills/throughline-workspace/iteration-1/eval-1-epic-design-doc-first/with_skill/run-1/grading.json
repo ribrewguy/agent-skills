@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Creates the epic (parent) task and a design (child) task in the tracker before authoring any file",
+      "passed": true,
+      "evidence": "Phase 1 Steps 3-4 create the epic ('proj-100') and the child design task ('proj-101', parented to proj-100) in the tracker; authoring does not begin until Phase 3 Step 9. Opening paragraph states 'the epic scaffolding is created centrally on the trunk *before* any work begins'."
+    },
+    {
+      "text": "Commits only the task scaffolding to the trunk from the main checkout — no design content lands on the trunk at this stage",
+      "passed": true,
+      "evidence": "Step 6: 'commit exactly that scaffolding — the epic and design task records — directly on develop in the main checkout... Either way, **nothing else** lands on the trunk: no docs, no stubs, no placeholder directories.'"
+    },
+    {
+      "text": "Creates a dedicated branch/worktree for the design task BEFORE writing the design document",
+      "passed": true,
+      "evidence": "Step 8 runs 'git worktree add .worktrees/jwt-migration-design -b feature/proj-101_jwt-migration-design develop' before Step 9 authors the doc; the intro states 'the worktree is created before the first authored file'."
+    },
+    {
+      "text": "The design document is authored and committed on the design task's branch, not in the main checkout or directly on the trunk",
+      "passed": true,
+      "evidence": "Step 9 (Phase 3, 'worktree only'): 'Author the design document inside the worktree'; Step 12 commits on feature/proj-101_jwt-migration-design in the worktree. 'What deliberately has not happened': 'No merge to develop.'"
+    },
+    {
+      "text": "The main checkout is used only for tracker commands and branch/worktree creation — it is never the authoring surface for the design doc",
+      "passed": true,
+      "evidence": "Line 1: 'the main checkout is only a surface for tracker commands and git worktree add, never for authoring.' Step 8: '(worktree add) is the last thing the main checkout does. From here on, every file write and every command runs inside the worktree.' Phase 0 use of the main checkout is explicitly read-only ('No files are written or edited in this phase')."
+    },
+    {
+      "text": "Treats the design doc as tracked work in its own right (it gets the same start-of-work ceremony as code would), not as a pre-work note that precedes process",
+      "passed": true,
+      "evidence": "'a design document **is** work, so the worktree is created before the first authored file.' The doc gets a tracker task (proj-101), an atomic claim (Step 5), a kickoff declaration (Step 7), its own branch/worktree, quality gates (Step 10), a Conventional Commit with task id (Step 12), and an evidence block + implementation summary (Steps 13-14)."
+    },
+    {
+      "text": "Output does not cite this skill by name",
+      "passed": true,
+      "evidence": "No occurrence of 'throughline' (or any skill name) in the output. The only tool named is a 'Beads-style tracker' as an example tracker, which is not the skill's name."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

@@ -70,6 +70,8 @@ exclude:
   - "skills/task-handoff-summaries-workspace/**/*.json"
   - "skills/branch-promotion-discipline-workspace/**/*.md"
   - "skills/branch-promotion-discipline-workspace/**/*.json"
+  - "skills/throughline-workspace/**/*.md"
+  - "skills/throughline-workspace/**/*.json"
 
 markdown: kramdown
 kramdown:
@@ -130,6 +132,11 @@ defaults:
       search_exclude: true
   - scope:
       path: "skills/branch-promotion-discipline-workspace"
+    values:
+      nav_exclude: true
+      search_exclude: true
+  - scope:
+      path: "skills/throughline-workspace"
     values:
       nav_exclude: true
       search_exclude: true

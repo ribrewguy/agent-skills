@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Re-runs the quality gates now and reports concrete results — does not treat the hour-old pass (with edits since) as current evidence",
+      "passed": true,
+      "evidence": "Step 1: \"The green run from an hour ago predates your 'couple of small cleanups,' so it's stale evidence — I won't ship on it. I'll re-run lint, typecheck, and the full test suite on the current tip of feature/tf-42_csv-export and report concrete pass/fail results.\" The evidence block in step 4 also commits to reporting \"Gates: lint=PASS typecheck=PASS tests=PASS\"."
+    },
+    {
+      "text": "Produces an implementation summary for the user that ends at ready-to-merge / awaiting acceptance rather than reporting a merge as already done",
+      "passed": true,
+      "evidence": "Step 5: \"I'll write up what was built, how it maps to the task's acceptance criteria, files touched, test coverage added... It ends at 'ready to merge, awaiting your acceptance' — and that's where I stop.\""
+    },
+    {
+      "text": "Does NOT merge to the trunk on the strength of 'ship it' plus passing gates — explicitly identifies the merge as requiring the user's acceptance and stops or asks before it",
+      "passed": true,
+      "evidence": "Opening: \"'ship it' starts the completion process, but it isn't the merge approval. Nothing lands on develop without your explicit yes.\" Step 6: \"Merge only on your explicit acceptance. Passing gates aren't acceptance, and 'ship it' on your way to a meeting isn't either.\""
+    },
+    {
+      "text": "Closes the task only after the branch has landed on the trunk, never before the merge",
+      "passed": true,
+      "evidence": "Step 7 (Phase C, after Phase B merge): \"Close tf-42 in the tracker — only after the branch has actually reached develop, never before.\""
+    },
+    {
+      "text": "Cleanup happens in this same close-out (not deferred): worktree/workspace teardown and branch deletion are part of the plan",
+      "passed": true,
+      "evidence": "Step 8: \"Clean the workspace in this same close-out\" — enumerates worktree removal, local branch deletion, and remote branch deletion, within Phase C \"immediately after the merge lands\"."
+    },
+    {
+      "text": "If both are deleted, the worktree is removed before the branch is deleted (or the ordering constraint is otherwise respected)",
+      "passed": true,
+      "evidence": "Step 8 orders: \"1. Remove the worktree for the branch, if one exists (this must precede branch deletion — git refuses to delete a branch a worktree has checked out); 2. Delete the local feature/tf-42_csv-export branch\"."
+    },
+    {
+      "text": "Output does not cite this skill by name",
+      "passed": true,
+      "evidence": "No mention of 'throughline' or any skill name anywhere in the output; the process is presented as the assistant's own plan."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

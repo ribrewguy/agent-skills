@@ -1,0 +1,14 @@
+{
+  "eval_id": 0,
+  "eval_name": "kickoff-before-code",
+  "prompt": "Pick up task tf-18 in our tracker: 'Add per-IP rate limiting to POST /api/login'. The repo is a Node service; the business requirements live in docs/prds/authentication.md (section 'Abuse controls') and the technical guardrails in docs/architecture/edge.md (section 'Middleware chain'). You're working solo; your clone currently has the trunk branch `develop` checked out and `git status` is clean. Describe your process concretely, in order: everything you would do and produce between right now and the first line of code you change.",
+  "assertions": [
+    "Produces a kickoff declaration (or equivalent structured preflight block) before any implementation step, naming at least the task id, the requirements source, the architecture source, and the branch",
+    "Reads and cites the task, the requirements file+section, and the architecture file+section as explicit visible steps, not as an assumed background",
+    "Claims the task in the tracker (marks it in-progress/assigned) before implementation begins",
+    "Creates a working branch whose name embeds the task id (e.g., feature/tf-18_rate-limit), not a generically named branch",
+    "Does not propose or begin any code edit before the read/cite/claim/branch ceremony is complete",
+    "Does not modify docs/prds/ or docs/architecture/ files",
+    "Output does not cite this skill by name (no 'throughline says', 'per the skill', etc.)"
+  ]
+}
