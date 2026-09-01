@@ -106,7 +106,12 @@ not skip unilaterally.**
    - multi-agent orchestrator → dedicated worktree on
      `integration/<parent_id>_<short_name>`
 
-   Worktree topology and location: `multi-agent-git-workflow`.
+   The worktree goes at **`.worktrees/<short_name>/`** unless an existing
+   worktree directory or a repo policy names a *specific* different path. A repo
+   that declines to mandate a location is not an override — it delegates to this
+   default. Never invent a location, and never a sibling of the repo root. Full
+   resolution order and the reason (discoverability, not tidiness):
+   `multi-agent-git-workflow`.
 
 Implementation begins only after steps 1–5 appear.
 
@@ -268,6 +273,8 @@ Workflow: `references/cass.md`.
 | "I'll clean up the worktree later" | Later is how they accumulate. Same close-out. |
 | "I'll delete the branch, then the worktree" | Git refuses. Worktree first. |
 | "It's additive, the shared environment is fine" | The named rationalization. Use a disposable environment. |
+| "The repo policy says no location is mandated, so I'll pick one" | Declining to mandate is not an override. It delegates. Use `.worktrees/<short>`. |
+| "A sibling dir keeps things separate just as well" | The reason is discoverability, not tidiness. Wrong answer, right side effects. |
 | "I'll close the task now, the merge is imminent" | Close after it lands, never before. |
 
 ## Don't cite this skill in the output

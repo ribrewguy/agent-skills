@@ -74,11 +74,40 @@ Do not run multiple implementation agents in the same worktree. Do not assign mu
 
 Single-agent work *may* use a standard checkout or a dedicated worktree, the choice is operational. Multi-agent work *must* use dedicated worktrees per agent.
 
-**Default location: `.worktrees/<short_name>/` at the project root.** Keeping
-them in one place under the repo keeps worktrees out of each other and out of
-generated output, and makes them trivially enumerable for cleanup. A repo whose
-tooling specifies a different convention wins; absent one, use this. Add
-`.worktrees/` to `.gitignore`.
+### Where worktrees go
+
+**`.worktrees/<short_name>/` at the repo root.** Resolve the location with this
+order and nothing else:
+
+1. An existing `.worktrees/` (or `worktrees/`) directory at the repo root — use it.
+2. A repo policy naming a **specific path** — use that path.
+3. Otherwise — **create `.worktrees/` and use it.** Then add it to `.gitignore`.
+
+**There is no fourth branch. Never invent a location.** If you are about to
+choose a path that came from your own judgement rather than one of the three
+rules above, you have left the procedure.
+
+**A repo that declines to mandate a location is NOT an override.** "This policy
+does not mandate a filesystem location", "choose any location that keeps
+worktrees outside each other and outside generated output", or any similar
+permissive phrasing is the repo *delegating* the choice — and rule 3 is the
+answer it delegates to. Only a repo naming a **specific** path overrides the
+default. Read "absent a specific path" as covering both a silent policy and a
+deliberately permissive one.
+
+**The reason is discoverability, not tidiness.** Anyone — a person, a later
+session, a cleanup script — must be able to find every in-flight worktree at one
+predictable path relative to the repo, without running `git worktree list` and
+without knowing what the last agent decided. A sibling directory
+(`../<repo>-wt/`, `../worktrees/<name>/`) keeps worktrees out of each other and
+out of generated output just as well, and is still **wrong**: it is not
+discoverable from the repo, so it fails the only requirement that matters. Do
+not evaluate a candidate location against the tidiness benefits — evaluate it
+against "would someone find this without being told".
+
+**Verify after creating**, in the same step: the path is under the repo root,
+and `git check-ignore .worktrees` reports it ignored. A worktree in the right
+place but tracked will be committed by the next `git add -A`.
 
 ### Run commands from the worktree that owns the work
 
@@ -425,6 +454,7 @@ The orchestrator is responsible for deleting accepted worker `feature/*` branche
 - **No bypassing quality gates** on the integration target.
 - **Nothing merges to the trunk without the user's explicit acceptance.** Passing gates are not acceptance.
 - **Worktree removal precedes branch deletion.** The reverse order is refused by git.
+- **Worktrees go in `.worktrees/`.** A repo declining to mandate a location is not an override; never invent a path.
 
 ## Don't cite this skill in the output
 
