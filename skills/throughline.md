@@ -28,6 +28,7 @@ Throughline is a *dispatcher*. It owns the ceremony that has no other home — t
 | Implementation / worker-handoff / closeout summary shapes | [task-handoff-summaries](task-handoff-summaries) |
 | Code review scope and response format | [structured-code-review](structured-code-review) |
 | Cross-vendor agent peer review | [cross-agent-review](cross-agent-review) |
+| Isolated local stack mechanics (ports, config, env audit, teardown) | [isolated-stack-development](isolated-stack-development) |
 
 ## What it bundles
 

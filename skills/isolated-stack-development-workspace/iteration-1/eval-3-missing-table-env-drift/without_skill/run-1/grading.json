@@ -1,0 +1,78 @@
+{
+  "expectations": [
+    {
+      "text": "Diagnoses the real cause: apps/api/.env was copied from the main checkout and still points every value at the SHARED stack (which answers queries happily but has no search_index table), while the isolated stack's config allocates different ports",
+      "passed": true,
+      "evidence": "output.md: \"apps/api/.env in the worktree still pointed at the **default/main stack ports** (project_id `myapp` from the main checkout's config)\" and \"the api app booted fine and queried a perfectly healthy database — just the `develop` stack's database, which never received this branch's migration.\" It attributes provenance to .env.example rather than the main checkout's .env, but the two files are byte-identical in the fixture, and the substantive diagnosis (shared-stack pointers vs isolated ports 23110/23111/23115) is exactly right."
+    },
+    {
+      "text": "Does NOT 'fix' it by applying the branch's migration to the shared database — the table appearing there would resolve the symptom by contaminating the shared stack",
+      "passed": true,
+      "evidence": "Fixture state: the migration exists only under .worktrees/tf-9/supabase/migrations/; the main checkout's supabase/ contains only config.toml and root apps/api/.env still holds 543xx values. output.md: \"Run from the worktree so it uses the worktree's `config.toml` ... never from the main checkout, which would reset the `develop` stack.\""
+    },
+    {
+      "text": "Fixes by repointing the env at the isolated stack's allocated values, read from the worktree's supabase/config.toml (or stack status), not from memory or the example file",
+      "passed": true,
+      "evidence": "Fixture .worktrees/tf-9/apps/api/.env now reads SUPABASE_URL=http://127.0.0.1:23110, DB_PORT=23111, SMTP_PORT=23115 — matching the worktree config.toml ([api] port=23110, [db] port=23111, [inbucket] smtp_port=23115), which output.md quotes as its source: \"`supabase/config.toml` ... API port 23110, DB port 23111, inbucket SMTP 23115.\""
+    },
+    {
+      "text": "Audits the WHOLE env file for shared-stack pointers, catching the values beyond the database (SUPABASE_URL and SMTP_PORT), not just the one that explains the symptom",
+      "passed": true,
+      "evidence": "All three shared-stack pointers repointed in the fixture .env: SUPABASE_URL 54321→23110, DB_PORT 54322→23111, SMTP_PORT 54325→23115. API_PORT=3100 was deliberately left with a stated rationale (\"it isn't part of the Supabase stack\"), showing the whole file was considered."
+    },
+    {
+      "text": "Does not export stack-pointing variables into the shell as part of the fix",
+      "passed": true,
+      "evidence": "The fix is an edit to the .env file only; no `export` statements appear anywhere in output.md, and the deferred commands pass connection strings explicitly to psql rather than via shell environment."
+    },
+    {
+      "text": "Notes why nothing errored: a stale env value that points at a live shared system fails silently — requests succeed against the wrong stack",
+      "passed": true,
+      "evidence": "output.md: \"the api app booted fine and queried a perfectly healthy database — just the `develop` stack's database ... no connection errors, but `search_index` doesn't exist\" and \"`.env` is gitignored, so nothing in `git status` hinted at the drift.\""
+    },
+    {
+      "text": "Does not cite this skill by name",
+      "passed": true,
+      "evidence": "grep for 'isolated-stack-development-workspace' across run-1 outputs returns no matches; output.md references only the repo's own `.isolated-stack.json` tooling artifact, not a skill."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "executor_duration_seconds": 94.3,
+    "total_tokens": 47093
+  },
+  "claims": [
+    {
+      "claim": "supabase/config.toml still shows S (skip-worktree) in git ls-files -v; worktree git status is clean",
+      "type": "factual",
+      "verified": true,
+      "evidence": "git -C .worktrees/tf-9 status --short is empty in the fixture despite config.toml differing from the committed version."
+    },
+    {
+      "claim": "The branch's migration was applied to the isolated stack",
+      "type": "factual",
+      "verified": false,
+      "evidence": "Stated as fact in output.md but no live stack exists in the fixture to confirm; the output does hedge with a verification query (to_regclass) and a fallback `supabase db reset`."
+    },
+    {
+      "claim": ".env was copied from .env.example",
+      "type": "factual",
+      "verified": false,
+      "evidence": "Consistent with fixture state (contents identical) but indistinguishable from a copy of the main checkout's .env; provenance cannot be established from files alone."
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Does not export stack-pointing variables into the shell as part of the fix",
+        "reason": "Only outputs/output.md is preserved (no transcript), so this is graded from the written fix containing no exports; a transcript would make it directly verifiable."
+      }
+    ],
+    "overall": "Assertions are well-targeted at fixture-verifiable state; the main gap is transcript capture for the export assertion."
+  }
+}

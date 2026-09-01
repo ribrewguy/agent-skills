@@ -72,6 +72,9 @@ exclude:
   - "skills/branch-promotion-discipline-workspace/**/*.json"
   - "skills/throughline-workspace/**/*.md"
   - "skills/throughline-workspace/**/*.json"
+  - "skills/isolated-stack-development-workspace/**/*.md"
+  - "skills/isolated-stack-development-workspace/**/*.json"
+  - "skills/isolated-stack-development-workspace/**/*.sh"
 
 markdown: kramdown
 kramdown:
@@ -137,6 +140,11 @@ defaults:
       search_exclude: true
   - scope:
       path: "skills/throughline-workspace"
+    values:
+      nav_exclude: true
+      search_exclude: true
+  - scope:
+      path: "skills/isolated-stack-development-workspace"
     values:
       nav_exclude: true
       search_exclude: true

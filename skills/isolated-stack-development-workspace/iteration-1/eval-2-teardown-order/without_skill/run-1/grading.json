@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Stops the isolated stack from the worktree that owns it, and verifies the config's project_id is the worktree's own stack (not the shared 'myapp') before any stop — never stops the shared stack",
+      "passed": false,
+      "evidence": "The prescribed stop runs from the worktree ('cd .worktrees/tf-9; supabase stop --no-backup') and prose notes it must happen 'while its config.toml still carries the isolated project_id', but no verification step exists — nothing checks the config's project_id before the stop (no grep/guard, unlike an explicit assertion of ownership). The ordering is stated as narrative only. The shared stack was never stopped, but the required verification-before-stop is absent."
+    },
+    {
+      "text": "Removes the stack's Docker volumes scoped to the isolated project's label — not a broad docker volume prune, and never the shared stack's volumes",
+      "passed": false,
+      "evidence": "Volume checks and removal use name filters, not the project label: 'docker volume ls --filter \"name=myapp-feature-tf-9-search\"' and 'docker volume rm $(docker volume ls -q --filter \"name=myapp-feature-tf-9-search\")'. No broad prune and the shared stack's volumes are not targeted, but the assertion's required scoping mechanism — the isolated project's label (com.supabase.cli.project) — is never used; name-substring filtering is what the label scoping exists to avoid."
+    },
+    {
+      "text": "Clears --skip-worktree on supabase/config.toml BEFORE checking the file out / restoring it, with the ordering explicit (with the bit set the checkout silently no-ops)",
+      "passed": true,
+      "evidence": "Commands executed in the correct order: 'git -C .worktrees/tf-9 update-index --no-skip-worktree supabase/config.toml' then 'git -C .worktrees/tf-9 checkout -- supabase/config.toml', with the ordering stated: 'I cleared the flag and restored the tracked version before removal'. Fixture confirms the bit is cleared (git ls-files -v: 'H supabase/config.toml')."
+    },
+    {
+      "text": "Restores the config so the worktree carries no isolation edits (project_id back to 'myapp', tracked file clean)",
+      "passed": true,
+      "evidence": "Fixture state: supabase/config.toml line 1 is 'project_id = \"myapp\"', git status is clean, ls-files flag is 'H'. Output confirms: 'Main checkout's supabase/config.toml untouched (project_id = \"myapp\", ports 543xx)'."
+    },
+    {
+      "text": "Removes the worktree before deleting the feature branch, in that order",
+      "passed": true,
+      "evidence": "Output sequence: 'git worktree remove .worktrees/tf-9' then 'git branch -d feature/tf-9_search' then 'git worktree prune'. Fixture confirms: worktree list shows only the main checkout on develop, only branch develop remains, .worktrees/ is gone."
+    },
+    {
+      "text": "Verifies afterwards that the shared stack is untouched and nothing leaked (stray processes, leftover volumes)",
+      "passed": true,
+      "evidence": "'Final state (verified)' section covers all three: main checkout's config untouched (project_id \"myapp\"), 'No tf-9 containers, volumes, or port listeners found' — backed by the stated read-only checks 'docker ps -a', 'docker volume ls', 'lsof' on ports 23110-23116."
+    },
+    {
+      "text": "Does not cite this skill by name",
+      "passed": true,
+      "evidence": "grep for 'skill' and 'isolated-stack' over output.md: no matches."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 2,
+    "total": 7,
+    "pass_rate": 0.71
+  }
+}

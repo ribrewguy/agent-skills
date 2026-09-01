@@ -37,6 +37,11 @@
       "description": "3-tier long-lived branch hierarchy (develop / uat / main), one-way promotion (develop to uat to main), per-tier CI gate matrix, source-ref enforcement, hotfix flow with forward-merge to develop, branch protection ruleset, pre-commit hook setup. Layer above multi-agent-git-workflow."
     },
     {
+      "name": "isolated-stack-development",
+      "source": "./plugins/isolated-stack-development",
+      "description": "One isolated local stack per worktree for Supabase-backed repos: derived project_id, ports discovered at allocation time (never recorded), copied-env audit for shared-system pointers, order-critical teardown. Ships the stack tool (up/status/down/doctor with --dry-run), a PreToolUse guard that blocks destructive resets aimed at a stack the current directory doesn't own, and nuxt/node/vite/spring adapters. Repos opt in with a tracked .isolated-stack.json."
+    },
+    {
       "name": "throughline",
       "source": "./plugins/throughline",
       "description": "Lifecycle dispatcher: requirements to architecture to task to implementation to commit to merge to closeout. Owns the Kickoff Declaration, the three completion phases, the source-of-truth ladder, and epic scaffolding order. Delegates to multi-agent-git-workflow, branch-promotion-discipline, task-handoff-summaries and structured-code-review; bundles feature governance, procedural memory, MCP parity and Beads mechanics."

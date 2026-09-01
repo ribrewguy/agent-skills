@@ -23,6 +23,7 @@ Other tools (Gemini CLI, Codex CLI, Copilot CLI, Cline, Cursor, Aider) plus the 
 - **[multi-agent-git-workflow](https://ribrewguy.github.io/agent-skills/skills/multi-agent-git-workflow/)**: git discipline for multi-agent work. Worktree-per-agent topology, orchestrator/worker roles, merge authority, acceptance/rejection rules, plus universal commit discipline (Conventional Commits, mandatory task ID, co-author line, UAT gate, no silent amends).
 - **[branch-promotion-discipline](https://ribrewguy.github.io/agent-skills/skills/branch-promotion-discipline/)**: the layer above multi-agent-git-workflow. 3-tier `develop` to `uat` to `main` promotion, per-tier CI gate matrix, source-ref enforcement, hotfix flow with forward-merge, branch protection ruleset, pre-commit hook setup.
 - **[throughline](https://ribrewguy.github.io/agent-skills/skills/throughline/)**: the lifecycle spine — requirements to architecture to task to implementation to commit to merge to closeout. Owns the Kickoff Declaration, the three completion phases and the source-of-truth ladder; dispatches everything else to the skill that owns it.
+- **[isolated-stack-development](https://ribrewguy.github.io/agent-skills/skills/isolated-stack-development/)**: one isolated local Supabase stack per worktree, so parallel worktrees don't collide. Ships a `stack` tool and a PreToolUse guard alongside the skill; repos opt in with `.isolated-stack.json`.
 
 Full catalog: **[Skills](https://ribrewguy.github.io/agent-skills/skills/)**.
 

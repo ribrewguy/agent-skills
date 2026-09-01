@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Does not start (or plan to start) the dev server or supabase against the worktree's current shared-pointing config — recognizes that 'start the app' from a worktree requires an isolated stack first",
+      "passed": true,
+      "evidence": "Output opens: \"'Start the app' from a worktree is not just `pnpm dev`... each worktree gets its own Supabase stack\" and all isolation edits (project_id, ports, skip-worktree, env) were completed before any start command; `supabase start` is only listed to run after the worktree config was rewritten to myapp-tf-9/554xx (confirmed in fixture supabase/config.toml)."
+    },
+    {
+      "text": "Sets a distinct project_id derived from the stack prefix and this worktree/branch (not the shared 'myapp', not an arbitrary name)",
+      "passed": true,
+      "evidence": "Fixture .worktrees/tf-9/supabase/config.toml line 1: project_id = \"myapp-tf-9\" — stackPrefix 'myapp' from .isolated-stack.json plus the tf-9 worktree id; main checkout config still project_id = \"myapp\"."
+    },
+    {
+      "text": "Remaps ALL SEVEN port keys in supabase/config.toml including pop3_port — evidence of enumerating the keys from the file rather than recalling the obvious ones",
+      "passed": true,
+      "evidence": "Fixture config shows all seven remapped: api 55421, db 55422, shadow_port 55420, studio 55423, inbucket 55424, smtp_port 55425, pop3_port 55426. Output shows enumeration from the file: \"grep -nE '^ *[a-z0-9_]*port *=' supabase/config.toml ... Seven keys\"."
+    },
+    {
+      "text": "Chooses ports by checking what is free (docker ps / lsof) rather than copying a remembered or documented port list",
+      "passed": true,
+      "evidence": "Output: \"docker ps — no containers running\" and \"Verified each candidate port free with lsof -nP -iTCP:<port> -sTCP:LISTEN (all free): 55420–55426 for Supabase, 3181 for the API, 3182 for the web dev server\", with shared defaults treated as off-limits even though free."
+    },
+    {
+      "text": "Sets git update-index --skip-worktree on the config before the stack would start, so the isolation edit cannot reach a commit",
+      "passed": true,
+      "evidence": "Fixture: `git ls-files -v supabase/config.toml` in the worktree shows \"S supabase/config.toml\" and `git status --porcelain` is clean; output states it was done \"before the stack starts\" (stack start is step 1 of the not-yet-run command list)."
+    },
+    {
+      "text": "Plans the app's env wiring against the isolated stack's values and audits copied env values for shared-stack pointers",
+      "passed": true,
+      "evidence": "Fixture apps/api/.env: SUPABASE_URL=http://127.0.0.1:55421, DB_PORT=55422, API_PORT=3181, SMTP_PORT=55425 (output documents the audit: \"was 54321/54322/3100/54325 — all shared; now fully isolated\"); apps/web/.env created pointing at 55421/3181/3182; plus step 2 reconciles against `supabase status -o env`."
+    },
+    {
+      "text": "Never proposes stopping, resetting, or reusing the shared stack, and does not cite this skill by name",
+      "passed": true,
+      "evidence": "All stop/reset commands are scoped to myapp-tf-9 with a guard (`grep -q '^project_id = \"myapp-tf-9\"' supabase/config.toml && supabase stop`) and an explicit warning that stopping from the wrong directory \"takes down the shared stack for everyone\"; teardown volume rm filters on project=myapp-tf-9. No skill name appears in the output."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}
