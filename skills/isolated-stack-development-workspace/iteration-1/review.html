@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "isolated-stack-development", "runs": [{"id": "eval-0-start-the-app-unprompted-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Starting the app in `.worktrees/tf-9`\n\n\"Start the app\" from a worktree is not just `pnpm dev`. This repo has multiple worktrees and a tracked `.isolated-stack.json`, which means each worktree gets its **own** Supabase stack \u2014 its own `project_id`, ports, and volumes \u2014 so nothing here can touch the shared stack the main checkout runs on its default ports (54321\u201354326). Booting the app from this worktree against the shared stack would mean my search-branch migrations and seeds land in the database every other workstream depends on.\n\nSo before starting anything I stood up the isolation wiring. Here is exactly what I did and what runs next.\n\n## What I already did (file/git changes, done)\n\n### 1. Surveyed before allocating\n\n- `docker ps` \u2014 no containers running; no stack (shared or otherwise) currently up, and no container-published ports to avoid beyond the shared defaults.\n- Enumerated every port key from the actual config (not from memory):\n\n  ```\n  grep -nE '^ *[a-z0-9_]*port *=' supabase/config.toml\n  ```\n\n  Seven keys: `[api] port`, `[db] port`, `[db] shadow_port`, `[studio] port`, `[inbucket] port`, `smtp_port`, `pop3_port`. Every one must be remapped \u2014 a single missed key leaves one service on a shared port, and a port collision makes `supabase start` apply every migration and then roll the whole boot back.\n- Verified each candidate port free with `lsof -nP -iTCP:<port> -sTCP:LISTEN` (all free): 55420\u201355426 for Supabase, 3181 for the API, 3182 for the web dev server. The shared stack's ports (54320\u201354326), the apps' default dev ports (3100, 3000), and Nuxt's default were treated as off-limits even though nothing is listening right now.\n\n### 2. Edited `supabase/config.toml` in the worktree\n\n- `project_id = \"myapp-tf-9\"` \u2014 derived from the stack prefix + this worktree's task id, so `docker ps` will be self-documenting and this stack can coexist with the shared one (the project id keys the Docker Compose project).\n- Remapped all seven port keys: api 55421, db 55422, shadow 55420, studio 55423, inbucket 55424, smtp 55425, pop3 55426.\n- Set `[analytics] enabled = false` \u2014 the analytics container often never reports healthy under concurrent-stack load, and one unhealthy service rolls back the entire boot.\n\n### 3. Protected the tracked config from being committed\n\n```\ngit update-index --skip-worktree supabase/config.toml\n```\n\nDone **before** the stack starts. The config file is tracked; these isolation edits must never reach a commit. `git status` in the worktree is clean and `git ls-files -v` shows the `S` bit set. At teardown the bit is cleared first, then the file restored (that order matters \u2014 with the bit still set, a checkout silently no-ops).\n\n### 4. Wrote the worktree's env files, audited for shared-stack pointers\n\nThe fresh worktree had no gitignored env files. I copied the API one from the main checkout and audited every value \u2014 copied env files start out aimed at the shared stack, and stale values there don't fail, they *succeed against the shared system*, which is the worst failure mode.\n\n`apps/api/.env` (was 54321/54322/3100/54325 \u2014 all shared; now fully isolated):\n\n```\nSUPABASE_URL=http://127.0.0.1:55421\nDB_PORT=54322 \u2192 55422\nAPI_PORT=3100 \u2192 3181\nSMTP_PORT=54325 \u2192 55425\n```\n\n`apps/web/.env` (the main checkout has **no** web env file, so I created one from the stack declaration):\n\n```\nNUXT_PORT=3182\nSUPABASE_URL=http://127.0.0.1:55421\nAPI_BASE_URL=http://127.0.0.1:3181\n```\n\nNotes on the audit:\n- `127.0.0.1` rather than `localhost` throughout \u2014 IPv6-first resolution makes `localhost` bind/connect mismatches intermittent.\n- Nothing is `export`ed into the shell; an exported stack-pointing variable would shadow the per-worktree env file in every worktree.\n- The web port goes through `NUXT_PORT` rather than a `--port` flag, because a package-manager wrapper's `--` can silently swallow the flag and the server would come up on the default (shared app) port with no error.\n- Both files are gitignored (verified with `git check-ignore`), so nothing env-related can leak into a commit either.\n\n## Commands to run, in order (each `cd` in the same invocation \u2014 Supabase resolves its config by walking up from the current directory)\n\nLet `WT=/private/tmp/claude-501/-Users-torr-Projects-agent-skills/62a0d71b-499c-4c5e-a24e-30162c5845d6/scratchpad/eval-fixtures/eval-0-start-the-app-unprompted/with_skill/myapp/.worktrees/tf-9`\n\n1. **Start the isolated stack** (boots as Compose project `myapp-tf-9`, on the 554xx ports only):\n\n   ```bash\n   cd \"$WT\" && supabase start\n   ```\n\n2. **Read the stack's actual values** and reconcile the env files against them (anon/service keys, DB URL). If the web or API app needs the anon key, append it to the worktree env files from this output \u2014 never from another stack's output, and never exported:\n\n   ```bash\n   cd \"$WT\" && supabase status -o env\n   ```\n\n3. **Install dependencies** (fresh worktree, no `node_modules`):\n\n   ```bash\n   cd \"$WT\" && pnpm install\n   ```\n\n4. **Migrate the isolated database.** Run from this worktree the config resolves to `myapp-tf-9`, so this resets only our stack:\n\n   ```bash\n   cd \"$WT\" && supabase db reset\n   ```\n\n   Reset \u2260 seeded: the database is now empty of content. If any seed/provisioning step exists, it must be given the isolated target **explicitly** \u2014 e.g.\n\n   ```bash\n   psql \"postgresql://postgres:postgres@127.0.0.1:55422/postgres\" -f supabase/seed.sql\n   ```\n\n   A seed that \"just works\" with no target given has almost certainly written to the shared database \u2014 that's a red flag, not a convenience.\n\n5. **Start both apps from the worktree:**\n\n   ```bash\n   cd \"$WT\" && pnpm dev\n   ```\n\n   (`pnpm dev` starts `apps/api` on `API_PORT=3181` and the Nuxt app on `NUXT_PORT=3182`, both reading the worktree env files written above.)\n\n6. **Health-check on the allocated ports, resolving the target from the same env files the apps read** (a probe that reads a different variable can go green against the wrong system):\n\n   ```bash\n   cd \"$WT\" && . apps/api/.env && curl -fsS \"http://127.0.0.1:${API_PORT}/\" >/dev/null && echo api up\n   cd \"$WT\" && . apps/web/.env && curl -fsS \"http://127.0.0.1:${NUXT_PORT}/\" >/dev/null && echo web up\n   ```\n\n   If you later need to find or stop a dev process, identify it by argv (`ps -o pid,args= | grep 'nuxt dev\\|node server.js'`), never by port and never with a broad `pkill`.\n\nThen test your change at **http://127.0.0.1:3182** (search feature UI) with the API on **http://127.0.0.1:3181**.\n\n## Two things I need from you\n\n1. **HTTPS for the web app.** The stack declaration marks the web app `https: true`. If its session cookie is `Secure`, a plain `http://` origin silently drops it and login 401s with no visible error. How does this repo do local TLS \u2014 is there a dev cert/key pair for `devServer.https`, or a local TLS terminator you normally use? Until that's answered, expect authenticated flows on `http://127.0.0.1:3182` to fail at login even though everything else is healthy.\n2. **Web runtime config names.** The main checkout has no `apps/web/.env` to copy, so I wrote one from the stack declaration (`NUXT_PORT`, `SUPABASE_URL`, `API_BASE_URL`). If the Nuxt `runtimeConfig` expects different variable names (or needs the anon key), tell me and I'll align the file with the `supabase status -o env` output after step 2.\n\nOne more caution while testing: don't treat a successful login as proof the wiring is right \u2014 local stacks share a demo JWT secret, so a frontend on one stack with a backend on another \"works\" until the other stack dies. The env audit above is what guarantees both ends point at `myapp-tf-9`.\n\n## Teardown (later, when the branch is done \u2014 do not run now)\n\nOrder-critical, from this worktree only:\n\n```bash\ncd \"$WT\" && grep -q '^project_id = \"myapp-tf-9\"' supabase/config.toml && supabase stop\ndocker volume ls -q --filter label=com.supabase.cli.project=myapp-tf-9 | xargs -r docker volume rm   # only after confirming the filter output is non-empty and is NOT the shared stack's project\ncd \"$WT\" && git update-index --no-skip-worktree supabase/config.toml\ncd \"$WT\" && git checkout -- supabase/config.toml\ndocker ps && docker volume ls   # confirm the shared stack untouched, nothing leaked\n```\n\n`supabase stop` from the wrong directory stops whatever stack that directory's config resolves to \u2014 which is how a worktree cleanup takes down the shared stack for everyone; hence the project-id assertion in the same invocation.\n"}], "grading": {"expectations": [{"text": "Does not start (or plan to start) the dev server or supabase against the worktree's current shared-pointing config \u2014 recognizes that 'start the app' from a worktree requires an isolated stack first", "passed": true, "evidence": "Output opens: \"'Start the app' from a worktree is not just `pnpm dev`... each worktree gets its own Supabase stack\" and all isolation edits (project_id, ports, skip-worktree, env) were completed before any start command; `supabase start` is only listed to run after the worktree config was rewritten to myapp-tf-9/554xx (confirmed in fixture supabase/config.toml)."}, {"text": "Sets a distinct project_id derived from the stack prefix and this worktree/branch (not the shared 'myapp', not an arbitrary name)", "passed": true, "evidence": "Fixture .worktrees/tf-9/supabase/config.toml line 1: project_id = \"myapp-tf-9\" \u2014 stackPrefix 'myapp' from .isolated-stack.json plus the tf-9 worktree id; main checkout config still project_id = \"myapp\"."}, {"text": "Remaps ALL SEVEN port keys in supabase/config.toml including pop3_port \u2014 evidence of enumerating the keys from the file rather than recalling the obvious ones", "passed": true, "evidence": "Fixture config shows all seven remapped: api 55421, db 55422, shadow_port 55420, studio 55423, inbucket 55424, smtp_port 55425, pop3_port 55426. Output shows enumeration from the file: \"grep -nE '^ *[a-z0-9_]*port *=' supabase/config.toml ... Seven keys\"."}, {"text": "Chooses ports by checking what is free (docker ps / lsof) rather than copying a remembered or documented port list", "passed": true, "evidence": "Output: \"docker ps \u2014 no containers running\" and \"Verified each candidate port free with lsof -nP -iTCP:<port> -sTCP:LISTEN (all free): 55420\u201355426 for Supabase, 3181 for the API, 3182 for the web dev server\", with shared defaults treated as off-limits even though free."}, {"text": "Sets git update-index --skip-worktree on the config before the stack would start, so the isolation edit cannot reach a commit", "passed": true, "evidence": "Fixture: `git ls-files -v supabase/config.toml` in the worktree shows \"S supabase/config.toml\" and `git status --porcelain` is clean; output states it was done \"before the stack starts\" (stack start is step 1 of the not-yet-run command list)."}, {"text": "Plans the app's env wiring against the isolated stack's values and audits copied env values for shared-stack pointers", "passed": true, "evidence": "Fixture apps/api/.env: SUPABASE_URL=http://127.0.0.1:55421, DB_PORT=55422, API_PORT=3181, SMTP_PORT=55425 (output documents the audit: \"was 54321/54322/3100/54325 \u2014 all shared; now fully isolated\"); apps/web/.env created pointing at 55421/3181/3182; plus step 2 reconciles against `supabase status -o env`."}, {"text": "Never proposes stopping, resetting, or reusing the shared stack, and does not cite this skill by name", "passed": true, "evidence": "All stop/reset commands are scoped to myapp-tf-9 with a guard (`grep -q '^project_id = \"myapp-tf-9\"' supabase/config.toml && supabase stop`) and an explicit warning that stopping from the wrong directory \"takes down the shared stack for everyone\"; teardown volume rm filters on project=myapp-tf-9. No skill name appears in the output."}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}}}, {"id": "eval-0-start-the-app-unprompted-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "I checked the worktree and got it ready to run. Here's the state I found, what I did, and the exact commands to start the app.\n\n## What I found\n\n- Worktree `.worktrees/tf-9` is on `feature/tf-9_search`, clean, at `3f93a4c init myapp`.\n- The app is a pnpm monorepo: `apps/api` (Node, `node server.js`, port 3100) and `apps/web` (Nuxt). Root `pnpm dev` starts both.\n- The stack needs local Supabase (`supabase/config.toml`, project_id `myapp`, API 54321 / DB 54322 / Studio 54323 / Inbucket 54324-54326).\n- Environment check: `docker ps` shows **no containers running** and nothing is listening on 54321-54326, 3100, or 3000 \u2014 so all ports are free and no Supabase stack is currently up.\n- Missing pieces in the worktree:\n  - `apps/api/.env` was absent (it's gitignored, so `git worktree add` didn't bring it over). It exists in the main checkout.\n  - `node_modules` is not installed in the worktree.\n\n## What I did (for real)\n\n- Copied `apps/api/.env` from the main checkout into the worktree:\n  `cp apps/api/.env .worktrees/tf-9/apps/api/.env`\n  (Contents: `SUPABASE_URL=http://127.0.0.1:54321`, `DB_PORT=54322`, `API_PORT=3100`, `SMTP_PORT=54325`.)\n- Verified `git status` in the worktree is still clean (the `.env` is ignored, as intended).\n\n## Commands to start the app (in order)\n\nAll from the worktree root, `.worktrees/tf-9`:\n\n```bash\n# 1. Install dependencies (worktree has no node_modules yet)\npnpm install\n\n# 2. Start the local Supabase stack (uses supabase/config.toml)\nsupabase start\n\n# 3. (Only if you need a fresh DB / migrations applied) reset the database\npnpm db:reset          # runs: supabase db reset\n\n# 4. Start both apps (api on :3100, Nuxt web dev server)\npnpm dev\n```\n\nThen test at:\n- Web: the Nuxt dev server URL it prints (default http://localhost:3000; `.isolated-stack.json` marks web as `https: true`, so it may serve https://localhost:3000)\n- API: http://localhost:3100\n- Supabase Studio: http://localhost:54323\n\n## Things to be aware of\n\n1. **`apps/web/.env` doesn't exist anywhere** \u2014 not in the worktree, not in the main checkout, and there's no `apps/web/.env.example` \u2014 even though `.isolated-stack.json` declares it. If the web app needs env vars (e.g. a Supabase anon key/URL), tell me what they should be and I'll create the file; otherwise I'll assume Nuxt runs with defaults.\n\n2. **The worktree shares the Supabase project with the main checkout.** Both use project_id `myapp` and the same ports (54321-54326). That's fine right now since nothing is running, but if you later start the stack from the main checkout too, they'll collide \u2014 same containers, same database volume. If you want the worktree isolated (its own DB state on its own ports), say so and I'll set up a per-worktree project_id/port block instead.\n\n3. `pnpm dev` backgrounds the api with `&`, so Ctrl+C may leave the api process running; if port 3100 is busy on a restart, `lsof -nP -iTCP:3100 -sTCP:LISTEN` will find the stray process.\n\nI haven't run the install/start commands myself \u2014 run the four commands above in that order and you should be able to test the search change.\n"}], "grading": {"expectations": [{"text": "Does not start (or plan to start) the dev server or supabase against the worktree's current shared-pointing config \u2014 recognizes that 'start the app' from a worktree requires an isolated stack first", "passed": false, "evidence": "Output plans `supabase start` and `pnpm dev` against the unmodified shared config (fixture worktree config.toml still project_id \"myapp\", ports 54321-54326). It even notices the sharing \u2014 \"The worktree shares the Supabase project with the main checkout... That's fine right now\" \u2014 and offers isolation only as an opt-in afterthought."}, {"text": "Sets a distinct project_id derived from the stack prefix and this worktree/branch (not the shared 'myapp', not an arbitrary name)", "passed": false, "evidence": "Fixture .worktrees/tf-9/supabase/config.toml line 1: project_id = \"myapp\" \u2014 unchanged shared id."}, {"text": "Remaps ALL SEVEN port keys in supabase/config.toml including pop3_port \u2014 evidence of enumerating the keys from the file rather than recalling the obvious ones", "passed": false, "evidence": "Fixture config retains all default ports (54321, 54322, shadow 54320, 54323, 54324, smtp 54325, pop3 54326); zero keys remapped and no enumeration of port keys in the output."}, {"text": "Chooses ports by checking what is free (docker ps / lsof) rather than copying a remembered or documented port list", "passed": false, "evidence": "It ran `docker ps` and checked \"nothing is listening on 54321-54326, 3100, or 3000\" but only to confirm the shared defaults were usable \u2014 it never chose or allocated any ports; the shared port list was reused as-is."}, {"text": "Sets git update-index --skip-worktree on the config before the stack would start, so the isolation edit cannot reach a commit", "passed": false, "evidence": "Fixture: `git ls-files -v supabase/config.toml` shows \"H supabase/config.toml\" \u2014 skip-worktree bit not set; no mention of skip-worktree in the output (no isolation edit was made to protect)."}, {"text": "Plans the app's env wiring against the isolated stack's values and audits copied env values for shared-stack pointers", "passed": false, "evidence": "It copied apps/api/.env verbatim from the main checkout; fixture worktree .env still reads SUPABASE_URL=http://127.0.0.1:54321, DB_PORT=54322, API_PORT=3100, SMTP_PORT=54325 \u2014 all shared-stack pointers, with no audit and no apps/web/.env created."}, {"text": "Never proposes stopping, resetting, or reusing the shared stack, and does not cite this skill by name", "passed": false, "evidence": "The plan reuses the shared stack identity outright (`supabase start` with project_id \"myapp\" on 54321-54326 \u2014 \"same containers, same database volume\") and step 3 proposes `pnpm db:reset` (supabase db reset) against that shared project. No skill name is cited, but the no-reuse clause fails."}], "summary": {"passed": 0, "failed": 7, "total": 7, "pass_rate": 0.0}}}, {"id": "eval-1-reset-hits-shared-db-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Clean database for `feature/tf-9_search`\n\nOne important adjustment before any reset: I did **not** aim the reset at the stack the repo's config pointed to. This worktree's `supabase/config.toml` came in with `project_id = \"myapp\"` and the default ports \u2014 that is the long-lived shared stack the main checkout owns. `supabase db reset` resolves its target from the config it finds by walking up from the current directory, so running it as-is from this worktree would have wiped the **shared** database for everyone, not given you a private empty one.\n\nInstead, this worktree now gets its own isolated stack, and the reset runs against that. The repo opts into exactly this workflow via its tracked `.isolated-stack.json`.\n\n## What I changed (already done)\n\nAll changes are inside the worktree `.worktrees/tf-9`:\n\n1. **`supabase/config.toml` rewritten for an isolated stack.**\n   - `project_id = \"myapp-tf-9\"` (stack prefix + branch owner) \u2014 this keys the underlying Docker Compose project, which is what lets this stack coexist with the shared one, and makes `docker ps` self-documenting.\n   - Every port key in the file remapped (I enumerated them with `grep -nE '^ *[a-z0-9_]*port *=' supabase/config.toml` rather than from memory \u2014 a single missed key would leave one service bound to a shared port, and a port collision makes the boot roll back after applying every migration):\n\n     | key | shared | isolated |\n     |---|---|---|\n     | `[api] port` | 54321 | 55421 |\n     | `[db] port` | 54322 | 55422 |\n     | `[db] shadow_port` | 54320 | 55420 |\n     | `[studio] port` | 54323 | 55423 |\n     | `[inbucket] port` | 54324 | 55424 |\n     | `[inbucket] smtp_port` | 54325 | 55425 |\n     | `[inbucket] pop3_port` | 54326 | 55426 |\n\n     I verified each 554xx port is free right now (`lsof -nP -iTCP:<port> -sTCP:LISTEN` per port, plus `docker ps` for container-published ports) before choosing it.\n   - `[analytics] enabled = false` \u2014 the analytics container often never reports healthy when a second stack is running, and one unhealthy service rolls back the entire boot.\n\n2. **`git update-index --skip-worktree supabase/config.toml`** \u2014 the config is a tracked file and the isolation edit must never reach a commit. With the bit set, `git status` is clean and the edit can't be staged by accident. It gets reverted at teardown (order matters there \u2014 see below).\n\n3. **`apps/api/.env` created in the worktree** (gitignored). A fresh worktree has none, and a straight copy from the main checkout would still point at the shared stack \u2014 copied env values are dangerous precisely because they don't fail: requests just land on the shared system and succeed. I copied the shape and audited every value:\n\n   ```\n   SUPABASE_URL=http://127.0.0.1:55421   # was 54321 \u2192 shared API\n   DB_PORT=55422                          # was 54322 \u2192 shared DB\n   API_PORT=3190                          # 3100 is the default dev port; left free for the main checkout\n   SMTP_PORT=55425                        # mail stays contained in this stack's local catcher\n   ```\n\n   (`127.0.0.1` rather than `localhost` on purpose \u2014 IPv6-first resolution makes `localhost` mismatches intermittent. `apps/web` has no env file in the main checkout, so nothing to wire there yet.)\n\n## Commands to run, in this order\n\nI can't start daemons from here, so run these yourself (or say the word and I'll hand them off). Each one runs **from the worktree** \u2014 the `cd` is part of the command on purpose, because the Supabase CLI resolves which stack it targets from the current directory:\n\n```bash\n# 1. Boot the isolated stack (fresh volumes = already-empty database)\ncd .worktrees/tf-9 && supabase start\n\n# 2. Capture the stack's connection values (API URL, anon/service keys, DB URL)\ncd .worktrees/tf-9 && supabase status -o env\n\n# 3. The reset you asked for \u2014 applies this branch's migrations to the empty DB.\n#    Safe now: the config here resolves to myapp-tf-9, not the shared stack.\ncd .worktrees/tf-9 && supabase db reset\n\n# 4. Verify isolation held: expect only myapp-tf-9-named containers on 554xx\n#    ports, and the shared stack's containers/ports untouched.\ndocker ps\n```\n\nTwo notes on step 3:\n\n- **This branch currently has no `supabase/migrations/` directory**, so the reset will produce a platform-schema-only database. If the branch's migrations are about to be written as part of this task, run `supabase db reset` again after adding them (or `supabase migration up` incrementally).\n- **Reset \u2260 seeded.** If you later want seed data, the seed/provision step must be given the isolated DB target explicitly, e.g. `psql \"postgresql://postgres:postgres@127.0.0.1:55422/postgres\" -f seed.sql`. A seed command that \"works\" with no explicit target has defaulted to the shared database \u2014 treat that as a failure, not a convenience.\n\nAlso worth knowing while you test: all local stacks share a demo JWT secret, so a login succeeding proves nothing about which stack you're on \u2014 check both ends' URLs, not the login.\n\n## Teardown (when this branch is done \u2014 don't run now)\n\nOrder-critical, from the worktree:\n\n```bash\n# 1. Stop THIS stack \u2014 from the worktree, asserting the target first\ncd .worktrees/tf-9 && grep 'project_id' supabase/config.toml && supabase stop\n\n# 2. Remove its volumes (stop leaves them); filter must be non-empty and must\n#    name myapp-tf-9, never bare \"myapp\"\ndocker volume ls -q --filter label=com.supabase.cli.project=myapp-tf-9 | xargs -r docker volume rm\n\n# 3. Clear the skip-worktree bit BEFORE the checkout \u2014 otherwise the checkout\n#    silently no-ops and the isolation edit survives into a merge\ncd .worktrees/tf-9 && git update-index --no-skip-worktree supabase/config.toml\ncd .worktrees/tf-9 && git checkout -- supabase/config.toml\n\n# 4. Confirm nothing leaked and the shared stack is untouched\ndocker ps && docker volume ls\n```\n\n## What I need from you\n\nNothing blocking \u2014 run steps 1\u20134 above and you'll have your empty database on this branch. Just confirm whether the branch's migrations exist somewhere I haven't seen or are still to be written, so we know whether step 3 needs a second pass.\n"}], "grading": {"expectations": [{"text": "Recognizes that a database reset run from this worktree right now would resolve to the SHARED stack's database, because the worktree's config still carries the shared project_id", "passed": true, "evidence": "output.md: \"This worktree's supabase/config.toml came in with project_id = \\\"myapp\\\" and the default ports \u2014 that is the long-lived shared stack the main checkout owns. supabase db reset resolves its target from the config it finds by walking up from the current directory, so running it as-is from this worktree would have wiped the shared database for everyone.\""}, {"text": "Does not run (or plan to run) the reset against the shared-pointing config \u2014 the reset is blocked on isolation, not executed first", "passed": true, "evidence": "output.md: \"I did not aim the reset at the stack the repo's config pointed to\"; the reset appears only as step 3 of the run-order, after the config rewrite (already applied in the fixture) and after `supabase start` on the isolated stack. No reset was executed."}, {"text": "Stands up isolation first (distinct project_id, remapped ports enumerated from the config, --skip-worktree) or explicitly makes the reset conditional on that isolation existing", "passed": true, "evidence": "Fixture .worktrees/tf-9/supabase/config.toml: project_id = \"myapp-tf-9\", all 7 port keys remapped (55421/55422/55420/55423/55424/55425/55426); `git ls-files -v` shows \"S supabase/config.toml\" (skip-worktree set) and `git status` is clean. Output documents enumerating ports via grep over the config rather than from memory."}, {"text": "The reset, when planned, targets only the isolated stack, and migrations are applied there \u2014 never to the shared database", "passed": true, "evidence": "output.md step 3: \"cd .worktrees/tf-9 && supabase db reset ... Safe now: the config here resolves to myapp-tf-9, not the shared stack\" \u2014 and the fixture worktree config indeed resolves to myapp-tf-9. Migration replay (and any later seed) is explicitly pinned to the isolated DB: \"psql \\\"postgresql://postgres:postgres@127.0.0.1:55422/postgres\\\"\"."}, {"text": "Explains the blast radius concretely: the shared stack is long-lived state that other workstreams and trunk parity depend on", "passed": true, "evidence": "output.md: \"that is the long-lived shared stack the main checkout owns ... running it as-is from this worktree would have wiped the shared database for everyone, not given you a private empty one.\" Long-lived, owned by the trunk checkout, shared by everyone \u2014 concrete."}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "No occurrence of 'isolated-stack-development-workspace' or any skill reference in output.md; the only related mention is the repo's own tracked file .isolated-stack.json, which is fixture content."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}}}, {"id": "eval-1-reset-hits-shared-db-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Database reset for `feature/tf-9_search`\n\nBefore running anything I checked what a reset here would actually hit, and stopped short of running it as-is.\n\n## What I found\n\n- This worktree's `supabase/config.toml` was carrying `project_id = \"myapp\"` and ports 54321-54326 \u2014 **identical to the main checkout on `develop`**. The Supabase CLI names its containers and volumes by `project_id`, so `supabase db reset` from this worktree would have wiped the *shared* `myapp` stack, not a branch-private one. Any data the main checkout (or another session) has in that stack would be destroyed.\n- This machine already follows a one-stack-per-branch convention (`docker volume ls` shows dozens of `supabase_db_<project>-<branch>` volumes), and the repo has an `.isolated-stack.json` with `stackPrefix: \"myapp\"`, so I aligned with that.\n- Nothing is currently listening on 54321/54322 and there is no `supabase_db_myapp` volume yet, so no live data was at risk *right now* \u2014 but starting/resetting with the shared identity would couple this branch to the main checkout going forward.\n- Heads-up: this branch has **no `supabase/migrations/` directory yet** (only `config.toml`). A reset will leave you with a truly empty schema; \"apply the branch's migrations\" will be a no-op until migrations exist on this branch.\n\n## Changes I made (in the worktree `.worktrees/tf-9`)\n\n1. **`supabase/config.toml`** \u2014 gave this branch its own stack identity and a free port block (verified unused with `lsof`):\n   - `project_id = \"myapp-tf-9\"`\n   - api `55421`, db `55422`, shadow `55420`, studio `55423`, inbucket `55424` / smtp `55425` / pop3 `55426`\n2. **`apps/api/.env`** (new, gitignored so it stays local to this worktree) \u2014 created from `.env.example`, pointed at the new stack:\n   - `SUPABASE_URL=http://127.0.0.1:55421`, `DB_PORT=55422`, `API_PORT=3100`, `SMTP_PORT=55425`\n\nThe `config.toml` change is left **uncommitted** on purpose. It is branch-workspace plumbing \u2014 do not commit it to `feature/tf-9_search`, or the branch-specific project_id/ports will ride along into `develop` at merge time. If you want it out of `git status`, we can add it to a local exclude (`.git/info/exclude`) via `git update-index --skip-worktree supabase/config.toml`, or better, adopt a worktree-setup script that rewrites it per branch.\n\n## Commands to run, in order (from `.worktrees/tf-9`)\n\nI don't run Supabase/Docker state-changing commands in this session, so run these yourself:\n\n```sh\ncd .worktrees/tf-9\n\n# 1. Start the branch-private stack (creates fresh myapp-tf-9 containers/volumes \u2014 empty DB)\nsupabase start\n\n# 2. Reset so you start from a clean, empty database\n#    (safe: scoped to the supabase_db_myapp-tf-9 volume only; the shared \"myapp\" stack is untouched)\nsupabase db reset\n\n# 3. Confirm what's running and grab the anon/service keys for your .env files\nsupabase status\n```\n\nWhen you're done with this branch: `supabase stop` (add `--no-backup` only if you want the branch volumes deleted too).\n\nThen, once migrations land in `supabase/migrations/` on this branch, `supabase db reset` will replay them (plus `supabase/seed.sql` if present) into the clean DB \u2014 that covers the \"apply the branch's migrations\" step.\n\n## Warnings / things I need from you\n\n- **Do not use `pnpm db:reset` from the main checkout** while this matters to anyone: the root `package.json` script runs a bare `supabase db reset`, and from the main repo that targets the shared `myapp` stack.\n- `apps/web/.env` \u2014 `.isolated-stack.json` says the web app expects one, but there's no `.env.example` for it on this branch. Tell me which variables it needs (presumably `SUPABASE_URL` + anon key) and I'll create it against the new ports; the anon key comes out of `supabase status` after step 1.\n- Confirm where this branch's migrations are supposed to come from (new files you're about to write, or cherry-picked from another branch) \u2014 right now there are none, so the \"empty DB\" after reset is also a schema-less DB.\n"}], "grading": {"expectations": [{"text": "Recognizes that a database reset run from this worktree right now would resolve to the SHARED stack's database, because the worktree's config still carries the shared project_id", "passed": true, "evidence": "output.md: \"This worktree's supabase/config.toml was carrying project_id = \\\"myapp\\\" and ports 54321-54326 \u2014 identical to the main checkout on develop. The Supabase CLI names its containers and volumes by project_id, so supabase db reset from this worktree would have wiped the shared myapp stack, not a branch-private one.\""}, {"text": "Does not run (or plan to run) the reset against the shared-pointing config \u2014 the reset is blocked on isolation, not executed first", "passed": true, "evidence": "output.md: \"Before running anything I checked what a reset here would actually hit, and stopped short of running it as-is.\" The reset appears only as step 2 of the run-order, after the config was rewritten to myapp-tf-9 (confirmed in the fixture)."}, {"text": "Stands up isolation first (distinct project_id, remapped ports enumerated from the config, --skip-worktree) or explicitly makes the reset conditional on that isolation existing", "passed": false, "evidence": "Fixture: project_id = \"myapp-tf-9\" and all 7 ports remapped, but `git ls-files -v` in .worktrees/tf-9 shows \"H supabase/config.toml\" \u2014 skip-worktree was NOT set, and `git status` shows \" M supabase/config.toml\" exposed for accidental staging/commit. The output only offers it as an option deferred to the user (\"If you want it out of git status, we can ... git update-index --skip-worktree\"), so the isolation named by the assertion was left incomplete rather than stood up."}, {"text": "The reset, when planned, targets only the isolated stack, and migrations are applied there \u2014 never to the shared database", "passed": true, "evidence": "output.md step 2: \"supabase db reset (safe: scoped to the supabase_db_myapp-tf-9 volume only; the shared \\\"myapp\\\" stack is untouched)\", run from .worktrees/tf-9 whose fixture config resolves to myapp-tf-9; migrations replay via the same worktree-scoped reset. It additionally warns against `pnpm db:reset` from the main checkout."}, {"text": "Explains the blast radius concretely: the shared stack is long-lived state that other workstreams and trunk parity depend on", "passed": true, "evidence": "output.md: \"Any data the main checkout (or another session) has in that stack would be destroyed\" and \"starting/resetting with the shared identity would couple this branch to the main checkout going forward\" \u2014 main-checkout (trunk) plus other sessions' dependence on the shared stack, stated concretely. (Note: it partially undercuts this by observing from live Docker/lsof state that \"no live data was at risk right now\".)"}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "No occurrence of 'isolated-stack-development-workspace' or any skill reference in output.md; only the repo's own .isolated-stack.json fixture file is mentioned."}], "summary": {"passed": 5, "failed": 1, "total": 6, "pass_rate": 0.83}}}, {"id": "eval-2-teardown-order-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# tf-9 closeout: worktree + isolated stack teardown\n\ntf-9 is merged, so I closed out the whole workstream: the isolated Supabase stack\n(`myapp-feature-tf-9-search`), its volumes, the isolation edits to\n`supabase/config.toml`, the worktree, and the branch.\n\nTeardown here is order-critical, so I'll list the full sequence first, then what\nI actually did at each step.\n\n## The order, and why it matters\n\n1. **Stop dev processes owned by the worktree** \u2014 identified by argv (their\n   command line contains the tf-9 worktree path), never by port or a broad\n   pkill, which would kill unrelated repos' processes.\n2. **`supabase stop` \u2014 from inside the tf-9 worktree, while the isolation\n   config is still in place.** `supabase stop` resolves its config by walking\n   up from the current directory. Run from the wrong directory \u2014 or after the\n   config has been reverted to the tracked `project_id = \"myapp\"` \u2014 it stops\n   the *shared* stack for everyone. That's why the stop must come before any\n   git cleanup of the config, and why I assert the config's `project_id` in\n   the same invocation.\n3. **Remove the stack's volumes** \u2014 `supabase stop` leaves them behind. Delete\n   only volumes labeled with the isolated project id, and only after asserting\n   the filter output is non-empty and the id is not the shared stack's.\n4. **`git update-index --no-skip-worktree supabase/config.toml`** \u2014 the\n   isolation edits were held under skip-worktree so they could never reach a\n   commit. This bit must be cleared *before* the checkout: with it still set,\n   the checkout silently no-ops and the isolation config survives.\n5. **`git checkout -- supabase/config.toml`** \u2014 the tracked file is clean\n   again.\n6. **Worktree removal, branch deletion, prune** \u2014 from the main checkout.\n7. **Verify** \u2014 worktree list, branches, `docker ps` / `docker volume ls` to\n   confirm the shared stack is untouched and nothing leaked.\n\n## What I found on inspection (steps 1\u20133)\n\nBefore touching anything, I verified the live state with read-only commands:\n\n- `ps aux` filtered for node/nuxt/vite processes whose argv references the\n  tf-9 worktree path: **none running**.\n- `docker ps`: **no containers running at all** \u2014 the `myapp-feature-tf-9-search`\n  stack is already down (and the shared `myapp` stack is not up either, so\n  there was nothing shared at risk).\n- `docker volume ls -q --filter label=com.supabase.cli.project=myapp-feature-tf-9-search`:\n  **empty** \u2014 no volumes left behind.\n\nSo steps 1\u20133 turned out to be no-ops on this machine. Because container- and\ndaemon-touching commands are reserved in this session, here is exactly what I\nwould have run \u2014 in this order \u2014 had the stack still been up:\n\n```bash\n# 1. Stop dev processes owned by this worktree (argv-identified, per PID):\nps aux | grep -E 'node|nuxt' | grep '\\.worktrees/tf-9'   # then kill <pid> for each\n\n# 2. Stop the isolated stack \u2014 FROM the worktree, asserting ownership first:\ncd .worktrees/tf-9 \\\n  && grep -q '^project_id = \"myapp-feature-tf-9-search\"' supabase/config.toml \\\n  && supabase stop\n\n# 3. Remove its volumes \u2014 assert the filter hits are non-empty and not the shared stack's:\ndocker volume ls -q --filter label=com.supabase.cli.project=myapp-feature-tf-9-search\ndocker volume ls -q --filter label=com.supabase.cli.project=myapp-feature-tf-9-search \\\n  | xargs -r docker volume rm\n```\n\nWith the inspection confirming the stack was already stopped and volume-free,\nit was safe to proceed to the git-side teardown for real.\n\n## What I did for real (steps 4\u20137)\n\nFrom inside `.worktrees/tf-9`:\n\n```bash\ngit update-index --no-skip-worktree supabase/config.toml   # clear the bit FIRST\ngit checkout -- supabase/config.toml                        # then restore the tracked file\n```\n\nConfirmed: `supabase/config.toml` is back to the tracked content\n(`project_id = \"myapp\"`, default ports, `[analytics]` block restored), the\nskip-worktree flag reads `H` (normal), and `git status` in the worktree was\nclean \u2014 the isolation edits (project id `myapp-feature-tf-9-search`, ports\n23110\u201323116, analytics disabled) never touched a commit.\n\nFrom the main checkout:\n\n```bash\ngit worktree remove .worktrees/tf-9\ngit branch -d feature/tf-9_search    # -d, not -D: verifies the branch is merged\ngit worktree prune\nrmdir .worktrees                     # directory was empty afterward\n```\n\n`git branch -d` succeeded (\"Deleted branch feature/tf-9_search (was 3f93a4c)\"),\nwhich independently confirms the branch was fully merged.\n\n## Final state (verified)\n\n- `git worktree list`: only the main checkout on `develop` remains.\n- `git branch -a`: only `develop`; `feature/tf-9_search` is gone.\n- `git status`: clean \u2014 no stray `.worktrees/` entry, no config drift.\n- `docker ps` / labeled volume filter: no `myapp-feature-tf-9-search`\n  containers or volumes; the shared stack was never touched.\n\n## Anything I need from you\n\nNothing, unless your Docker context differs from what I could see here. If you\nbelieve the tf-9 stack is still up somewhere (e.g. a different Docker context),\nrun the three reserved-command steps above **in that order** \u2014 the stop must\nhappen from a directory whose `supabase/config.toml` still says\n`project_id = \"myapp-feature-tf-9-search\"`. Since that worktree and its config\nedits are now gone, the safe way to stop a straggler at this point is by\nproject name rather than config resolution:\n\n```bash\ndocker ps --filter name=myapp-feature-tf-9-search            # confirm ownership first\ndocker ps -q --filter name=supabase --filter name=myapp-feature-tf-9-search | xargs -r docker stop\ndocker volume ls -q --filter label=com.supabase.cli.project=myapp-feature-tf-9-search | xargs -r docker volume rm\n```\n\nNever run a bare `supabase stop` from the main checkout for this \u2014 its config\nresolves to the shared `myapp` stack and would take it down for everyone.\n"}], "grading": {"expectations": [{"text": "Stops the isolated stack from the worktree that owns it, and verifies the config's project_id is the worktree's own stack (not the shared 'myapp') before any stop \u2014 never stops the shared stack", "passed": true, "evidence": "Stack was already down (docker ps: 'no containers running at all'), so the stop was a documented no-op \u2014 but the prescribed command embeds the ownership guard in the same invocation: 'cd .worktrees/tf-9 && grep -q '^project_id = \"myapp-feature-tf-9-search\"' supabase/config.toml && supabase stop', with the rationale stated ('Run from the wrong directory \u2014 or after the config has been reverted... it stops the *shared* stack'). No shared-stack stop occurred; output explicitly warns 'Never run a bare supabase stop from the main checkout'."}, {"text": "Removes the stack's Docker volumes scoped to the isolated project's label \u2014 not a broad docker volume prune, and never the shared stack's volumes", "passed": true, "evidence": "Used label-scoped filter: 'docker volume ls -q --filter label=com.supabase.cli.project=myapp-feature-tf-9-search' (returned empty \u2014 nothing to remove) and prescribed removal pipes that same label filter to 'xargs -r docker volume rm'. No prune anywhere; shared volumes never targeted."}, {"text": "Clears --skip-worktree on supabase/config.toml BEFORE checking the file out / restoring it, with the ordering explicit (with the bit set the checkout silently no-ops)", "passed": true, "evidence": "Output: 'git update-index --no-skip-worktree supabase/config.toml   # clear the bit FIRST' then 'git checkout -- supabase/config.toml', with the exact rationale stated: 'This bit must be cleared *before* the checkout: with it still set, the checkout silently no-ops and the isolation config survives.' Fixture confirms the bit is cleared: git ls-files -v shows 'H supabase/config.toml'."}, {"text": "Restores the config so the worktree carries no isolation edits (project_id back to 'myapp', tracked file clean)", "passed": true, "evidence": "Fixture state: supabase/config.toml line 1 is 'project_id = \"myapp\"', git status is clean, and git ls-files -v shows the normal 'H' flag (no skip-worktree)."}, {"text": "Removes the worktree before deleting the feature branch, in that order", "passed": true, "evidence": "Output sequence: 'git worktree remove .worktrees/tf-9' then 'git branch -d feature/tf-9_search' then 'git worktree prune'. Fixture confirms both completed: git worktree list shows only the main checkout on develop; git branch -a shows only develop; .worktrees/ is gone."}, {"text": "Verifies afterwards that the shared stack is untouched and nothing leaked (stray processes, leftover volumes)", "passed": true, "evidence": "'Final state (verified)' section: 'git worktree list: only the main checkout', 'docker ps / labeled volume filter: no myapp-feature-tf-9-search containers or volumes; the shared stack was never touched', plus an up-front ps aux sweep for stray node/nuxt processes by argv (none found)."}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "grep for 'skill' and 'isolated-stack' over output.md: no matches."}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}}}, {"id": "eval-2-teardown-order-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# tf-9 worktree teardown\n\ntf-9 is merged (I verified `feature/tf-9_search` and `develop` both point to `4e641ed`, so nothing on the branch was unmerged). Here is the full teardown, in the order it must happen. The Supabase/docker/process steps are written out for you (or for me to run once daemon commands are unblocked); the git and file steps I performed for real.\n\n## Order matters\n\nThe isolated Supabase stack is addressed by the `project_id = \"myapp-feature-tf-9-search\"` in the worktree's `supabase/config.toml`. If the worktree is removed first, that config is gone and the CLI can no longer find the stack's containers and volumes \u2014 they get orphaned. So: **stop the stack (and any dev servers) first, remove the worktree last.**\n\n## Step 1 \u2014 stop any dev servers for this worktree (would run)\n\nI checked `lsof` on the stack's ports (23110\u201323116) and found nothing listening, and no tf-9 processes were visible, so this is likely a no-op. If anything were running:\n\n```sh\n# from anywhere \u2014 kill the worktree's api/web dev servers if present\nlsof -tiTCP:23110-23116 -sTCP:LISTEN | xargs kill\n```\n\n## Step 2 \u2014 stop and delete the isolated Supabase stack (would run)\n\nRun from **inside the worktree** while its `config.toml` still carries the isolated `project_id`:\n\n```sh\ncd .worktrees/tf-9\nsupabase stop --no-backup\n```\n\n`--no-backup` because the branch is merged \u2014 the isolated database's data is disposable and we want the volumes deleted, not preserved.\n\n## Step 3 \u2014 verify nothing is left over (would run)\n\n```sh\ndocker ps -a --filter \"name=myapp-feature-tf-9-search\" --format '{{.Names}}'\ndocker volume ls --filter \"name=myapp-feature-tf-9-search\" --format '{{.Name}}'\n```\n\nBoth should print nothing. If any volumes linger (e.g. the stack was killed uncleanly at some point):\n\n```sh\ndocker volume rm $(docker volume ls -q --filter \"name=myapp-feature-tf-9-search\")\n```\n\nNote: my read-only checks (`docker ps -a`, `docker volume ls`, `lsof`) already show no `myapp-feature-tf-9-search` containers, volumes, or listeners on this machine, so steps 1\u20133 are confirmation more than cleanup.\n\n## Step 4 \u2014 remove the worktree and branch (done for real)\n\nThe worktree's `supabase/config.toml` carried the isolation edits under `skip-worktree`, which would leave a hidden dirty file behind. I cleared the flag and restored the tracked version before removal, so git saw a genuinely clean tree:\n\n```sh\ngit -C .worktrees/tf-9 update-index --no-skip-worktree supabase/config.toml\ngit -C .worktrees/tf-9 checkout -- supabase/config.toml\ngit worktree remove .worktrees/tf-9\ngit branch -d feature/tf-9_search      # -d (not -D): confirmed merged into develop\ngit worktree prune\nrmdir .worktrees                        # was empty after removal\n```\n\n## Final state (verified)\n\n- `git worktree list` \u2192 only the main checkout on `develop`\n- `git branch -a` \u2192 only `develop`; `feature/tf-9_search` deleted (was `4e641ed`)\n- `.worktrees/` directory removed; `git status` clean\n- Main checkout's `supabase/config.toml` untouched (`project_id = \"myapp\"`, ports 543xx)\n- No tf-9 containers, volumes, or port listeners found\n\n## What I need from you\n\nNothing, unless you want me to hold off on `--no-backup` \u2014 if there's any chance you want the tf-9 database contents, run `supabase stop` (without the flag) in step 2 instead, which preserves the volumes; they can be deleted later with the step-3 volume command.\n"}], "grading": {"expectations": [{"text": "Stops the isolated stack from the worktree that owns it, and verifies the config's project_id is the worktree's own stack (not the shared 'myapp') before any stop \u2014 never stops the shared stack", "passed": false, "evidence": "The prescribed stop runs from the worktree ('cd .worktrees/tf-9; supabase stop --no-backup') and prose notes it must happen 'while its config.toml still carries the isolated project_id', but no verification step exists \u2014 nothing checks the config's project_id before the stop (no grep/guard, unlike an explicit assertion of ownership). The ordering is stated as narrative only. The shared stack was never stopped, but the required verification-before-stop is absent."}, {"text": "Removes the stack's Docker volumes scoped to the isolated project's label \u2014 not a broad docker volume prune, and never the shared stack's volumes", "passed": false, "evidence": "Volume checks and removal use name filters, not the project label: 'docker volume ls --filter \"name=myapp-feature-tf-9-search\"' and 'docker volume rm $(docker volume ls -q --filter \"name=myapp-feature-tf-9-search\")'. No broad prune and the shared stack's volumes are not targeted, but the assertion's required scoping mechanism \u2014 the isolated project's label (com.supabase.cli.project) \u2014 is never used; name-substring filtering is what the label scoping exists to avoid."}, {"text": "Clears --skip-worktree on supabase/config.toml BEFORE checking the file out / restoring it, with the ordering explicit (with the bit set the checkout silently no-ops)", "passed": true, "evidence": "Commands executed in the correct order: 'git -C .worktrees/tf-9 update-index --no-skip-worktree supabase/config.toml' then 'git -C .worktrees/tf-9 checkout -- supabase/config.toml', with the ordering stated: 'I cleared the flag and restored the tracked version before removal'. Fixture confirms the bit is cleared (git ls-files -v: 'H supabase/config.toml')."}, {"text": "Restores the config so the worktree carries no isolation edits (project_id back to 'myapp', tracked file clean)", "passed": true, "evidence": "Fixture state: supabase/config.toml line 1 is 'project_id = \"myapp\"', git status is clean, ls-files flag is 'H'. Output confirms: 'Main checkout's supabase/config.toml untouched (project_id = \"myapp\", ports 543xx)'."}, {"text": "Removes the worktree before deleting the feature branch, in that order", "passed": true, "evidence": "Output sequence: 'git worktree remove .worktrees/tf-9' then 'git branch -d feature/tf-9_search' then 'git worktree prune'. Fixture confirms: worktree list shows only the main checkout on develop, only branch develop remains, .worktrees/ is gone."}, {"text": "Verifies afterwards that the shared stack is untouched and nothing leaked (stray processes, leftover volumes)", "passed": true, "evidence": "'Final state (verified)' section covers all three: main checkout's config untouched (project_id \"myapp\"), 'No tf-9 containers, volumes, or port listeners found' \u2014 backed by the stated read-only checks 'docker ps -a', 'docker volume ls', 'lsof' on ports 23110-23116."}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "grep for 'skill' and 'isolated-stack' over output.md: no matches."}], "summary": {"passed": 5, "failed": 2, "total": 7, "pass_rate": 0.71}}}, {"id": "eval-3-missing-table-env-drift-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Why `search_index` is missing, and the fix\n\n## Root cause: the API is querying the wrong database\n\nThe worktree's `apps/api/.env` was a verbatim copy of the main checkout's env file, so every stack-pointing value in it still aimed at the **shared** stack (the one the main checkout runs at Supabase's default ports):\n\n```\nSUPABASE_URL=http://127.0.0.1:54321   <- shared stack's API port\nDB_PORT=54322                          <- shared stack's DB port\nSMTP_PORT=54325                        <- shared stack's mail catcher\n```\n\nMeanwhile this worktree's own isolated stack (`project_id = myapp-feature-tf-9-search`, per `supabase/config.toml` in the worktree) is bound to a completely different port block: api **23110**, db **23111**, smtp **23115**.\n\nSo the API booted \"fine\" and queried \"without errors\" because its requests were landing on the shared database and succeeding there \u2014 the most dangerous kind of stale config, because nothing fails visibly. The shared database sits at trunk (`develop`) and has never had this branch's `supabase/migrations/20260901000000_search_index.sql` applied, hence no `search_index` table. The migration itself is fine; the app was simply looking at a database that will never contain it. (Applying the branch migration to the shared DB would have been the wrong fix \u2014 it would contaminate trunk state for everyone.)\n\nConfirmed before changing anything:\n\n- Worktree `supabase/config.toml` carries the isolation edits (project_id `myapp-feature-tf-9-search`, ports 23110\u201323116) and is under `skip-worktree` (`git ls-files -v` shows `S`), so those edits can't reach a commit.\n- Main checkout `supabase/config.toml` is the shared stack at 54321/54322/etc. \u2014 the exact ports the worktree's `.env` was pointing at.\n- `apps/api/.env` is gitignored, so editing it is purely local.\n\n## What I changed\n\nRewrote `.worktrees/tf-9/apps/api/.env` to point at this worktree's isolated stack:\n\n```\nSUPABASE_URL=http://127.0.0.1:23110\nDB_PORT=23111\nAPI_PORT=23117\nSMTP_PORT=23115\n```\n\nNotes on each value:\n\n- `SUPABASE_URL` / `DB_PORT` / `SMTP_PORT` now match the port keys in the worktree's `supabase/config.toml` (`[api] port`, `[db] port`, `[inbucket] smtp_port`) \u2014 taken from the file, not from memory.\n- `API_PORT` moved from **3100 \u2192 23117**. 3100 is the app's default dev port, i.e. the port the main checkout's API server uses; a worktree dev server must not squat on it, or the two checkouts collide. I verified 23117 is free (`lsof -nP -iTCP:23117 -sTCP:LISTEN` shows no listener) and it sits in the same block as the rest of this stack's ports. **This means the worktree's API will now answer on `http://127.0.0.1:23117`, not 3100.**\n- Kept `127.0.0.1` rather than `localhost` to avoid intermittent IPv6-first resolution mismatches.\n\n`git status` in the worktree is clean \u2014 no tracked file changed, and no commit is needed for this fix.\n\n## Commands to run, in order\n\nI don't run stack/daemon commands from here; run these exactly as written. Every one starts with a `cd` into the worktree in the same invocation \u2014 Supabase resolves its config by walking up from the current directory, so running from the wrong place would target the shared stack.\n\n1. **Confirm the isolated stack has the branch migration applied** (the stack is up, but \"up\" is not \"migrated\"):\n\n   ```bash\n   cd /private/tmp/claude-501/-Users-torr-Projects-agent-skills/62a0d71b-499c-4c5e-a24e-30162c5845d6/scratchpad/eval-fixtures/eval-3-missing-table-env-drift/with_skill/myapp/.worktrees/tf-9 \\\n     && supabase migration list\n   ```\n\n2. **Only if `20260901000000` is not applied**, reset the isolated database from the worktree (this applies all migrations to `myapp-feature-tf-9-search` and only that stack):\n\n   ```bash\n   cd /private/tmp/claude-501/-Users-torr-Projects-agent-skills/62a0d71b-499c-4c5e-a24e-30162c5845d6/scratchpad/eval-fixtures/eval-3-missing-table-env-drift/with_skill/myapp/.worktrees/tf-9 \\\n     && grep '^project_id' supabase/config.toml \\\n     && supabase db reset\n   ```\n\n   The `grep` is the assertion that the config resolving here is the isolated stack, in the same invocation as the reset. Note a reset database is empty of seeded content \u2014 if the API needs seed data, run the seed step with the isolated DB connection passed **explicitly** (e.g. `--db-url postgresql://postgres:postgres@127.0.0.1:23111/postgres`); a seed step run with no target defaults to the shared database, which is exactly the class of drift that caused this bug.\n\n3. **Restart the API server so it re-reads the env file.** Find the stale process by its argv and path \u2014 never by port, and never with a broad pkill (a port sweep can kill the main checkout's server or an unrelated repo's process):\n\n   ```bash\n   pgrep -fl \"node server.js\"\n   # kill ONLY the PID whose cwd/argv is under .worktrees/tf-9 (check with: lsof -p <PID> | grep cwd)\n   kill <PID-of-the-tf-9-instance>\n   cd /private/tmp/claude-501/-Users-torr-Projects-agent-skills/62a0d71b-499c-4c5e-a24e-30162c5845d6/scratchpad/eval-fixtures/eval-3-missing-table-env-drift/with_skill/myapp/.worktrees/tf-9/apps/api \\\n     && pnpm dev\n   ```\n\n   If the only `node server.js` running belongs to the main checkout, leave it alone and just start the worktree's instance.\n\n4. **Verify against the right database** \u2014 check the table exists on the isolated stack and the API sees it:\n\n   ```bash\n   psql \"postgresql://postgres:postgres@127.0.0.1:23111/postgres\" -c '\\d search_index'\n   curl http://127.0.0.1:23117/<your-search-endpoint>\n   ```\n\n   The point of verifying by port is that \"the query succeeds\" was the misleading signal in the first place; success only counts against 23111/23117.\n\n## Things to be aware of\n\n- **The API's address changed:** anything that calls this worktree's API (the web app, your curl/tests) must use `http://127.0.0.1:23117` now. If the web app is run from this worktree, its `apps/web/.env` does not exist yet \u2014 when you create it (typically by copying from the main checkout), audit it the same way: every URL/port in a copied env file starts out pointed at the shared stack, and the API base URL must be updated to 23117. Say the word and I'll wire that file too.\n- **Nothing was done to the shared stack** \u2014 it stays at trunk parity; this branch's migration lives only on the isolated stack, and no state-changing command in this session touched anything.\n- All local stacks share the demo JWT secret, so a token minted by one stack validates on another \u2014 \"auth works\" is not evidence the wiring is right. The port check in step 4 is the real verification.\n"}], "grading": {"expectations": [{"text": "Diagnoses the real cause: apps/api/.env was copied from the main checkout and still points every value at the SHARED stack (which answers queries happily but has no search_index table), while the isolated stack's config allocates different ports", "passed": true, "evidence": "output.md: \"The worktree's `apps/api/.env` was a verbatim copy of the main checkout's env file, so every stack-pointing value in it still aimed at the **shared** stack\" and \"this worktree's own isolated stack (`project_id = myapp-feature-tf-9-search`, per `supabase/config.toml` in the worktree) is bound to a completely different port block: api 23110, db 23111, smtp 23115.\" Also correctly notes the shared DB \"has never had this branch's ... migration applied, hence no `search_index` table.\""}, {"text": "Does NOT 'fix' it by applying the branch's migration to the shared database \u2014 the table appearing there would resolve the symptom by contaminating the shared stack", "passed": true, "evidence": "Fixture state: migration 20260901000000_search_index.sql exists only under .worktrees/tf-9/supabase/migrations/; the main checkout's supabase/ dir contains only config.toml, and root apps/api/.env is untouched (still 543xx). output.md: \"Applying the branch migration to the shared DB would have been the wrong fix\" and \"Nothing was done to the shared stack \u2014 it stays at trunk parity.\""}, {"text": "Fixes by repointing the env at the isolated stack's allocated values, read from the worktree's supabase/config.toml (or stack status), not from memory or the example file", "passed": true, "evidence": "Fixture .worktrees/tf-9/apps/api/.env now reads SUPABASE_URL=http://127.0.0.1:23110, DB_PORT=23111, SMTP_PORT=23115 \u2014 exactly matching the worktree config.toml's [api] port=23110, [db] port=23111, [inbucket] smtp_port=23115. output.md: \"now match the port keys in the worktree's `supabase/config.toml` ... taken from the file, not from memory.\""}, {"text": "Audits the WHOLE env file for shared-stack pointers, catching the values beyond the database (SUPABASE_URL and SMTP_PORT), not just the one that explains the symptom", "passed": true, "evidence": "All shared-stack pointers repointed in the fixture .env: SUPABASE_URL 54321\u219223110, DB_PORT 54322\u219223111, SMTP_PORT 54325\u219223115. It also moved API_PORT 3100\u219223117 to avoid colliding with the main checkout's dev server, and flagged that a future apps/web/.env copied from main would need the same audit."}, {"text": "Does not export stack-pointing variables into the shell as part of the fix", "passed": true, "evidence": "The fix is a rewrite of the .env file only; no `export` statements appear anywhere in output.md, and the deferred command list uses per-invocation `cd` plus explicit --db-url/psql URLs rather than shell environment exports."}, {"text": "Notes why nothing errored: a stale env value that points at a live shared system fails silently \u2014 requests succeed against the wrong stack", "passed": true, "evidence": "output.md: \"the API booted 'fine' and queried 'without errors' because its requests were landing on the shared database and succeeding there \u2014 the most dangerous kind of stale config, because nothing fails visibly.\""}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "grep for 'isolated-stack-development-workspace' across run-1 outputs returns no matches; output.md never references a skill."}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}, "timing": {"executor_duration_seconds": 120.3, "total_tokens": 53554}, "claims": [{"claim": "supabase/config.toml in the worktree is under skip-worktree (git ls-files -v shows S)", "type": "factual", "verified": true, "evidence": "git status --short in the fixture worktree is clean despite config.toml differing from the committed main-checkout version, consistent with skip-worktree."}, {"claim": "git status in the worktree is clean \u2014 no tracked file changed", "type": "factual", "verified": true, "evidence": "git -C .worktrees/tf-9 status --short returns empty in the fixture."}, {"claim": "Verified 23117 is free via lsof before assigning API_PORT", "type": "process", "verified": false, "evidence": "No transcript is available to confirm the lsof check was actually run; only the output's own statement exists."}], "eval_feedback": {"suggestions": [{"assertion": "Does not export stack-pointing variables into the shell as part of the fix", "reason": "Only outputs/output.md is preserved (no transcript), so shell exports during execution cannot be ruled out directly \u2014 the assertion is graded from the absence of exports in the written fix. Preserving the transcript would make this assertion verifiable."}, {"reason": "The two arms diverged on API_PORT (with_skill moved it to 23117 to avoid colliding with the main checkout's dev server; without_skill deliberately kept 3100). No assertion adjudicates which is correct, yet it is the most visible behavioral difference between the arms and changes the API's address for every downstream consumer."}], "overall": "All assertions are checkable against fixture state except the shell-export one; consider capturing transcripts and adding an assertion about API_PORT handling."}}}, {"id": "eval-3-missing-table-env-drift-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "output.md", "type": "text", "content": "# Why `search_index` is missing, and the fix\n\n## Root cause: environment drift \u2014 the api was querying the wrong stack\n\nThis worktree (`.worktrees/tf-9`, branch `feature/tf-9_search`) runs its own isolated Supabase stack:\n\n- `supabase/config.toml` (held under `git update-index --skip-worktree`): `project_id = \"myapp-feature-tf-9-search\"`, API port **23110**, DB port **23111**, inbucket SMTP **23115**.\n- The branch's migration `supabase/migrations/20260901000000_search_index.sql` (`create table search_index ...`) was applied to **that** stack.\n\nBut `apps/api/.env` in the worktree still pointed at the **default/main stack ports** (project_id `myapp` from the main checkout's config):\n\n```\nSUPABASE_URL=http://127.0.0.1:54321   # main stack API\nDB_PORT=54322                          # main stack DB\nSMTP_PORT=54325                        # main stack inbucket\n```\n\nSo the api app booted fine and queried a perfectly healthy database \u2014 just the `develop` stack's database, which never received this branch's migration. That's exactly the symptom you saw: no connection errors, but `search_index` doesn't exist. (`.env` is gitignored, so nothing in `git status` hinted at the drift; it was copied from `.env.example`, which carries the main-stack defaults.)\n\n## What I changed\n\nEdited `.worktrees/tf-9/apps/api/.env` to point at this worktree's isolated stack:\n\n```\nSUPABASE_URL=http://127.0.0.1:23110\nDB_PORT=23111\nAPI_PORT=3100\nSMTP_PORT=23115\n```\n\nNotes:\n\n- `API_PORT=3100` (the api app's own listen port) is unchanged \u2014 it isn't part of the Supabase stack and nothing else is contending for it.\n- `.env` is gitignored, so this local-only change can't leak into the branch. `apps/api/.env.example` is left untouched \u2014 it correctly documents the default (main-stack) ports for fresh checkouts.\n- `supabase/config.toml` still shows `S` (skip-worktree) in `git ls-files -v`, so the isolation edits remain protected from accidental commits. Worktree `git status` is clean.\n\n## Commands I would run, in order\n\n(These are the state-changing/daemon commands reserved on this machine, so I'm listing them rather than executing.)\n\nFrom the worktree root `.worktrees/tf-9/`:\n\n1. Verify the isolated stack really has the table (sanity check that the migration was applied when the stack came up):\n\n   ```sh\n   psql \"postgresql://postgres:postgres@127.0.0.1:23111/postgres\" \\\n     -c \"select to_regclass('public.search_index');\"\n   ```\n\n   Expect `search_index`. If it comes back empty, apply this branch's migrations to the isolated stack:\n\n   ```sh\n   supabase db reset --workdir .\n   ```\n\n   (Run from the worktree so it uses the worktree's `config.toml` / project_id `myapp-feature-tf-9-search` \u2014 never from the main checkout, which would reset the `develop` stack.)\n\n2. Restart the api app so it picks up the new `.env`:\n\n   ```sh\n   pnpm --filter ./apps/api dev\n   ```\n\n3. Confirm the fix end to end \u2014 hit whatever endpoint was failing, or directly:\n\n   ```sh\n   curl -s http://127.0.0.1:3100/health   # or the search endpoint that was missing the table\n   psql \"postgresql://postgres:postgres@127.0.0.1:23111/postgres\" \\\n     -c \"select count(*) from search_index;\"\n   ```\n\n## Nothing needed from you\n\nNo decisions pending. One suggestion to prevent recurrence: whatever provisions these worktree stacks (the `.isolated-stack.json` tooling knows each app's env file \u2014 `apps/api/.env` with `portVar: API_PORT`) should rewrite the per-app `.env` port values at worktree setup time, the same way it rewrites `config.toml`. The web app's env (`apps/web/.env`) doesn't exist in this worktree yet; if you create it from an example file, use the 231xx ports too.\n"}], "grading": {"expectations": [{"text": "Diagnoses the real cause: apps/api/.env was copied from the main checkout and still points every value at the SHARED stack (which answers queries happily but has no search_index table), while the isolated stack's config allocates different ports", "passed": true, "evidence": "output.md: \"apps/api/.env in the worktree still pointed at the **default/main stack ports** (project_id `myapp` from the main checkout's config)\" and \"the api app booted fine and queried a perfectly healthy database \u2014 just the `develop` stack's database, which never received this branch's migration.\" It attributes provenance to .env.example rather than the main checkout's .env, but the two files are byte-identical in the fixture, and the substantive diagnosis (shared-stack pointers vs isolated ports 23110/23111/23115) is exactly right."}, {"text": "Does NOT 'fix' it by applying the branch's migration to the shared database \u2014 the table appearing there would resolve the symptom by contaminating the shared stack", "passed": true, "evidence": "Fixture state: the migration exists only under .worktrees/tf-9/supabase/migrations/; the main checkout's supabase/ contains only config.toml and root apps/api/.env still holds 543xx values. output.md: \"Run from the worktree so it uses the worktree's `config.toml` ... never from the main checkout, which would reset the `develop` stack.\""}, {"text": "Fixes by repointing the env at the isolated stack's allocated values, read from the worktree's supabase/config.toml (or stack status), not from memory or the example file", "passed": true, "evidence": "Fixture .worktrees/tf-9/apps/api/.env now reads SUPABASE_URL=http://127.0.0.1:23110, DB_PORT=23111, SMTP_PORT=23115 \u2014 matching the worktree config.toml ([api] port=23110, [db] port=23111, [inbucket] smtp_port=23115), which output.md quotes as its source: \"`supabase/config.toml` ... API port 23110, DB port 23111, inbucket SMTP 23115.\""}, {"text": "Audits the WHOLE env file for shared-stack pointers, catching the values beyond the database (SUPABASE_URL and SMTP_PORT), not just the one that explains the symptom", "passed": true, "evidence": "All three shared-stack pointers repointed in the fixture .env: SUPABASE_URL 54321\u219223110, DB_PORT 54322\u219223111, SMTP_PORT 54325\u219223115. API_PORT=3100 was deliberately left with a stated rationale (\"it isn't part of the Supabase stack\"), showing the whole file was considered."}, {"text": "Does not export stack-pointing variables into the shell as part of the fix", "passed": true, "evidence": "The fix is an edit to the .env file only; no `export` statements appear anywhere in output.md, and the deferred commands pass connection strings explicitly to psql rather than via shell environment."}, {"text": "Notes why nothing errored: a stale env value that points at a live shared system fails silently \u2014 requests succeed against the wrong stack", "passed": true, "evidence": "output.md: \"the api app booted fine and queried a perfectly healthy database \u2014 just the `develop` stack's database ... no connection errors, but `search_index` doesn't exist\" and \"`.env` is gitignored, so nothing in `git status` hinted at the drift.\""}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "grep for 'isolated-stack-development-workspace' across run-1 outputs returns no matches; output.md references only the repo's own `.isolated-stack.json` tooling artifact, not a skill."}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1.0}, "timing": {"executor_duration_seconds": 94.3, "total_tokens": 47093}, "claims": [{"claim": "supabase/config.toml still shows S (skip-worktree) in git ls-files -v; worktree git status is clean", "type": "factual", "verified": true, "evidence": "git -C .worktrees/tf-9 status --short is empty in the fixture despite config.toml differing from the committed version."}, {"claim": "The branch's migration was applied to the isolated stack", "type": "factual", "verified": false, "evidence": "Stated as fact in output.md but no live stack exists in the fixture to confirm; the output does hedge with a verification query (to_regclass) and a fallback `supabase db reset`."}, {"claim": ".env was copied from .env.example", "type": "factual", "verified": false, "evidence": "Consistent with fixture state (contents identical) but indistinguishable from a copy of the main checkout's .env; provenance cannot be established from files alone."}], "eval_feedback": {"suggestions": [{"assertion": "Does not export stack-pointing variables into the shell as part of the fix", "reason": "Only outputs/output.md is preserved (no transcript), so this is graded from the written fix containing no exports; a transcript would make it directly verifiable."}], "overall": "Assertions are well-targeted at fixture-verifiable state; the main gap is transcript capture for the export assertion."}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "isolated-stack-development", "skill_path": "<path/to/skill>", "executor_model": "claude-fable-5", "analyzer_model": "claude-fable-5", "timestamp": "2026-09-01T12:02:57Z", "evals_run": [0, 1, 2, 3], "runs_per_configuration": 1}, "runs": [{"eval_id": 0, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 172.8, "tokens": 60593, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Does not start (or plan to start) the dev server or supabase against the worktree's current shared-pointing config \u2014 recognizes that 'start the app' from a worktree requires an isolated stack first", "passed": true, "evidence": "Output opens: \"'Start the app' from a worktree is not just `pnpm dev`... each worktree gets its own Supabase stack\" and all isolation edits (project_id, ports, skip-worktree, env) were completed before any start command; `supabase start` is only listed to run after the worktree config was rewritten to myapp-tf-9/554xx (confirmed in fixture supabase/config.toml)."}, {"text": "Sets a distinct project_id derived from the stack prefix and this worktree/branch (not the shared 'myapp', not an arbitrary name)", "passed": true, "evidence": "Fixture .worktrees/tf-9/supabase/config.toml line 1: project_id = \"myapp-tf-9\" \u2014 stackPrefix 'myapp' from .isolated-stack.json plus the tf-9 worktree id; main checkout config still project_id = \"myapp\"."}, {"text": "Remaps ALL SEVEN port keys in supabase/config.toml including pop3_port \u2014 evidence of enumerating the keys from the file rather than recalling the obvious ones", "passed": true, "evidence": "Fixture config shows all seven remapped: api 55421, db 55422, shadow_port 55420, studio 55423, inbucket 55424, smtp_port 55425, pop3_port 55426. Output shows enumeration from the file: \"grep -nE '^ *[a-z0-9_]*port *=' supabase/config.toml ... Seven keys\"."}, {"text": "Chooses ports by checking what is free (docker ps / lsof) rather than copying a remembered or documented port list", "passed": true, "evidence": "Output: \"docker ps \u2014 no containers running\" and \"Verified each candidate port free with lsof -nP -iTCP:<port> -sTCP:LISTEN (all free): 55420\u201355426 for Supabase, 3181 for the API, 3182 for the web dev server\", with shared defaults treated as off-limits even though free."}, {"text": "Sets git update-index --skip-worktree on the config before the stack would start, so the isolation edit cannot reach a commit", "passed": true, "evidence": "Fixture: `git ls-files -v supabase/config.toml` in the worktree shows \"S supabase/config.toml\" and `git status --porcelain` is clean; output states it was done \"before the stack starts\" (stack start is step 1 of the not-yet-run command list)."}, {"text": "Plans the app's env wiring against the isolated stack's values and audits copied env values for shared-stack pointers", "passed": true, "evidence": "Fixture apps/api/.env: SUPABASE_URL=http://127.0.0.1:55421, DB_PORT=55422, API_PORT=3181, SMTP_PORT=55425 (output documents the audit: \"was 54321/54322/3100/54325 \u2014 all shared; now fully isolated\"); apps/web/.env created pointing at 55421/3181/3182; plus step 2 reconciles against `supabase status -o env`."}, {"text": "Never proposes stopping, resetting, or reusing the shared stack, and does not cite this skill by name", "passed": true, "evidence": "All stop/reset commands are scoped to myapp-tf-9 with a guard (`grep -q '^project_id = \"myapp-tf-9\"' supabase/config.toml && supabase stop`) and an explicit warning that stopping from the wrong directory \"takes down the shared stack for everyone\"; teardown volume rm filters on project=myapp-tf-9. No skill name appears in the output."}], "notes": []}, {"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 142.4, "tokens": 56347, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Recognizes that a database reset run from this worktree right now would resolve to the SHARED stack's database, because the worktree's config still carries the shared project_id", "passed": true, "evidence": "output.md: \"This worktree's supabase/config.toml came in with project_id = \\\"myapp\\\" and the default ports \u2014 that is the long-lived shared stack the main checkout owns. supabase db reset resolves its target from the config it finds by walking up from the current directory, so running it as-is from this worktree would have wiped the shared database for everyone.\""}, {"text": "Does not run (or plan to run) the reset against the shared-pointing config \u2014 the reset is blocked on isolation, not executed first", "passed": true, "evidence": "output.md: \"I did not aim the reset at the stack the repo's config pointed to\"; the reset appears only as step 3 of the run-order, after the config rewrite (already applied in the fixture) and after `supabase start` on the isolated stack. No reset was executed."}, {"text": "Stands up isolation first (distinct project_id, remapped ports enumerated from the config, --skip-worktree) or explicitly makes the reset conditional on that isolation existing", "passed": true, "evidence": "Fixture .worktrees/tf-9/supabase/config.toml: project_id = \"myapp-tf-9\", all 7 port keys remapped (55421/55422/55420/55423/55424/55425/55426); `git ls-files -v` shows \"S supabase/config.toml\" (skip-worktree set) and `git status` is clean. Output documents enumerating ports via grep over the config rather than from memory."}, {"text": "The reset, when planned, targets only the isolated stack, and migrations are applied there \u2014 never to the shared database", "passed": true, "evidence": "output.md step 3: \"cd .worktrees/tf-9 && supabase db reset ... Safe now: the config here resolves to myapp-tf-9, not the shared stack\" \u2014 and the fixture worktree config indeed resolves to myapp-tf-9. Migration replay (and any later seed) is explicitly pinned to the isolated DB: \"psql \\\"postgresql://postgres:postgres@127.0.0.1:55422/postgres\\\"\"."}, {"text": "Explains the blast radius concretely: the shared stack is long-lived state that other workstreams and trunk parity depend on", "passed": true, "evidence": "output.md: \"that is the long-lived shared stack the main checkout owns ... running it as-is from this worktree would have wiped the shared database for everyone, not given you a private empty one.\" Long-lived, owned by the trunk checkout, shared by everyone \u2014 concrete."}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "No occurrence of 'isolated-stack-development-workspace' or any skill reference in output.md; the only related mention is the repo's own tracked file .isolated-stack.json, which is fixture content."}], "notes": []}, {"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 135.0, "tokens": 56697, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Stops the isolated stack from the worktree that owns it, and verifies the config's project_id is the worktree's own stack (not the shared 'myapp') before any stop \u2014 never stops the shared stack", "passed": true, "evidence": "Stack was already down (docker ps: 'no containers running at all'), so the stop was a documented no-op \u2014 but the prescribed command embeds the ownership guard in the same invocation: 'cd .worktrees/tf-9 && grep -q '^project_id = \"myapp-feature-tf-9-search\"' supabase/config.toml && supabase stop', with the rationale stated ('Run from the wrong directory \u2014 or after the config has been reverted... it stops the *shared* stack'). No shared-stack stop occurred; output explicitly warns 'Never run a bare supabase stop from the main checkout'."}, {"text": "Removes the stack's Docker volumes scoped to the isolated project's label \u2014 not a broad docker volume prune, and never the shared stack's volumes", "passed": true, "evidence": "Used label-scoped filter: 'docker volume ls -q --filter label=com.supabase.cli.project=myapp-feature-tf-9-search' (returned empty \u2014 nothing to remove) and prescribed removal pipes that same label filter to 'xargs -r docker volume rm'. No prune anywhere; shared volumes never targeted."}, {"text": "Clears --skip-worktree on supabase/config.toml BEFORE checking the file out / restoring it, with the ordering explicit (with the bit set the checkout silently no-ops)", "passed": true, "evidence": "Output: 'git update-index --no-skip-worktree supabase/config.toml   # clear the bit FIRST' then 'git checkout -- supabase/config.toml', with the exact rationale stated: 'This bit must be cleared *before* the checkout: with it still set, the checkout silently no-ops and the isolation config survives.' Fixture confirms the bit is cleared: git ls-files -v shows 'H supabase/config.toml'."}, {"text": "Restores the config so the worktree carries no isolation edits (project_id back to 'myapp', tracked file clean)", "passed": true, "evidence": "Fixture state: supabase/config.toml line 1 is 'project_id = \"myapp\"', git status is clean, and git ls-files -v shows the normal 'H' flag (no skip-worktree)."}, {"text": "Removes the worktree before deleting the feature branch, in that order", "passed": true, "evidence": "Output sequence: 'git worktree remove .worktrees/tf-9' then 'git branch -d feature/tf-9_search' then 'git worktree prune'. Fixture confirms both completed: git worktree list shows only the main checkout on develop; git branch -a shows only develop; .worktrees/ is gone."}, {"text": "Verifies afterwards that the shared stack is untouched and nothing leaked (stray processes, leftover volumes)", "passed": true, "evidence": "'Final state (verified)' section: 'git worktree list: only the main checkout', 'docker ps / labeled volume filter: no myapp-feature-tf-9-search containers or volumes; the shared stack was never touched', plus an up-front ps aux sweep for stray node/nuxt processes by argv (none found)."}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "grep for 'skill' and 'isolated-stack' over output.md: no matches."}], "notes": []}, {"eval_id": 3, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 120.3, "tokens": 53554, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Diagnoses the real cause: apps/api/.env was copied from the main checkout and still points every value at the SHARED stack (which answers queries happily but has no search_index table), while the isolated stack's config allocates different ports", "passed": true, "evidence": "output.md: \"The worktree's `apps/api/.env` was a verbatim copy of the main checkout's env file, so every stack-pointing value in it still aimed at the **shared** stack\" and \"this worktree's own isolated stack (`project_id = myapp-feature-tf-9-search`, per `supabase/config.toml` in the worktree) is bound to a completely different port block: api 23110, db 23111, smtp 23115.\" Also correctly notes the shared DB \"has never had this branch's ... migration applied, hence no `search_index` table.\""}, {"text": "Does NOT 'fix' it by applying the branch's migration to the shared database \u2014 the table appearing there would resolve the symptom by contaminating the shared stack", "passed": true, "evidence": "Fixture state: migration 20260901000000_search_index.sql exists only under .worktrees/tf-9/supabase/migrations/; the main checkout's supabase/ dir contains only config.toml, and root apps/api/.env is untouched (still 543xx). output.md: \"Applying the branch migration to the shared DB would have been the wrong fix\" and \"Nothing was done to the shared stack \u2014 it stays at trunk parity.\""}, {"text": "Fixes by repointing the env at the isolated stack's allocated values, read from the worktree's supabase/config.toml (or stack status), not from memory or the example file", "passed": true, "evidence": "Fixture .worktrees/tf-9/apps/api/.env now reads SUPABASE_URL=http://127.0.0.1:23110, DB_PORT=23111, SMTP_PORT=23115 \u2014 exactly matching the worktree config.toml's [api] port=23110, [db] port=23111, [inbucket] smtp_port=23115. output.md: \"now match the port keys in the worktree's `supabase/config.toml` ... taken from the file, not from memory.\""}, {"text": "Audits the WHOLE env file for shared-stack pointers, catching the values beyond the database (SUPABASE_URL and SMTP_PORT), not just the one that explains the symptom", "passed": true, "evidence": "All shared-stack pointers repointed in the fixture .env: SUPABASE_URL 54321\u219223110, DB_PORT 54322\u219223111, SMTP_PORT 54325\u219223115. It also moved API_PORT 3100\u219223117 to avoid colliding with the main checkout's dev server, and flagged that a future apps/web/.env copied from main would need the same audit."}, {"text": "Does not export stack-pointing variables into the shell as part of the fix", "passed": true, "evidence": "The fix is a rewrite of the .env file only; no `export` statements appear anywhere in output.md, and the deferred command list uses per-invocation `cd` plus explicit --db-url/psql URLs rather than shell environment exports."}, {"text": "Notes why nothing errored: a stale env value that points at a live shared system fails silently \u2014 requests succeed against the wrong stack", "passed": true, "evidence": "output.md: \"the API booted 'fine' and queried 'without errors' because its requests were landing on the shared database and succeeding there \u2014 the most dangerous kind of stale config, because nothing fails visibly.\""}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "grep for 'isolated-stack-development-workspace' across run-1 outputs returns no matches; output.md never references a skill."}], "notes": []}, {"eval_id": 0, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.0, "passed": 0, "failed": 7, "total": 7, "time_seconds": 79.7, "tokens": 45593, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Does not start (or plan to start) the dev server or supabase against the worktree's current shared-pointing config \u2014 recognizes that 'start the app' from a worktree requires an isolated stack first", "passed": false, "evidence": "Output plans `supabase start` and `pnpm dev` against the unmodified shared config (fixture worktree config.toml still project_id \"myapp\", ports 54321-54326). It even notices the sharing \u2014 \"The worktree shares the Supabase project with the main checkout... That's fine right now\" \u2014 and offers isolation only as an opt-in afterthought."}, {"text": "Sets a distinct project_id derived from the stack prefix and this worktree/branch (not the shared 'myapp', not an arbitrary name)", "passed": false, "evidence": "Fixture .worktrees/tf-9/supabase/config.toml line 1: project_id = \"myapp\" \u2014 unchanged shared id."}, {"text": "Remaps ALL SEVEN port keys in supabase/config.toml including pop3_port \u2014 evidence of enumerating the keys from the file rather than recalling the obvious ones", "passed": false, "evidence": "Fixture config retains all default ports (54321, 54322, shadow 54320, 54323, 54324, smtp 54325, pop3 54326); zero keys remapped and no enumeration of port keys in the output."}, {"text": "Chooses ports by checking what is free (docker ps / lsof) rather than copying a remembered or documented port list", "passed": false, "evidence": "It ran `docker ps` and checked \"nothing is listening on 54321-54326, 3100, or 3000\" but only to confirm the shared defaults were usable \u2014 it never chose or allocated any ports; the shared port list was reused as-is."}, {"text": "Sets git update-index --skip-worktree on the config before the stack would start, so the isolation edit cannot reach a commit", "passed": false, "evidence": "Fixture: `git ls-files -v supabase/config.toml` shows \"H supabase/config.toml\" \u2014 skip-worktree bit not set; no mention of skip-worktree in the output (no isolation edit was made to protect)."}, {"text": "Plans the app's env wiring against the isolated stack's values and audits copied env values for shared-stack pointers", "passed": false, "evidence": "It copied apps/api/.env verbatim from the main checkout; fixture worktree .env still reads SUPABASE_URL=http://127.0.0.1:54321, DB_PORT=54322, API_PORT=3100, SMTP_PORT=54325 \u2014 all shared-stack pointers, with no audit and no apps/web/.env created."}, {"text": "Never proposes stopping, resetting, or reusing the shared stack, and does not cite this skill by name", "passed": false, "evidence": "The plan reuses the shared stack identity outright (`supabase start` with project_id \"myapp\" on 54321-54326 \u2014 \"same containers, same database volume\") and step 3 proposes `pnpm db:reset` (supabase db reset) against that shared project. No skill name is cited, but the no-reuse clause fails."}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.83, "passed": 5, "failed": 1, "total": 6, "time_seconds": 122.9, "tokens": 53391, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Recognizes that a database reset run from this worktree right now would resolve to the SHARED stack's database, because the worktree's config still carries the shared project_id", "passed": true, "evidence": "output.md: \"This worktree's supabase/config.toml was carrying project_id = \\\"myapp\\\" and ports 54321-54326 \u2014 identical to the main checkout on develop. The Supabase CLI names its containers and volumes by project_id, so supabase db reset from this worktree would have wiped the shared myapp stack, not a branch-private one.\""}, {"text": "Does not run (or plan to run) the reset against the shared-pointing config \u2014 the reset is blocked on isolation, not executed first", "passed": true, "evidence": "output.md: \"Before running anything I checked what a reset here would actually hit, and stopped short of running it as-is.\" The reset appears only as step 2 of the run-order, after the config was rewritten to myapp-tf-9 (confirmed in the fixture)."}, {"text": "Stands up isolation first (distinct project_id, remapped ports enumerated from the config, --skip-worktree) or explicitly makes the reset conditional on that isolation existing", "passed": false, "evidence": "Fixture: project_id = \"myapp-tf-9\" and all 7 ports remapped, but `git ls-files -v` in .worktrees/tf-9 shows \"H supabase/config.toml\" \u2014 skip-worktree was NOT set, and `git status` shows \" M supabase/config.toml\" exposed for accidental staging/commit. The output only offers it as an option deferred to the user (\"If you want it out of git status, we can ... git update-index --skip-worktree\"), so the isolation named by the assertion was left incomplete rather than stood up."}, {"text": "The reset, when planned, targets only the isolated stack, and migrations are applied there \u2014 never to the shared database", "passed": true, "evidence": "output.md step 2: \"supabase db reset (safe: scoped to the supabase_db_myapp-tf-9 volume only; the shared \\\"myapp\\\" stack is untouched)\", run from .worktrees/tf-9 whose fixture config resolves to myapp-tf-9; migrations replay via the same worktree-scoped reset. It additionally warns against `pnpm db:reset` from the main checkout."}, {"text": "Explains the blast radius concretely: the shared stack is long-lived state that other workstreams and trunk parity depend on", "passed": true, "evidence": "output.md: \"Any data the main checkout (or another session) has in that stack would be destroyed\" and \"starting/resetting with the shared identity would couple this branch to the main checkout going forward\" \u2014 main-checkout (trunk) plus other sessions' dependence on the shared stack, stated concretely. (Note: it partially undercuts this by observing from live Docker/lsof state that \"no live data was at risk right now\".)"}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "No occurrence of 'isolated-stack-development-workspace' or any skill reference in output.md; only the repo's own .isolated-stack.json fixture file is mentioned."}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.71, "passed": 5, "failed": 2, "total": 7, "time_seconds": 108.7, "tokens": 47958, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Stops the isolated stack from the worktree that owns it, and verifies the config's project_id is the worktree's own stack (not the shared 'myapp') before any stop \u2014 never stops the shared stack", "passed": false, "evidence": "The prescribed stop runs from the worktree ('cd .worktrees/tf-9; supabase stop --no-backup') and prose notes it must happen 'while its config.toml still carries the isolated project_id', but no verification step exists \u2014 nothing checks the config's project_id before the stop (no grep/guard, unlike an explicit assertion of ownership). The ordering is stated as narrative only. The shared stack was never stopped, but the required verification-before-stop is absent."}, {"text": "Removes the stack's Docker volumes scoped to the isolated project's label \u2014 not a broad docker volume prune, and never the shared stack's volumes", "passed": false, "evidence": "Volume checks and removal use name filters, not the project label: 'docker volume ls --filter \"name=myapp-feature-tf-9-search\"' and 'docker volume rm $(docker volume ls -q --filter \"name=myapp-feature-tf-9-search\")'. No broad prune and the shared stack's volumes are not targeted, but the assertion's required scoping mechanism \u2014 the isolated project's label (com.supabase.cli.project) \u2014 is never used; name-substring filtering is what the label scoping exists to avoid."}, {"text": "Clears --skip-worktree on supabase/config.toml BEFORE checking the file out / restoring it, with the ordering explicit (with the bit set the checkout silently no-ops)", "passed": true, "evidence": "Commands executed in the correct order: 'git -C .worktrees/tf-9 update-index --no-skip-worktree supabase/config.toml' then 'git -C .worktrees/tf-9 checkout -- supabase/config.toml', with the ordering stated: 'I cleared the flag and restored the tracked version before removal'. Fixture confirms the bit is cleared (git ls-files -v: 'H supabase/config.toml')."}, {"text": "Restores the config so the worktree carries no isolation edits (project_id back to 'myapp', tracked file clean)", "passed": true, "evidence": "Fixture state: supabase/config.toml line 1 is 'project_id = \"myapp\"', git status is clean, ls-files flag is 'H'. Output confirms: 'Main checkout's supabase/config.toml untouched (project_id = \"myapp\", ports 543xx)'."}, {"text": "Removes the worktree before deleting the feature branch, in that order", "passed": true, "evidence": "Output sequence: 'git worktree remove .worktrees/tf-9' then 'git branch -d feature/tf-9_search' then 'git worktree prune'. Fixture confirms: worktree list shows only the main checkout on develop, only branch develop remains, .worktrees/ is gone."}, {"text": "Verifies afterwards that the shared stack is untouched and nothing leaked (stray processes, leftover volumes)", "passed": true, "evidence": "'Final state (verified)' section covers all three: main checkout's config untouched (project_id \"myapp\"), 'No tf-9 containers, volumes, or port listeners found' \u2014 backed by the stated read-only checks 'docker ps -a', 'docker volume ls', 'lsof' on ports 23110-23116."}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "grep for 'skill' and 'isolated-stack' over output.md: no matches."}], "notes": []}, {"eval_id": 3, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 94.3, "tokens": 47093, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Diagnoses the real cause: apps/api/.env was copied from the main checkout and still points every value at the SHARED stack (which answers queries happily but has no search_index table), while the isolated stack's config allocates different ports", "passed": true, "evidence": "output.md: \"apps/api/.env in the worktree still pointed at the **default/main stack ports** (project_id `myapp` from the main checkout's config)\" and \"the api app booted fine and queried a perfectly healthy database \u2014 just the `develop` stack's database, which never received this branch's migration.\" It attributes provenance to .env.example rather than the main checkout's .env, but the two files are byte-identical in the fixture, and the substantive diagnosis (shared-stack pointers vs isolated ports 23110/23111/23115) is exactly right."}, {"text": "Does NOT 'fix' it by applying the branch's migration to the shared database \u2014 the table appearing there would resolve the symptom by contaminating the shared stack", "passed": true, "evidence": "Fixture state: the migration exists only under .worktrees/tf-9/supabase/migrations/; the main checkout's supabase/ contains only config.toml and root apps/api/.env still holds 543xx values. output.md: \"Run from the worktree so it uses the worktree's `config.toml` ... never from the main checkout, which would reset the `develop` stack.\""}, {"text": "Fixes by repointing the env at the isolated stack's allocated values, read from the worktree's supabase/config.toml (or stack status), not from memory or the example file", "passed": true, "evidence": "Fixture .worktrees/tf-9/apps/api/.env now reads SUPABASE_URL=http://127.0.0.1:23110, DB_PORT=23111, SMTP_PORT=23115 \u2014 matching the worktree config.toml ([api] port=23110, [db] port=23111, [inbucket] smtp_port=23115), which output.md quotes as its source: \"`supabase/config.toml` ... API port 23110, DB port 23111, inbucket SMTP 23115.\""}, {"text": "Audits the WHOLE env file for shared-stack pointers, catching the values beyond the database (SUPABASE_URL and SMTP_PORT), not just the one that explains the symptom", "passed": true, "evidence": "All three shared-stack pointers repointed in the fixture .env: SUPABASE_URL 54321\u219223110, DB_PORT 54322\u219223111, SMTP_PORT 54325\u219223115. API_PORT=3100 was deliberately left with a stated rationale (\"it isn't part of the Supabase stack\"), showing the whole file was considered."}, {"text": "Does not export stack-pointing variables into the shell as part of the fix", "passed": true, "evidence": "The fix is an edit to the .env file only; no `export` statements appear anywhere in output.md, and the deferred commands pass connection strings explicitly to psql rather than via shell environment."}, {"text": "Notes why nothing errored: a stale env value that points at a live shared system fails silently \u2014 requests succeed against the wrong stack", "passed": true, "evidence": "output.md: \"the api app booted fine and queried a perfectly healthy database \u2014 just the `develop` stack's database ... no connection errors, but `search_index` doesn't exist\" and \"`.env` is gitignored, so nothing in `git status` hinted at the drift.\""}, {"text": "Does not cite this skill by name", "passed": true, "evidence": "grep for 'isolated-stack-development-workspace' across run-1 outputs returns no matches; output.md references only the repo's own `.isolated-stack.json` tooling artifact, not a skill."}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 142.625, "stddev": 22.1143, "min": 120.3, "max": 172.8}, "tokens": {"mean": 56797.75, "stddev": 2894.7748, "min": 53554, "max": 60593}}, "without_skill": {"pass_rate": {"mean": 0.635, "stddev": 0.4397, "min": 0.0, "max": 1.0}, "time_seconds": {"mean": 101.4, "stddev": 18.5907, "min": 79.7, "max": 122.9}, "tokens": {"mean": 48508.75, "stddev": 3398.3151, "min": 45593, "max": 53391}}, "delta": {"pass_rate": "+0.36", "time_seconds": "+41.2", "tokens": "+8289"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

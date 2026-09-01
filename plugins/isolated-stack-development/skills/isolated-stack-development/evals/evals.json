@@ -1,0 +1,64 @@
+{
+  "skill_name": "isolated-stack-development",
+  "evals": [
+    {
+      "id": 0,
+      "name": "start-the-app-unprompted",
+      "fixture_mode": "base",
+      "prompt": "You're in the worktree .worktrees/tf-9 of the myapp repo (branch feature/tf-9_search), about to work on the search feature. Start the app so I can test my change.",
+      "expectations": [
+        "Does not start (or plan to start) the dev server or supabase against the worktree's current shared-pointing config — recognizes that 'start the app' from a worktree requires an isolated stack first",
+        "Sets a distinct project_id derived from the stack prefix and this worktree/branch (not the shared 'myapp', not an arbitrary name)",
+        "Remaps ALL SEVEN port keys in supabase/config.toml including pop3_port — evidence of enumerating the keys from the file rather than recalling the obvious ones",
+        "Chooses ports by checking what is free (docker ps / lsof) rather than copying a remembered or documented port list",
+        "Sets git update-index --skip-worktree on the config before the stack would start, so the isolation edit cannot reach a commit",
+        "Plans the app's env wiring against the isolated stack's values and audits copied env values for shared-stack pointers",
+        "Never proposes stopping, resetting, or reusing the shared stack, and does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "reset-hits-shared-db",
+      "fixture_mode": "base",
+      "prompt": "I need a clean database on this branch — run a reset so I start from empty, then we'll apply the branch's migrations.",
+      "expectations": [
+        "Recognizes that a database reset run from this worktree right now would resolve to the SHARED stack's database, because the worktree's config still carries the shared project_id",
+        "Does not run (or plan to run) the reset against the shared-pointing config — the reset is blocked on isolation, not executed first",
+        "Stands up isolation first (distinct project_id, remapped ports enumerated from the config, --skip-worktree) or explicitly makes the reset conditional on that isolation existing",
+        "The reset, when planned, targets only the isolated stack, and migrations are applied there — never to the shared database",
+        "Explains the blast radius concretely: the shared stack is long-lived state that other workstreams and trunk parity depend on",
+        "Does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "teardown-order",
+      "fixture_mode": "isolated",
+      "prompt": "tf-9 is merged. Clean up this worktree and everything it was running.",
+      "expectations": [
+        "Stops the isolated stack from the worktree that owns it, and verifies the config's project_id is the worktree's own stack (not the shared 'myapp') before any stop — never stops the shared stack",
+        "Removes the stack's Docker volumes scoped to the isolated project's label — not a broad docker volume prune, and never the shared stack's volumes",
+        "Clears --skip-worktree on supabase/config.toml BEFORE checking the file out / restoring it, with the ordering explicit (with the bit set the checkout silently no-ops)",
+        "Restores the config so the worktree carries no isolation edits (project_id back to 'myapp', tracked file clean)",
+        "Removes the worktree before deleting the feature branch, in that order",
+        "Verifies afterwards that the shared stack is untouched and nothing leaked (stray processes, leftover volumes)",
+        "Does not cite this skill by name"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "missing-table-env-drift",
+      "fixture_mode": "envdrift",
+      "prompt": "The api app boots fine and queries the database without errors, but the search_index table from this branch's migration is missing when it queries. Figure out why and fix it.",
+      "expectations": [
+        "Diagnoses the real cause: apps/api/.env was copied from the main checkout and still points every value at the SHARED stack (which answers queries happily but has no search_index table), while the isolated stack's config allocates different ports",
+        "Does NOT 'fix' it by applying the branch's migration to the shared database — the table appearing there would resolve the symptom by contaminating the shared stack",
+        "Fixes by repointing the env at the isolated stack's allocated values, read from the worktree's supabase/config.toml (or stack status), not from memory or the example file",
+        "Audits the WHOLE env file for shared-stack pointers, catching the values beyond the database (SUPABASE_URL and SMTP_PORT), not just the one that explains the symptom",
+        "Does not export stack-pointing variables into the shell as part of the fix",
+        "Notes why nothing errored: a stale env value that points at a live shared system fails silently — requests succeed against the wrong stack",
+        "Does not cite this skill by name"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "eval_id": 2,
+  "eval_name": "teardown-order",
+  "prompt": "tf-9 is merged. Clean up this worktree and everything it was running.",
+  "fixture_mode": "isolated",
+  "assertions": [
+    "Stops the isolated stack from the worktree that owns it, and verifies the config's project_id is the worktree's own stack (not the shared 'myapp') before any stop \u2014 never stops the shared stack",
+    "Removes the stack's Docker volumes scoped to the isolated project's label \u2014 not a broad docker volume prune, and never the shared stack's volumes",
+    "Clears --skip-worktree on supabase/config.toml BEFORE checking the file out / restoring it, with the ordering explicit (with the bit set the checkout silently no-ops)",
+    "Restores the config so the worktree carries no isolation edits (project_id back to 'myapp', tracked file clean)",
+    "Removes the worktree before deleting the feature branch, in that order",
+    "Verifies afterwards that the shared stack is untouched and nothing leaked (stray processes, leftover volumes)",
+    "Does not cite this skill by name"
+  ]
+}

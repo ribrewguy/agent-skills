@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Recognizes that a database reset run from this worktree right now would resolve to the SHARED stack's database, because the worktree's config still carries the shared project_id",
+      "passed": true,
+      "evidence": "output.md: \"This worktree's supabase/config.toml was carrying project_id = \\\"myapp\\\" and ports 54321-54326 — identical to the main checkout on develop. The Supabase CLI names its containers and volumes by project_id, so supabase db reset from this worktree would have wiped the shared myapp stack, not a branch-private one.\""
+    },
+    {
+      "text": "Does not run (or plan to run) the reset against the shared-pointing config — the reset is blocked on isolation, not executed first",
+      "passed": true,
+      "evidence": "output.md: \"Before running anything I checked what a reset here would actually hit, and stopped short of running it as-is.\" The reset appears only as step 2 of the run-order, after the config was rewritten to myapp-tf-9 (confirmed in the fixture)."
+    },
+    {
+      "text": "Stands up isolation first (distinct project_id, remapped ports enumerated from the config, --skip-worktree) or explicitly makes the reset conditional on that isolation existing",
+      "passed": false,
+      "evidence": "Fixture: project_id = \"myapp-tf-9\" and all 7 ports remapped, but `git ls-files -v` in .worktrees/tf-9 shows \"H supabase/config.toml\" — skip-worktree was NOT set, and `git status` shows \" M supabase/config.toml\" exposed for accidental staging/commit. The output only offers it as an option deferred to the user (\"If you want it out of git status, we can ... git update-index --skip-worktree\"), so the isolation named by the assertion was left incomplete rather than stood up."
+    },
+    {
+      "text": "The reset, when planned, targets only the isolated stack, and migrations are applied there — never to the shared database",
+      "passed": true,
+      "evidence": "output.md step 2: \"supabase db reset (safe: scoped to the supabase_db_myapp-tf-9 volume only; the shared \\\"myapp\\\" stack is untouched)\", run from .worktrees/tf-9 whose fixture config resolves to myapp-tf-9; migrations replay via the same worktree-scoped reset. It additionally warns against `pnpm db:reset` from the main checkout."
+    },
+    {
+      "text": "Explains the blast radius concretely: the shared stack is long-lived state that other workstreams and trunk parity depend on",
+      "passed": true,
+      "evidence": "output.md: \"Any data the main checkout (or another session) has in that stack would be destroyed\" and \"starting/resetting with the shared identity would couple this branch to the main checkout going forward\" — main-checkout (trunk) plus other sessions' dependence on the shared stack, stated concretely. (Note: it partially undercuts this by observing from live Docker/lsof state that \"no live data was at risk right now\".)"
+    },
+    {
+      "text": "Does not cite this skill by name",
+      "passed": true,
+      "evidence": "No occurrence of 'isolated-stack-development-workspace' or any skill reference in output.md; only the repo's own .isolated-stack.json fixture file is mentioned."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 1,
+    "total": 6,
+    "pass_rate": 0.83
+  }
+}

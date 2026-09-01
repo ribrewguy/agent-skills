@@ -1,0 +1,229 @@
+#!/usr/bin/env bash
+# stack — isolated Supabase stack lifecycle for worktree development.
+#
+#   stack up [--dry-run]      allocate ports + project_id, edit config, start
+#   stack status              what is running, who owns it
+#   stack down [--dry-run]    order-critical teardown of THIS worktree's stack
+#   stack doctor              orphaned stacks, leaked volumes, dirty config
+#
+# Reads the repo's tracked .isolated-stack.json. No declaration = out of
+# scope: this tool refuses to guess.
+#
+# Allocation is DERIVED, never registered: project_id comes from
+# <stackPrefix>-<owner>; ports are discovered free at allocation time via
+# docker ps + lsof. There is intentionally no registry file.
+
+set -euo pipefail
+
+die()  { printf 'stack: %s\n' "$*" >&2; exit 1; }
+note() { printf 'stack: %s\n' "$*"; }
+
+# ---------------------------------------------------------------- repo facts
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git repository"
+DECL="$REPO_ROOT/.isolated-stack.json"
+[ -f "$DECL" ] || die "no .isolated-stack.json at $REPO_ROOT — this repo has no stack declaration; not guessing"
+
+json() { python3 -c '
+import json,sys
+d=json.load(open(sys.argv[1]))
+for k in sys.argv[2].split("."):
+    d=d[k]
+print(d)' "$DECL" "$1" 2>/dev/null; }
+
+STACK_PREFIX=$(json stackPrefix) || die "stackPrefix missing from .isolated-stack.json"
+CONFIG_REL=$(json supabase.config) || die "supabase.config missing from .isolated-stack.json"
+CONFIG="$REPO_ROOT/$CONFIG_REL"
+[ -f "$CONFIG" ] || die "declared config not found: $CONFIG"
+
+# Main checkout vs worktree: in a linked worktree, --git-dir and
+# --git-common-dir differ. Enumeration always via `git worktree list
+# --porcelain` (handles nesting and non-standard locations); never a glob.
+GIT_DIR=$(git rev-parse --absolute-git-dir)
+GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" && pwd)
+IS_WORKTREE=$([ "$GIT_DIR" != "$GIT_COMMON" ] && echo 1 || echo 0)
+
+# Owner: branch name if on one, else the worktree directory name. Sanitized
+# so the derived project_id is a valid Docker Compose project name.
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+if [ -n "$branch" ] && [ "$branch" != "HEAD" ]; then
+  OWNER=$branch
+else
+  OWNER=$(basename "$REPO_ROOT")
+fi
+OWNER=$(printf '%s' "$OWNER" | tr '[:upper:]/' '[:lower:]-' | tr -c 'a-z0-9-' '-' | sed -e 's/--*/-/g' -e 's/^-//' -e 's/-$//' | cut -c1-40)
+PROJECT_ID="${STACK_PREFIX}-${OWNER}"
+
+config_project_id() { grep -E '^ *project_id *=' "$CONFIG" | head -1 | sed -E 's/.*= *"?([^"]*)"?.*/\1/'; }
+
+# Port keys are ENUMERATED from the config, never recalled. A missed key
+# binds a shared port and the boot rolls back after applying every migration.
+port_keys() { grep -nE '^ *[a-z0-9_]*port *= *[0-9]+' "$CONFIG"; }
+
+port_free() { # true if nothing listens and no container publishes it
+  local p=$1
+  if lsof -nP -iTCP:"$p" -sTCP:LISTEN >/dev/null 2>&1; then return 1; fi
+  if docker ps --format '{{.Ports}}' 2>/dev/null | grep -qE "[:.]${p}->"; then return 1; fi
+  return 0
+}
+
+live_stacks() { # lines: <project> — from container labels, the ground truth
+  docker ps --format '{{.Label "com.supabase.cli.project"}}' 2>/dev/null | grep -v '^$' | sort -u
+}
+
+skipworktree_set() { git -C "$REPO_ROOT" ls-files -v -- "$CONFIG_REL" | grep -q '^S'; }
+
+DRY_RUN=0
+case "${2:-}" in --dry-run) DRY_RUN=1 ;; esac
+
+cmd=${1:-help}
+case "$cmd" in
+
+# ------------------------------------------------------------------------ up
+up)
+  [ "$IS_WORKTREE" = 1 ] || die "refusing 'up' from the main checkout — the main checkout runs the SHARED stack ($STACK_PREFIX). Run from the worktree that owns the work (cd and command in one invocation)."
+  cur=$(config_project_id)
+  [ "$cur" = "$STACK_PREFIX" ] || [ "$cur" = "$PROJECT_ID" ] || die "config already carries project_id '$cur', which is not the shared '$STACK_PREFIX' nor this worktree's '$PROJECT_ID'. Another owner's isolation edit — resolve before starting."
+  if live_stacks | grep -qx "$PROJECT_ID"; then die "stack '$PROJECT_ID' is already running (docker ps)"; fi
+
+  keys=$(port_keys) || die "no port keys found in $CONFIG_REL — nothing to remap?"
+  n=$(printf '%s\n' "$keys" | wc -l | tr -d ' ')
+
+  # Find a base where the whole block is free. Candidate bases walk a range
+  # far from common defaults; the numbers below are search STARTING points,
+  # not an allocation registry — what is free is verified live, per port.
+  base="" ; try=$(( (RANDOM % 300) * 10 + 20000 ))
+  for _ in $(seq 1 200); do
+    ok=1; i=0
+    while [ $i -lt "$n" ]; do port_free $((try + i)) || { ok=0; break; }; i=$((i+1)); done
+    [ $ok = 1 ] && { base=$try; break; }
+    try=$((try + 10 + n))
+  done
+  [ -n "$base" ] || die "could not find $n consecutive free ports; run 'stack doctor'"
+
+  plan=$(printf '%s\n' "$keys" | awk -F: -v b="$base" '{printf "  line %s: %s -> %d\n", $1, $2, b+NR-1}')
+  note "project_id: $cur -> $PROJECT_ID"
+  printf '%s\n' "$plan"
+  [ $DRY_RUN = 1 ] && { note "dry-run: no changes made"; exit 0; }
+
+  # Edit config: project_id, then each enumerated port line by line number.
+  python3 - "$CONFIG" "$PROJECT_ID" "$base" <<'PY'
+import re, sys
+path, pid, base = sys.argv[1], sys.argv[2], int(sys.argv[3])
+lines = open(path).read().splitlines(keepends=True)
+out, nport = [], 0
+for ln in lines:
+    if re.match(r'^ *project_id *=', ln):
+        ln = re.sub(r'=.*$', f'= "{pid}"', ln)
+    elif re.match(r'^ *[a-z0-9_]*port *= *[0-9]+', ln):
+        ln = re.sub(r'= *[0-9]+', f'= {base + nport}', ln); nport += 1
+    out.append(ln)
+open(path, 'w').writelines(out)
+PY
+  # Concurrent stacks starve optional analytics; one unhealthy service rolls
+  # back the whole boot. Disable the block if present.
+  python3 - "$CONFIG" <<'PY'
+import re, sys
+path = sys.argv[1]
+text = open(path).read()
+new = re.sub(r'(\[analytics\]\s*\n(?:\s*#[^\n]*\n)*\s*enabled *= *)true', r'\1false', text)
+if new != text: open(path, 'w').write(new)
+PY
+
+  git -C "$REPO_ROOT" update-index --skip-worktree -- "$CONFIG_REL"
+  skipworktree_set || die "failed to set --skip-worktree on $CONFIG_REL"
+  note "config isolated ($CONFIG_REL under --skip-worktree); starting stack $PROJECT_ID"
+  (cd "$REPO_ROOT" && supabase start)
+  note "stack up. App env values: (cd $REPO_ROOT && supabase status -o env)"
+  note "now audit every copied env value for shared-system pointers (see the skill)"
+  ;;
+
+# -------------------------------------------------------------------- status
+status)
+  echo "declaration : $DECL"
+  echo "shared stack: $STACK_PREFIX"
+  echo "this checkout owns: $([ "$IS_WORKTREE" = 1 ] && echo "$PROJECT_ID (worktree)" || echo "$STACK_PREFIX (main checkout)")"
+  echo "config project_id : $(config_project_id) $(skipworktree_set && echo '[skip-worktree SET]' || echo '[clean]')"
+  echo "live stacks (docker ps labels):"
+  live_stacks | sed 's/^/  /' || true
+  ;;
+
+# ---------------------------------------------------------------------- down
+down)
+  [ "$IS_WORKTREE" = 1 ] || die "refusing 'down' from the main checkout — from here 'supabase stop' resolves the SHARED config and stops the shared stack for everyone."
+  cur=$(config_project_id)
+  # Same-invocation assertion: the config we'd stop with must name the stack
+  # this worktree derives. Never rely on cwd alone.
+  [ "$cur" = "$PROJECT_ID" ] || die "config resolves project_id '$cur' but this worktree owns '$PROJECT_ID'. Stopping now would hit a stack that is not yours. Not proceeding."
+  [ "$cur" != "$STACK_PREFIX" ] || die "config resolves the SHARED project_id; refusing"
+
+  vols=$(docker volume ls -q --filter "label=com.supabase.cli.project=$PROJECT_ID" 2>/dev/null || true)
+  note "teardown plan for $PROJECT_ID:"
+  note "  1. supabase stop (config asserts project_id=$PROJECT_ID)"
+  note "  2. remove volumes:"; printf '%s\n' "${vols:-  (none found yet — some appear only after stop)}" | sed 's/^/       /'
+  note "  3. git update-index --no-skip-worktree $CONFIG_REL   (BEFORE checkout)"
+  note "  4. git checkout -- $CONFIG_REL"
+  [ $DRY_RUN = 1 ] && { note "dry-run: nothing stopped or removed"; exit 0; }
+
+  (cd "$REPO_ROOT" && supabase stop)
+
+  vols=$(docker volume ls -q --filter "label=com.supabase.cli.project=$PROJECT_ID" 2>/dev/null || true)
+  if [ -n "$vols" ]; then
+    # Assert scope before deletion: filter non-empty AND not the shared id.
+    [ "$PROJECT_ID" != "$STACK_PREFIX" ] || die "volume filter resolves the shared stack; refusing"
+    printf '%s\n' "$vols" | xargs docker volume rm >/dev/null
+    note "removed $(printf '%s\n' "$vols" | wc -l | tr -d ' ') volume(s) labeled $PROJECT_ID"
+  else
+    note "no volumes labeled $PROJECT_ID"
+  fi
+
+  # Order is load-bearing: clear the bit, VERIFY cleared, then checkout.
+  # With the bit set the checkout silently no-ops and the isolation config
+  # survives into a merge.
+  git -C "$REPO_ROOT" update-index --no-skip-worktree -- "$CONFIG_REL"
+  skipworktree_set && die "--skip-worktree still set on $CONFIG_REL; NOT running checkout (it would no-op)"
+  git -C "$REPO_ROOT" checkout -- "$CONFIG_REL"
+  [ "$(config_project_id)" = "$STACK_PREFIX" ] || die "config did not return to shared project_id after checkout — inspect $CONFIG_REL"
+  note "config restored. Worktree/branch removal is owned by your git workflow (worktree before branch)."
+  if live_stacks | grep -qx "$STACK_PREFIX"; then note "shared stack '$STACK_PREFIX' still running — untouched, as it should be"; fi
+  ;;
+
+# -------------------------------------------------------------------- doctor
+doctor)
+  issues=0
+  # Owners that SHOULD exist: derived from live worktrees (porcelain — never
+  # a directory glob; worktrees nest and land in non-standard locations).
+  expected=$(git -C "$REPO_ROOT" worktree list --porcelain | awk '/^branch /{sub(".*refs/heads/","");print}' \
+    | tr '[:upper:]/' '[:lower:]-' | tr -c 'a-z0-9-\n' '-' | sed -e 's/--*/-/g' -e 's/^-//' -e 's/-$//' \
+    | sed "s/^/${STACK_PREFIX}-/")
+  running=$(live_stacks | grep -E "^${STACK_PREFIX}(-|$)" || true)
+  orphans=$(comm -23 <(printf '%s\n' "$running" | grep -v "^${STACK_PREFIX}$" | sort -u) <(printf '%s\n' "$expected" | sort -u) | grep -v '^$' || true)
+
+  total_running=$(printf '%s\n' "$running" | grep -c . || true)
+  echo "stacks running for prefix '$STACK_PREFIX': ${total_running:-0} (shared $(printf '%s\n' "$running" | grep -qx "$STACK_PREFIX" && echo up || echo down))"
+  if [ -n "$orphans" ]; then
+    n=$(printf '%s\n' "$orphans" | grep -c .)
+    issues=$((issues+n)); echo "ORPHANED stacks (running, no live worktree owns them): $n"
+    printf '%s\n' "$orphans" | head -10 | sed 's/^/  /'
+    [ "$n" -gt 10 ] && echo "  ... and $((n-10)) more"
+  fi
+  leaked=$(docker volume ls -q --filter "label=com.supabase.cli.project" 2>/dev/null \
+    | while read -r v; do p=$(docker volume inspect -f '{{index .Labels "com.supabase.cli.project"}}' "$v"); \
+        case "$p" in "$STACK_PREFIX") ;; ${STACK_PREFIX}-*) live_stacks | grep -qx "$p" || echo "$v ($p)";; esac; done || true)
+  if [ -n "$leaked" ]; then
+    n=$(printf '%s\n' "$leaked" | grep -c .)
+    issues=$((issues+n)); echo "LEAKED volumes (labeled for a stack that is not running): $n"
+    printf '%s\n' "$leaked" | head -10 | sed 's/^/  /'
+    [ "$n" -gt 10 ] && echo "  ... and $((n-10)) more"
+  fi
+  cur=$(config_project_id)
+  if [ "$IS_WORKTREE" = 0 ] && { [ "$cur" != "$STACK_PREFIX" ] || skipworktree_set; }; then
+    issues=$((issues+1)); echo "DIRTY main-checkout config: project_id='$cur'$(skipworktree_set && echo ', --skip-worktree set')"
+  fi
+  [ $issues = 0 ] && echo "clean: no orphans, no leaked volumes, config consistent"
+  exit $([ $issues = 0 ] && echo 0 || echo 1)
+  ;;
+
+*)
+  sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+  ;;
+esac

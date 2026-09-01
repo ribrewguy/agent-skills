@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Does not start (or plan to start) the dev server or supabase against the worktree's current shared-pointing config — recognizes that 'start the app' from a worktree requires an isolated stack first",
+      "passed": false,
+      "evidence": "Output plans `supabase start` and `pnpm dev` against the unmodified shared config (fixture worktree config.toml still project_id \"myapp\", ports 54321-54326). It even notices the sharing — \"The worktree shares the Supabase project with the main checkout... That's fine right now\" — and offers isolation only as an opt-in afterthought."
+    },
+    {
+      "text": "Sets a distinct project_id derived from the stack prefix and this worktree/branch (not the shared 'myapp', not an arbitrary name)",
+      "passed": false,
+      "evidence": "Fixture .worktrees/tf-9/supabase/config.toml line 1: project_id = \"myapp\" — unchanged shared id."
+    },
+    {
+      "text": "Remaps ALL SEVEN port keys in supabase/config.toml including pop3_port — evidence of enumerating the keys from the file rather than recalling the obvious ones",
+      "passed": false,
+      "evidence": "Fixture config retains all default ports (54321, 54322, shadow 54320, 54323, 54324, smtp 54325, pop3 54326); zero keys remapped and no enumeration of port keys in the output."
+    },
+    {
+      "text": "Chooses ports by checking what is free (docker ps / lsof) rather than copying a remembered or documented port list",
+      "passed": false,
+      "evidence": "It ran `docker ps` and checked \"nothing is listening on 54321-54326, 3100, or 3000\" but only to confirm the shared defaults were usable — it never chose or allocated any ports; the shared port list was reused as-is."
+    },
+    {
+      "text": "Sets git update-index --skip-worktree on the config before the stack would start, so the isolation edit cannot reach a commit",
+      "passed": false,
+      "evidence": "Fixture: `git ls-files -v supabase/config.toml` shows \"H supabase/config.toml\" — skip-worktree bit not set; no mention of skip-worktree in the output (no isolation edit was made to protect)."
+    },
+    {
+      "text": "Plans the app's env wiring against the isolated stack's values and audits copied env values for shared-stack pointers",
+      "passed": false,
+      "evidence": "It copied apps/api/.env verbatim from the main checkout; fixture worktree .env still reads SUPABASE_URL=http://127.0.0.1:54321, DB_PORT=54322, API_PORT=3100, SMTP_PORT=54325 — all shared-stack pointers, with no audit and no apps/web/.env created."
+    },
+    {
+      "text": "Never proposes stopping, resetting, or reusing the shared stack, and does not cite this skill by name",
+      "passed": false,
+      "evidence": "The plan reuses the shared stack identity outright (`supabase start` with project_id \"myapp\" on 54321-54326 — \"same containers, same database volume\") and step 3 proposes `pnpm db:reset` (supabase db reset) against that shared project. No skill name is cited, but the no-reuse clause fails."
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 7,
+    "total": 7,
+    "pass_rate": 0.0
+  }
+}

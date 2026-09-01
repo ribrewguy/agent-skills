@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Recognizes that a database reset run from this worktree right now would resolve to the SHARED stack's database, because the worktree's config still carries the shared project_id",
+      "passed": true,
+      "evidence": "output.md: \"This worktree's supabase/config.toml came in with project_id = \\\"myapp\\\" and the default ports — that is the long-lived shared stack the main checkout owns. supabase db reset resolves its target from the config it finds by walking up from the current directory, so running it as-is from this worktree would have wiped the shared database for everyone.\""
+    },
+    {
+      "text": "Does not run (or plan to run) the reset against the shared-pointing config — the reset is blocked on isolation, not executed first",
+      "passed": true,
+      "evidence": "output.md: \"I did not aim the reset at the stack the repo's config pointed to\"; the reset appears only as step 3 of the run-order, after the config rewrite (already applied in the fixture) and after `supabase start` on the isolated stack. No reset was executed."
+    },
+    {
+      "text": "Stands up isolation first (distinct project_id, remapped ports enumerated from the config, --skip-worktree) or explicitly makes the reset conditional on that isolation existing",
+      "passed": true,
+      "evidence": "Fixture .worktrees/tf-9/supabase/config.toml: project_id = \"myapp-tf-9\", all 7 port keys remapped (55421/55422/55420/55423/55424/55425/55426); `git ls-files -v` shows \"S supabase/config.toml\" (skip-worktree set) and `git status` is clean. Output documents enumerating ports via grep over the config rather than from memory."
+    },
+    {
+      "text": "The reset, when planned, targets only the isolated stack, and migrations are applied there — never to the shared database",
+      "passed": true,
+      "evidence": "output.md step 3: \"cd .worktrees/tf-9 && supabase db reset ... Safe now: the config here resolves to myapp-tf-9, not the shared stack\" — and the fixture worktree config indeed resolves to myapp-tf-9. Migration replay (and any later seed) is explicitly pinned to the isolated DB: \"psql \\\"postgresql://postgres:postgres@127.0.0.1:55422/postgres\\\"\"."
+    },
+    {
+      "text": "Explains the blast radius concretely: the shared stack is long-lived state that other workstreams and trunk parity depend on",
+      "passed": true,
+      "evidence": "output.md: \"that is the long-lived shared stack the main checkout owns ... running it as-is from this worktree would have wiped the shared database for everyone, not given you a private empty one.\" Long-lived, owned by the trunk checkout, shared by everyone — concrete."
+    },
+    {
+      "text": "Does not cite this skill by name",
+      "passed": true,
+      "evidence": "No occurrence of 'isolated-stack-development-workspace' or any skill reference in output.md; the only related mention is the repo's own tracked file .isolated-stack.json, which is fixture content."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

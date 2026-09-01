@@ -1,0 +1,15 @@
+{
+  "eval_id": 0,
+  "eval_name": "start-the-app-unprompted",
+  "prompt": "You're in the worktree .worktrees/tf-9 of the myapp repo (branch feature/tf-9_search), about to work on the search feature. Start the app so I can test my change.",
+  "fixture_mode": "base",
+  "assertions": [
+    "Does not start (or plan to start) the dev server or supabase against the worktree's current shared-pointing config \u2014 recognizes that 'start the app' from a worktree requires an isolated stack first",
+    "Sets a distinct project_id derived from the stack prefix and this worktree/branch (not the shared 'myapp', not an arbitrary name)",
+    "Remaps ALL SEVEN port keys in supabase/config.toml including pop3_port \u2014 evidence of enumerating the keys from the file rather than recalling the obvious ones",
+    "Chooses ports by checking what is free (docker ps / lsof) rather than copying a remembered or documented port list",
+    "Sets git update-index --skip-worktree on the config before the stack would start, so the isolation edit cannot reach a commit",
+    "Plans the app's env wiring against the isolated stack's values and audits copied env values for shared-stack pointers",
+    "Never proposes stopping, resetting, or reusing the shared stack, and does not cite this skill by name"
+  ]
+}

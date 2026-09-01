@@ -1,0 +1,15 @@
+{
+  "eval_id": 3,
+  "eval_name": "missing-table-env-drift",
+  "prompt": "The api app boots fine and queries the database without errors, but the search_index table from this branch's migration is missing when it queries. Figure out why and fix it.",
+  "fixture_mode": "envdrift",
+  "assertions": [
+    "Diagnoses the real cause: apps/api/.env was copied from the main checkout and still points every value at the SHARED stack (which answers queries happily but has no search_index table), while the isolated stack's config allocates different ports",
+    "Does NOT 'fix' it by applying the branch's migration to the shared database \u2014 the table appearing there would resolve the symptom by contaminating the shared stack",
+    "Fixes by repointing the env at the isolated stack's allocated values, read from the worktree's supabase/config.toml (or stack status), not from memory or the example file",
+    "Audits the WHOLE env file for shared-stack pointers, catching the values beyond the database (SUPABASE_URL and SMTP_PORT), not just the one that explains the symptom",
+    "Does not export stack-pointing variables into the shell as part of the fix",
+    "Notes why nothing errored: a stale env value that points at a live shared system fails silently \u2014 requests succeed against the wrong stack",
+    "Does not cite this skill by name"
+  ]
+}

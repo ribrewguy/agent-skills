@@ -28,6 +28,7 @@ A small delta on a strong baseline still matters if it's catching a specific fai
 | [task-handoff-summaries](task-handoff-summaries) | 100% | 88% | **+12pp** | Three of four evals had a strong baseline because the format is intuitive. The implementation-summary eval (+27pp) is the discriminator. |
 | [branch-promotion-discipline](branch-promotion-discipline) | 100% | 84% | **+15pp** | The hotfix-with-forward-merge eval (+62pp) is the discriminator. Three other evals non-discriminating in iteration-1 because the prompts give away the framing; flagged for sharpening. |
 | [throughline](throughline) | 100% | 64% | **+36pp** | The spec-conflict eval (+57pp) is the sharpest: untrained models resolve-then-notify where the skill escalates-then-waits. The baseline also merges to the trunk on "ship it" plus green tests. |
+| [isolated-stack-development](isolated-stack-development) | 100% | 63% | **+36pp** | First behavioral eval set (real fixture repo, graded on file state). The headline eval — "start the app", isolation never mentioned, skill offered by description only — is +100pp: the baseline boots the shared stack from the worktree. |
 
 Numbers are pass rate across four evals, one run per configuration.
 
@@ -37,7 +38,7 @@ Numbers are pass rate across four evals, one run per configuration.
 - **Grading is reasoned, not regex'd.** A single grader reads each output and decides per-assertion pass/fail with a short evidence citation. Cited evidence is in `grading.json` per run for anyone who wants to recheck.
 - **Baseline arms ran in the same agent context as with-skill arms** for this iteration (sub-subagent dispatch wasn't available in the run environment). The orchestrator was instructed to avoid consulting the SKILL.md when producing baseline output. This isn't as clean as separate fresh agent contexts. Iteration-2 will run baselines as fully isolated agents.
 - **Time and token budgets are estimates** for the same reason: the orchestrator generated arms inline rather than dispatching them as separate timed tasks. The pass-rate columns are the load-bearing data; treat the time/token columns as advisory.
-- **Exception: the throughline run.** Its arms ran as fully isolated subagents with per-run measured tokens and wall-clock time — the methodology the two caveats above aspire to. Earlier skills' iteration-2 reruns will follow the same setup.
+- **Exception: the throughline and isolated-stack-development runs.** Their arms ran as fully isolated subagents with per-run measured tokens and wall-clock time — the methodology the two caveats above aspire to. Earlier skills' iteration-2 reruns will follow the same setup. The isolated-stack-development set additionally grades on real fixture-repo file state, not prose alone.
 
 ## How to dig deeper
 
@@ -58,6 +59,7 @@ Each per-skill page below has:
 - [multi-agent-git-workflow evaluations](multi-agent-git-workflow)
 - [branch-promotion-discipline evaluations](branch-promotion-discipline)
 - [throughline evaluations](throughline)
+- [isolated-stack-development evaluations](isolated-stack-development)
 
 ## Why republish so much detail
 

@@ -22,6 +22,7 @@ copy is a second thing to drift.
 | Implementation / worker-handoff / closeout summary shapes | `task-handoff-summaries` |
 | Code review scope and response format | `structured-code-review` |
 | Cross-vendor agent peer review | `cross-agent-review` |
+| Isolated local stack mechanics (ports, config, env audit, stack teardown) | `isolated-stack-development` |
 | Kickoff + completion ceremony, the ladder, task lifecycle | **this skill** |
 
 If a named skill is not installed, its section here still tells you *what* is
@@ -137,7 +138,8 @@ When work warrants an epic, the ordering matters:
    environment is trunk-parity ALWAYS — never apply unmerged migrations to it,
    never seed fixtures into it. *"It's additive so it's harmless"* is the named
    rationalization; refuse it. Every worker dispatch prompt states this
-   explicitly.
+   explicitly. The mechanics — per-worktree stack, ports, config, env audit,
+   teardown order: `isolated-stack-development`.
 
 ---
 

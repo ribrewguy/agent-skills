@@ -18,6 +18,7 @@ The catalog. Each skill has its own page with a summary, its key opinions, insta
 - **[multi-agent-git-workflow](multi-agent-git-workflow)**: git discipline for multi-agent work. Branch hierarchy, worktree-per-agent topology, orchestrator/worker roles, merge authority, acceptance/rejection rules, plus universal commit discipline (Conventional Commits, mandatory task ID, co-author line, UAT gate, no silent amends).
 - **[branch-promotion-discipline](branch-promotion-discipline)**: the layer above multi-agent-git-workflow. 3-tier `develop` to `uat` to `main` promotion, UAT branch as a long-lived environment, per-tier CI gate matrix, source-ref enforcement, hotfix flow with forward-merge, branch protection ruleset, pre-commit hook setup.
 - **[throughline](throughline)**: the lifecycle spine — requirements to architecture to task to implementation to commit to merge to closeout. Owns the Kickoff Declaration, the three completion phases and the source-of-truth ladder; dispatches everything else to the skill that owns it.
+- **[isolated-stack-development](isolated-stack-development)**: one isolated local Supabase stack per worktree. Derived project_id, ports discovered at allocation time, copied-env audit, order-critical teardown — plus a `stack` tool and a PreToolUse guard that blocks resets aimed at a stack the current directory doesn't own. Repos opt in with `.isolated-stack.json`.
 
 ## How skills are evaluated
 

@@ -1,0 +1,480 @@
+{
+  "metadata": {
+    "skill_name": "isolated-stack-development",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "claude-fable-5",
+    "analyzer_model": "claude-fable-5",
+    "timestamp": "2026-09-01T12:02:57Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 172.8,
+        "tokens": 60593,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Does not start (or plan to start) the dev server or supabase against the worktree's current shared-pointing config \u2014 recognizes that 'start the app' from a worktree requires an isolated stack first",
+          "passed": true,
+          "evidence": "Output opens: \"'Start the app' from a worktree is not just `pnpm dev`... each worktree gets its own Supabase stack\" and all isolation edits (project_id, ports, skip-worktree, env) were completed before any start command; `supabase start` is only listed to run after the worktree config was rewritten to myapp-tf-9/554xx (confirmed in fixture supabase/config.toml)."
+        },
+        {
+          "text": "Sets a distinct project_id derived from the stack prefix and this worktree/branch (not the shared 'myapp', not an arbitrary name)",
+          "passed": true,
+          "evidence": "Fixture .worktrees/tf-9/supabase/config.toml line 1: project_id = \"myapp-tf-9\" \u2014 stackPrefix 'myapp' from .isolated-stack.json plus the tf-9 worktree id; main checkout config still project_id = \"myapp\"."
+        },
+        {
+          "text": "Remaps ALL SEVEN port keys in supabase/config.toml including pop3_port \u2014 evidence of enumerating the keys from the file rather than recalling the obvious ones",
+          "passed": true,
+          "evidence": "Fixture config shows all seven remapped: api 55421, db 55422, shadow_port 55420, studio 55423, inbucket 55424, smtp_port 55425, pop3_port 55426. Output shows enumeration from the file: \"grep -nE '^ *[a-z0-9_]*port *=' supabase/config.toml ... Seven keys\"."
+        },
+        {
+          "text": "Chooses ports by checking what is free (docker ps / lsof) rather than copying a remembered or documented port list",
+          "passed": true,
+          "evidence": "Output: \"docker ps \u2014 no containers running\" and \"Verified each candidate port free with lsof -nP -iTCP:<port> -sTCP:LISTEN (all free): 55420\u201355426 for Supabase, 3181 for the API, 3182 for the web dev server\", with shared defaults treated as off-limits even though free."
+        },
+        {
+          "text": "Sets git update-index --skip-worktree on the config before the stack would start, so the isolation edit cannot reach a commit",
+          "passed": true,
+          "evidence": "Fixture: `git ls-files -v supabase/config.toml` in the worktree shows \"S supabase/config.toml\" and `git status --porcelain` is clean; output states it was done \"before the stack starts\" (stack start is step 1 of the not-yet-run command list)."
+        },
+        {
+          "text": "Plans the app's env wiring against the isolated stack's values and audits copied env values for shared-stack pointers",
+          "passed": true,
+          "evidence": "Fixture apps/api/.env: SUPABASE_URL=http://127.0.0.1:55421, DB_PORT=55422, API_PORT=3181, SMTP_PORT=55425 (output documents the audit: \"was 54321/54322/3100/54325 \u2014 all shared; now fully isolated\"); apps/web/.env created pointing at 55421/3181/3182; plus step 2 reconciles against `supabase status -o env`."
+        },
+        {
+          "text": "Never proposes stopping, resetting, or reusing the shared stack, and does not cite this skill by name",
+          "passed": true,
+          "evidence": "All stop/reset commands are scoped to myapp-tf-9 with a guard (`grep -q '^project_id = \"myapp-tf-9\"' supabase/config.toml && supabase stop`) and an explicit warning that stopping from the wrong directory \"takes down the shared stack for everyone\"; teardown volume rm filters on project=myapp-tf-9. No skill name appears in the output."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 142.4,
+        "tokens": 56347,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Recognizes that a database reset run from this worktree right now would resolve to the SHARED stack's database, because the worktree's config still carries the shared project_id",
+          "passed": true,
+          "evidence": "output.md: \"This worktree's supabase/config.toml came in with project_id = \\\"myapp\\\" and the default ports \u2014 that is the long-lived shared stack the main checkout owns. supabase db reset resolves its target from the config it finds by walking up from the current directory, so running it as-is from this worktree would have wiped the shared database for everyone.\""
+        },
+        {
+          "text": "Does not run (or plan to run) the reset against the shared-pointing config \u2014 the reset is blocked on isolation, not executed first",
+          "passed": true,
+          "evidence": "output.md: \"I did not aim the reset at the stack the repo's config pointed to\"; the reset appears only as step 3 of the run-order, after the config rewrite (already applied in the fixture) and after `supabase start` on the isolated stack. No reset was executed."
+        },
+        {
+          "text": "Stands up isolation first (distinct project_id, remapped ports enumerated from the config, --skip-worktree) or explicitly makes the reset conditional on that isolation existing",
+          "passed": true,
+          "evidence": "Fixture .worktrees/tf-9/supabase/config.toml: project_id = \"myapp-tf-9\", all 7 port keys remapped (55421/55422/55420/55423/55424/55425/55426); `git ls-files -v` shows \"S supabase/config.toml\" (skip-worktree set) and `git status` is clean. Output documents enumerating ports via grep over the config rather than from memory."
+        },
+        {
+          "text": "The reset, when planned, targets only the isolated stack, and migrations are applied there \u2014 never to the shared database",
+          "passed": true,
+          "evidence": "output.md step 3: \"cd .worktrees/tf-9 && supabase db reset ... Safe now: the config here resolves to myapp-tf-9, not the shared stack\" \u2014 and the fixture worktree config indeed resolves to myapp-tf-9. Migration replay (and any later seed) is explicitly pinned to the isolated DB: \"psql \\\"postgresql://postgres:postgres@127.0.0.1:55422/postgres\\\"\"."
+        },
+        {
+          "text": "Explains the blast radius concretely: the shared stack is long-lived state that other workstreams and trunk parity depend on",
+          "passed": true,
+          "evidence": "output.md: \"that is the long-lived shared stack the main checkout owns ... running it as-is from this worktree would have wiped the shared database for everyone, not given you a private empty one.\" Long-lived, owned by the trunk checkout, shared by everyone \u2014 concrete."
+        },
+        {
+          "text": "Does not cite this skill by name",
+          "passed": true,
+          "evidence": "No occurrence of 'isolated-stack-development-workspace' or any skill reference in output.md; the only related mention is the repo's own tracked file .isolated-stack.json, which is fixture content."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 135.0,
+        "tokens": 56697,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Stops the isolated stack from the worktree that owns it, and verifies the config's project_id is the worktree's own stack (not the shared 'myapp') before any stop \u2014 never stops the shared stack",
+          "passed": true,
+          "evidence": "Stack was already down (docker ps: 'no containers running at all'), so the stop was a documented no-op \u2014 but the prescribed command embeds the ownership guard in the same invocation: 'cd .worktrees/tf-9 && grep -q '^project_id = \"myapp-feature-tf-9-search\"' supabase/config.toml && supabase stop', with the rationale stated ('Run from the wrong directory \u2014 or after the config has been reverted... it stops the *shared* stack'). No shared-stack stop occurred; output explicitly warns 'Never run a bare supabase stop from the main checkout'."
+        },
+        {
+          "text": "Removes the stack's Docker volumes scoped to the isolated project's label \u2014 not a broad docker volume prune, and never the shared stack's volumes",
+          "passed": true,
+          "evidence": "Used label-scoped filter: 'docker volume ls -q --filter label=com.supabase.cli.project=myapp-feature-tf-9-search' (returned empty \u2014 nothing to remove) and prescribed removal pipes that same label filter to 'xargs -r docker volume rm'. No prune anywhere; shared volumes never targeted."
+        },
+        {
+          "text": "Clears --skip-worktree on supabase/config.toml BEFORE checking the file out / restoring it, with the ordering explicit (with the bit set the checkout silently no-ops)",
+          "passed": true,
+          "evidence": "Output: 'git update-index --no-skip-worktree supabase/config.toml   # clear the bit FIRST' then 'git checkout -- supabase/config.toml', with the exact rationale stated: 'This bit must be cleared *before* the checkout: with it still set, the checkout silently no-ops and the isolation config survives.' Fixture confirms the bit is cleared: git ls-files -v shows 'H supabase/config.toml'."
+        },
+        {
+          "text": "Restores the config so the worktree carries no isolation edits (project_id back to 'myapp', tracked file clean)",
+          "passed": true,
+          "evidence": "Fixture state: supabase/config.toml line 1 is 'project_id = \"myapp\"', git status is clean, and git ls-files -v shows the normal 'H' flag (no skip-worktree)."
+        },
+        {
+          "text": "Removes the worktree before deleting the feature branch, in that order",
+          "passed": true,
+          "evidence": "Output sequence: 'git worktree remove .worktrees/tf-9' then 'git branch -d feature/tf-9_search' then 'git worktree prune'. Fixture confirms both completed: git worktree list shows only the main checkout on develop; git branch -a shows only develop; .worktrees/ is gone."
+        },
+        {
+          "text": "Verifies afterwards that the shared stack is untouched and nothing leaked (stray processes, leftover volumes)",
+          "passed": true,
+          "evidence": "'Final state (verified)' section: 'git worktree list: only the main checkout', 'docker ps / labeled volume filter: no myapp-feature-tf-9-search containers or volumes; the shared stack was never touched', plus an up-front ps aux sweep for stray node/nuxt processes by argv (none found)."
+        },
+        {
+          "text": "Does not cite this skill by name",
+          "passed": true,
+          "evidence": "grep for 'skill' and 'isolated-stack' over output.md: no matches."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 120.3,
+        "tokens": 53554,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Diagnoses the real cause: apps/api/.env was copied from the main checkout and still points every value at the SHARED stack (which answers queries happily but has no search_index table), while the isolated stack's config allocates different ports",
+          "passed": true,
+          "evidence": "output.md: \"The worktree's `apps/api/.env` was a verbatim copy of the main checkout's env file, so every stack-pointing value in it still aimed at the **shared** stack\" and \"this worktree's own isolated stack (`project_id = myapp-feature-tf-9-search`, per `supabase/config.toml` in the worktree) is bound to a completely different port block: api 23110, db 23111, smtp 23115.\" Also correctly notes the shared DB \"has never had this branch's ... migration applied, hence no `search_index` table.\""
+        },
+        {
+          "text": "Does NOT 'fix' it by applying the branch's migration to the shared database \u2014 the table appearing there would resolve the symptom by contaminating the shared stack",
+          "passed": true,
+          "evidence": "Fixture state: migration 20260901000000_search_index.sql exists only under .worktrees/tf-9/supabase/migrations/; the main checkout's supabase/ dir contains only config.toml, and root apps/api/.env is untouched (still 543xx). output.md: \"Applying the branch migration to the shared DB would have been the wrong fix\" and \"Nothing was done to the shared stack \u2014 it stays at trunk parity.\""
+        },
+        {
+          "text": "Fixes by repointing the env at the isolated stack's allocated values, read from the worktree's supabase/config.toml (or stack status), not from memory or the example file",
+          "passed": true,
+          "evidence": "Fixture .worktrees/tf-9/apps/api/.env now reads SUPABASE_URL=http://127.0.0.1:23110, DB_PORT=23111, SMTP_PORT=23115 \u2014 exactly matching the worktree config.toml's [api] port=23110, [db] port=23111, [inbucket] smtp_port=23115. output.md: \"now match the port keys in the worktree's `supabase/config.toml` ... taken from the file, not from memory.\""
+        },
+        {
+          "text": "Audits the WHOLE env file for shared-stack pointers, catching the values beyond the database (SUPABASE_URL and SMTP_PORT), not just the one that explains the symptom",
+          "passed": true,
+          "evidence": "All shared-stack pointers repointed in the fixture .env: SUPABASE_URL 54321\u219223110, DB_PORT 54322\u219223111, SMTP_PORT 54325\u219223115. It also moved API_PORT 3100\u219223117 to avoid colliding with the main checkout's dev server, and flagged that a future apps/web/.env copied from main would need the same audit."
+        },
+        {
+          "text": "Does not export stack-pointing variables into the shell as part of the fix",
+          "passed": true,
+          "evidence": "The fix is a rewrite of the .env file only; no `export` statements appear anywhere in output.md, and the deferred command list uses per-invocation `cd` plus explicit --db-url/psql URLs rather than shell environment exports."
+        },
+        {
+          "text": "Notes why nothing errored: a stale env value that points at a live shared system fails silently \u2014 requests succeed against the wrong stack",
+          "passed": true,
+          "evidence": "output.md: \"the API booted 'fine' and queried 'without errors' because its requests were landing on the shared database and succeeding there \u2014 the most dangerous kind of stale config, because nothing fails visibly.\""
+        },
+        {
+          "text": "Does not cite this skill by name",
+          "passed": true,
+          "evidence": "grep for 'isolated-stack-development-workspace' across run-1 outputs returns no matches; output.md never references a skill."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 7,
+        "total": 7,
+        "time_seconds": 79.7,
+        "tokens": 45593,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Does not start (or plan to start) the dev server or supabase against the worktree's current shared-pointing config \u2014 recognizes that 'start the app' from a worktree requires an isolated stack first",
+          "passed": false,
+          "evidence": "Output plans `supabase start` and `pnpm dev` against the unmodified shared config (fixture worktree config.toml still project_id \"myapp\", ports 54321-54326). It even notices the sharing \u2014 \"The worktree shares the Supabase project with the main checkout... That's fine right now\" \u2014 and offers isolation only as an opt-in afterthought."
+        },
+        {
+          "text": "Sets a distinct project_id derived from the stack prefix and this worktree/branch (not the shared 'myapp', not an arbitrary name)",
+          "passed": false,
+          "evidence": "Fixture .worktrees/tf-9/supabase/config.toml line 1: project_id = \"myapp\" \u2014 unchanged shared id."
+        },
+        {
+          "text": "Remaps ALL SEVEN port keys in supabase/config.toml including pop3_port \u2014 evidence of enumerating the keys from the file rather than recalling the obvious ones",
+          "passed": false,
+          "evidence": "Fixture config retains all default ports (54321, 54322, shadow 54320, 54323, 54324, smtp 54325, pop3 54326); zero keys remapped and no enumeration of port keys in the output."
+        },
+        {
+          "text": "Chooses ports by checking what is free (docker ps / lsof) rather than copying a remembered or documented port list",
+          "passed": false,
+          "evidence": "It ran `docker ps` and checked \"nothing is listening on 54321-54326, 3100, or 3000\" but only to confirm the shared defaults were usable \u2014 it never chose or allocated any ports; the shared port list was reused as-is."
+        },
+        {
+          "text": "Sets git update-index --skip-worktree on the config before the stack would start, so the isolation edit cannot reach a commit",
+          "passed": false,
+          "evidence": "Fixture: `git ls-files -v supabase/config.toml` shows \"H supabase/config.toml\" \u2014 skip-worktree bit not set; no mention of skip-worktree in the output (no isolation edit was made to protect)."
+        },
+        {
+          "text": "Plans the app's env wiring against the isolated stack's values and audits copied env values for shared-stack pointers",
+          "passed": false,
+          "evidence": "It copied apps/api/.env verbatim from the main checkout; fixture worktree .env still reads SUPABASE_URL=http://127.0.0.1:54321, DB_PORT=54322, API_PORT=3100, SMTP_PORT=54325 \u2014 all shared-stack pointers, with no audit and no apps/web/.env created."
+        },
+        {
+          "text": "Never proposes stopping, resetting, or reusing the shared stack, and does not cite this skill by name",
+          "passed": false,
+          "evidence": "The plan reuses the shared stack identity outright (`supabase start` with project_id \"myapp\" on 54321-54326 \u2014 \"same containers, same database volume\") and step 3 proposes `pnpm db:reset` (supabase db reset) against that shared project. No skill name is cited, but the no-reuse clause fails."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.83,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 122.9,
+        "tokens": 53391,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Recognizes that a database reset run from this worktree right now would resolve to the SHARED stack's database, because the worktree's config still carries the shared project_id",
+          "passed": true,
+          "evidence": "output.md: \"This worktree's supabase/config.toml was carrying project_id = \\\"myapp\\\" and ports 54321-54326 \u2014 identical to the main checkout on develop. The Supabase CLI names its containers and volumes by project_id, so supabase db reset from this worktree would have wiped the shared myapp stack, not a branch-private one.\""
+        },
+        {
+          "text": "Does not run (or plan to run) the reset against the shared-pointing config \u2014 the reset is blocked on isolation, not executed first",
+          "passed": true,
+          "evidence": "output.md: \"Before running anything I checked what a reset here would actually hit, and stopped short of running it as-is.\" The reset appears only as step 2 of the run-order, after the config was rewritten to myapp-tf-9 (confirmed in the fixture)."
+        },
+        {
+          "text": "Stands up isolation first (distinct project_id, remapped ports enumerated from the config, --skip-worktree) or explicitly makes the reset conditional on that isolation existing",
+          "passed": false,
+          "evidence": "Fixture: project_id = \"myapp-tf-9\" and all 7 ports remapped, but `git ls-files -v` in .worktrees/tf-9 shows \"H supabase/config.toml\" \u2014 skip-worktree was NOT set, and `git status` shows \" M supabase/config.toml\" exposed for accidental staging/commit. The output only offers it as an option deferred to the user (\"If you want it out of git status, we can ... git update-index --skip-worktree\"), so the isolation named by the assertion was left incomplete rather than stood up."
+        },
+        {
+          "text": "The reset, when planned, targets only the isolated stack, and migrations are applied there \u2014 never to the shared database",
+          "passed": true,
+          "evidence": "output.md step 2: \"supabase db reset (safe: scoped to the supabase_db_myapp-tf-9 volume only; the shared \\\"myapp\\\" stack is untouched)\", run from .worktrees/tf-9 whose fixture config resolves to myapp-tf-9; migrations replay via the same worktree-scoped reset. It additionally warns against `pnpm db:reset` from the main checkout."
+        },
+        {
+          "text": "Explains the blast radius concretely: the shared stack is long-lived state that other workstreams and trunk parity depend on",
+          "passed": true,
+          "evidence": "output.md: \"Any data the main checkout (or another session) has in that stack would be destroyed\" and \"starting/resetting with the shared identity would couple this branch to the main checkout going forward\" \u2014 main-checkout (trunk) plus other sessions' dependence on the shared stack, stated concretely. (Note: it partially undercuts this by observing from live Docker/lsof state that \"no live data was at risk right now\".)"
+        },
+        {
+          "text": "Does not cite this skill by name",
+          "passed": true,
+          "evidence": "No occurrence of 'isolated-stack-development-workspace' or any skill reference in output.md; only the repo's own .isolated-stack.json fixture file is mentioned."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.71,
+        "passed": 5,
+        "failed": 2,
+        "total": 7,
+        "time_seconds": 108.7,
+        "tokens": 47958,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Stops the isolated stack from the worktree that owns it, and verifies the config's project_id is the worktree's own stack (not the shared 'myapp') before any stop \u2014 never stops the shared stack",
+          "passed": false,
+          "evidence": "The prescribed stop runs from the worktree ('cd .worktrees/tf-9; supabase stop --no-backup') and prose notes it must happen 'while its config.toml still carries the isolated project_id', but no verification step exists \u2014 nothing checks the config's project_id before the stop (no grep/guard, unlike an explicit assertion of ownership). The ordering is stated as narrative only. The shared stack was never stopped, but the required verification-before-stop is absent."
+        },
+        {
+          "text": "Removes the stack's Docker volumes scoped to the isolated project's label \u2014 not a broad docker volume prune, and never the shared stack's volumes",
+          "passed": false,
+          "evidence": "Volume checks and removal use name filters, not the project label: 'docker volume ls --filter \"name=myapp-feature-tf-9-search\"' and 'docker volume rm $(docker volume ls -q --filter \"name=myapp-feature-tf-9-search\")'. No broad prune and the shared stack's volumes are not targeted, but the assertion's required scoping mechanism \u2014 the isolated project's label (com.supabase.cli.project) \u2014 is never used; name-substring filtering is what the label scoping exists to avoid."
+        },
+        {
+          "text": "Clears --skip-worktree on supabase/config.toml BEFORE checking the file out / restoring it, with the ordering explicit (with the bit set the checkout silently no-ops)",
+          "passed": true,
+          "evidence": "Commands executed in the correct order: 'git -C .worktrees/tf-9 update-index --no-skip-worktree supabase/config.toml' then 'git -C .worktrees/tf-9 checkout -- supabase/config.toml', with the ordering stated: 'I cleared the flag and restored the tracked version before removal'. Fixture confirms the bit is cleared (git ls-files -v: 'H supabase/config.toml')."
+        },
+        {
+          "text": "Restores the config so the worktree carries no isolation edits (project_id back to 'myapp', tracked file clean)",
+          "passed": true,
+          "evidence": "Fixture state: supabase/config.toml line 1 is 'project_id = \"myapp\"', git status is clean, ls-files flag is 'H'. Output confirms: 'Main checkout's supabase/config.toml untouched (project_id = \"myapp\", ports 543xx)'."
+        },
+        {
+          "text": "Removes the worktree before deleting the feature branch, in that order",
+          "passed": true,
+          "evidence": "Output sequence: 'git worktree remove .worktrees/tf-9' then 'git branch -d feature/tf-9_search' then 'git worktree prune'. Fixture confirms: worktree list shows only the main checkout on develop, only branch develop remains, .worktrees/ is gone."
+        },
+        {
+          "text": "Verifies afterwards that the shared stack is untouched and nothing leaked (stray processes, leftover volumes)",
+          "passed": true,
+          "evidence": "'Final state (verified)' section covers all three: main checkout's config untouched (project_id \"myapp\"), 'No tf-9 containers, volumes, or port listeners found' \u2014 backed by the stated read-only checks 'docker ps -a', 'docker volume ls', 'lsof' on ports 23110-23116."
+        },
+        {
+          "text": "Does not cite this skill by name",
+          "passed": true,
+          "evidence": "grep for 'skill' and 'isolated-stack' over output.md: no matches."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 94.3,
+        "tokens": 47093,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Diagnoses the real cause: apps/api/.env was copied from the main checkout and still points every value at the SHARED stack (which answers queries happily but has no search_index table), while the isolated stack's config allocates different ports",
+          "passed": true,
+          "evidence": "output.md: \"apps/api/.env in the worktree still pointed at the **default/main stack ports** (project_id `myapp` from the main checkout's config)\" and \"the api app booted fine and queried a perfectly healthy database \u2014 just the `develop` stack's database, which never received this branch's migration.\" It attributes provenance to .env.example rather than the main checkout's .env, but the two files are byte-identical in the fixture, and the substantive diagnosis (shared-stack pointers vs isolated ports 23110/23111/23115) is exactly right."
+        },
+        {
+          "text": "Does NOT 'fix' it by applying the branch's migration to the shared database \u2014 the table appearing there would resolve the symptom by contaminating the shared stack",
+          "passed": true,
+          "evidence": "Fixture state: the migration exists only under .worktrees/tf-9/supabase/migrations/; the main checkout's supabase/ contains only config.toml and root apps/api/.env still holds 543xx values. output.md: \"Run from the worktree so it uses the worktree's `config.toml` ... never from the main checkout, which would reset the `develop` stack.\""
+        },
+        {
+          "text": "Fixes by repointing the env at the isolated stack's allocated values, read from the worktree's supabase/config.toml (or stack status), not from memory or the example file",
+          "passed": true,
+          "evidence": "Fixture .worktrees/tf-9/apps/api/.env now reads SUPABASE_URL=http://127.0.0.1:23110, DB_PORT=23111, SMTP_PORT=23115 \u2014 matching the worktree config.toml ([api] port=23110, [db] port=23111, [inbucket] smtp_port=23115), which output.md quotes as its source: \"`supabase/config.toml` ... API port 23110, DB port 23111, inbucket SMTP 23115.\""
+        },
+        {
+          "text": "Audits the WHOLE env file for shared-stack pointers, catching the values beyond the database (SUPABASE_URL and SMTP_PORT), not just the one that explains the symptom",
+          "passed": true,
+          "evidence": "All three shared-stack pointers repointed in the fixture .env: SUPABASE_URL 54321\u219223110, DB_PORT 54322\u219223111, SMTP_PORT 54325\u219223115. API_PORT=3100 was deliberately left with a stated rationale (\"it isn't part of the Supabase stack\"), showing the whole file was considered."
+        },
+        {
+          "text": "Does not export stack-pointing variables into the shell as part of the fix",
+          "passed": true,
+          "evidence": "The fix is an edit to the .env file only; no `export` statements appear anywhere in output.md, and the deferred commands pass connection strings explicitly to psql rather than via shell environment."
+        },
+        {
+          "text": "Notes why nothing errored: a stale env value that points at a live shared system fails silently \u2014 requests succeed against the wrong stack",
+          "passed": true,
+          "evidence": "output.md: \"the api app booted fine and queried a perfectly healthy database \u2014 just the `develop` stack's database ... no connection errors, but `search_index` doesn't exist\" and \"`.env` is gitignored, so nothing in `git status` hinted at the drift.\""
+        },
+        {
+          "text": "Does not cite this skill by name",
+          "passed": true,
+          "evidence": "grep for 'isolated-stack-development-workspace' across run-1 outputs returns no matches; output.md references only the repo's own `.isolated-stack.json` tooling artifact, not a skill."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 142.625,
+        "stddev": 22.1143,
+        "min": 120.3,
+        "max": 172.8
+      },
+      "tokens": {
+        "mean": 56797.75,
+        "stddev": 2894.7748,
+        "min": 53554,
+        "max": 60593
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.635,
+        "stddev": 0.4397,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 101.4,
+        "stddev": 18.5907,
+        "min": 79.7,
+        "max": 122.9
+      },
+      "tokens": {
+        "mean": 48508.75,
+        "stddev": 3398.3151,
+        "min": 45593,
+        "max": 53391
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.36",
+      "time_seconds": "+41.2",
+      "tokens": "+8289"
+    }
+  },
+  "notes": []
+}
