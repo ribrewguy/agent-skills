@@ -147,6 +147,9 @@ Closeout Outcome:
 
 Evidence:
   Quality gate results: <gate-by-gate, exactly as executed; numbers, not adjectives>
+  Token spend: <initial estimate NNN @ <model> → actual NNN (measured | self-reported)
+                | initial NNN @ <model> → estimated actual NNN (recording failed: <reason>)
+                | N/A — not tracked, with reason>
   UAT: <offered | requested | performed | deferred | not applicable>
   Commit: <SHA>
   Push status: <yes | no | skipped, with reason>
@@ -190,6 +193,27 @@ If a step required by the project's process didn't happen, say so plainly in the
 ## Don't cite this skill in the output
 
 The summary is a report for the reader (human reviewer, orchestrator agent, future-you reading the closeout record). The skill is the reference for the *author*. Don't write "Per task-handoff-summaries..." or "This skill requires...", just produce the report. The format speaks for itself.
+
+## Adapter: token accounting
+
+If the project tracks AI spend per task (e.g. with
+[BeadRoad](https://github.com/ribrewguy/beadroad)), the closeout summary's
+`Token spend:` line is where estimate meets actual — the initial estimate
+(never the refined one; drift from the initial is the reported signal) against
+what the work actually cost. Three honest shapes:
+
+- `initial estimate 400k @ <model> → actual 610k (measured)` — the stopwatch
+  ran with a transcript.
+- `initial estimate 400k @ <model> → actual ~550k (self-reported)` — the
+  stopwatch ran without a transcript; the disclosure is a feature.
+- `initial estimate 400k @ <model> → estimated actual ~500k (recording
+  failed: stopwatch never started)` — a backfilled number is an **estimate**,
+  labeled as one; it is never promoted to `measured`.
+
+Estimate drift is a metric, not a mistake to hide — a summary that quietly
+matches its estimate to its actual is worse than one that reports a 3x miss.
+Where the capture happens (estimate at kickoff, stopwatch, stop at branch
+completion): the token-accounting adapter in `throughline`.
 
 ## Adapter: Beads
 

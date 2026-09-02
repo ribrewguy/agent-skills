@@ -85,6 +85,7 @@ not skip unilaterally.**
 
 ```
 ### Kickoff Declaration
+- Token estimate: <initial NNN @ <model> | refined NNN @ <model> | N/A + reason>
 - Process: <single-agent | multi-agent worker | multi-agent orchestrator>
 - Requirements: <file path + section>
 - Architecture: <file path + section>
@@ -97,10 +98,14 @@ not skip unilaterally.**
 
 **Steps, visible in the transcript:**
 
+The declaration *begins* with the token estimate — even without a spend
+tracker, the line appears with `N/A` and a reason. Silence is never the right
+degradation. Estimate mechanics: the token-accounting adapter below.
+
 1. Read the task. Cite it.
 2. Read the requirements. Cite file + section.
 3. Read the architecture spec. Cite file + section.
-4. Claim the task atomically.
+4. Claim the task atomically — and refine the token estimate (adapter below).
 5. Create the branch and worktree the declared process requires:
    - single-agent → `feature/<task_id>_<short_name>`
    - multi-agent worker → dedicated worktree on `feature/<task_id>_<short_name>`
@@ -150,27 +155,31 @@ When work warrants an epic, the ordering matters:
 
 ### Phase A — Branch completion
 
-1. Run quality gates per the project's stack policy. Report pass/fail with
+1. Stop the token stopwatch and carry the recorded segment(s) — or the honest
+   none-recorded outcome with its reason — into the evidence block (adapter
+   below).
+2. Run quality gates per the project's stack policy. Report pass/fail with
    concrete results. **Do not accept "tests pass" as evidence without running
    them.**
-2. **UAT gate** — if the change is externally visible, ASK before any commit. No
+3. **UAT gate** — if the change is externally visible, ASK before any commit. No
    commit, push, or merge until UAT approval.
-3. Commit on the working branch: Conventional Commits, a real multi-paragraph
+4. Commit on the working branch: Conventional Commits, a real multi-paragraph
    body, the task id, and the co-author line (`multi-agent-git-workflow`).
-4. Publish the branch if remote visibility is required. Worker `feature/*`
+5. Publish the branch if remote visibility is required. Worker `feature/*`
    branches stay local by default; an orchestrator's `integration/*` branch MUST
    be published when it is the shared integration target.
-5. If published, verify SHA parity. Emit the pre-integration evidence block:
+6. If published, verify SHA parity. Emit the pre-integration evidence block:
 
 ```
 Branch: <name>
 Local SHA:  <hash>
 Remote SHA: <hash or "not published">
 Gates:      lint=PASS typecheck=PASS tests=PASS
+Tokens:     <recorded segment(s) NNN @ <model> | none recorded — <reason>>
 git status: clean
 ```
 
-6. Produce the **implementation summary** (`task-handoff-summaries` Format 1;
+7. Produce the **implementation summary** (`task-handoff-summaries` Format 1;
    workers use Format 2). It ends at *"ready to merge, awaiting your
    acceptance"* — and stops there.
 
@@ -307,21 +316,47 @@ parent/child state rules: `references/beads-protected-branches.md`.
 ## Adapter: token accounting
 
 If the project tracks AI spend per task with
-[BeadRoad](https://github.com/ribrewguy/beadroad):
+[BeadRoad](https://github.com/ribrewguy/beadroad). Token data degrades
+quietly — one forgotten stopwatch silently rots velocity, forecasts, and
+weighted progress. That is why this is ceremony, not suggestion.
 
-- **Kickoff, after the claim:** record or refine the estimate
-  (`beadroad tokens estimate <id> --model <m> --amount <n>`), then **start the
-  stopwatch** (`beadroad tokens start <id>`).
-- **Phase A, step 1:** stop it (`beadroad tokens stop`).
+**Estimates.** An initial estimate at task creation/grooming
+(`beadroad tokens estimate <id> --model <m> --amount <n> --initial`);
+refine at claim (same command without `--initial`). Refining never erases the
+initial value — **estimate drift is a reported metric, not a mistake to
+hide**. Denominate in raw tokens tagged with the model, never dollars or
+hours. Calibrate against actuals on similar closed tasks; without history,
+order-of-magnitude, no false precision.
 
-Starting the stopwatch AT kickoff is the only way to capture a **measured**
-actual; a retroactive backfill is self-report and must be recorded as an
-estimate, never as `measured`. Isolate the session so a concurrent one cannot
-clobber the shared active-task pointer. Use `beadroad tokens switch <id>` when
-moving between tasks.
+**The stopwatch.** `beadroad tokens start <id>` at kickoff, after the claim —
+pass `--transcript <path>` whenever the harness exposes one; that is the only
+way to capture a **measured** actual. `beadroad tokens stop` at Phase A
+step 1; `switch <id>` when changing tasks mid-session. Without a transcript,
+self-report honestly at stop — it is recorded as **self-reported**, and that
+disclosure is a feature. Give concurrent sessions distinct session ids so
+they cannot clobber each other's active-task state.
 
-If the stopwatch never ran, **say so** and record a refined estimate. Never
-fabricate a measured segment.
+**Honesty rules (verbatim-strength).**
+1. Never invent a measured number — no transcript and no real usage means
+   `stop` records nothing rather than a guess.
+2. Never smear unattributed spend (warm-up, between-task gaps) onto a
+   convenient task. An honest gap beats a guessed split.
+3. A failed `beadroad tokens` command means the segment was NOT recorded;
+   state only advances on success. Retrying is safe (idempotent).
+4. The CLI owns the label wire-format — never hand-edit `token-*` labels.
+
+**Where the numbers surface.** The Kickoff Declaration *begins* with the
+estimate line; the Phase A evidence block carries the recorded segment(s) or
+the honest none-recorded outcome; the **closeout summary reports initial
+estimate vs actual** — labeled `measured`, `self-reported`, or, when
+recording failed, an *estimated actual* explicitly labeled as an estimate
+(`task-handoff-summaries` Format 3). Multi-agent: workers run the stopwatch
+in their own sessions; the orchestrator's integration/review spend is
+attributed to the parent task.
+
+**Degradation.** Not connected (no `beadroad`): the estimate lines still
+apply — they cost nothing — and stopwatch steps are reported as
+`N/A — not connected`. Silence is never the right degradation.
 
 ## See also
 

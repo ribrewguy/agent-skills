@@ -36,4 +36,4 @@ Policies with no other home, as `references/`: feature governance (discovery and
 
 ## Adapters
 
-Tracker-agnostic by default, with adapters for [Beads](https://github.com/gastownhall/beads) (claim flow, branch/commit id format, parent-child state) and [BeadRoad](https://github.com/ribrewguy/beadroad) token accounting (stopwatch at kickoff, stop at Phase A — a retroactive backfill is an estimate, never a measured actual).
+Tracker-agnostic by default, with adapters for [Beads](https://github.com/gastownhall/beads) (claim flow, branch/commit id format, parent-child state) and [BeadRoad](https://github.com/ribrewguy/beadroad) token accounting. The Kickoff Declaration *begins* with the token estimate, the Phase A evidence block carries the recorded segment(s), and the closeout summary reports initial estimate vs actual — a backfill after a failed recording is an *estimated actual*, labeled as an estimate, never promoted to measured. Estimate drift is a reported metric, not a mistake to hide.
