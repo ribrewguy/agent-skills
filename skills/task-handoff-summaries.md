@@ -54,6 +54,7 @@ For other tools, see [Install](../install).
 - **Strongly recommended:** a task tracker (Beads, GitHub Issues, Linear, Jira, Shortcut). Without one, every summary's `Task Scope:` is `No task was worked on.` and the skill falls back to lightweight-process closeouts.
 - **Strongly recommended:** a version-controlled workflow with explicit branches and integration targets. The Branch / Integration Target / Governance Status fields assume a branch model where work flows through stages.
 - **Adapter:** [Beads](https://github.com/gastownhall/beads). The skill body has a section showing the literal mapping (`Bead Scope: proj-42`, `bd show <id>` for the design data the summary needs). Other trackers substitute their own ID format.
+- **Adapter:** token accounting ([BeadRoad](https://github.com/ribrewguy/beadroad)). The closeout summary's `Token spend:` line reports the initial estimate vs the actual — `measured`, `self-reported`, or an *estimated actual* when recording failed, labeled as an estimate. Estimate drift is the signal, not something to hide. Capture ceremony (estimate at kickoff, stopwatch, stop at branch completion) lives in [throughline](throughline).
 
 ## Source of truth
 
