@@ -1,6 +1,6 @@
 ---
 name: rest-api-design
-description: "Use when designing or reviewing HTTP REST APIs, endpoints, typed contracts (TS/Python/Go/Rust), pagination/error conventions, PRs at the network boundary. Covers resource-oriented URLs, PATCH for state transitions (not sub-resource verbs), domain-expressive error codes, flat error envelopes, idempotency, content negotiation. Symptoms, verbs in URLs, sub-resource action verbs (/complete) for state transitions, error codes echoing HTTP status, snake_case wire format, raw arrays from list endpoints, GET mutating state, missing idempotency on side-effectful POSTs."
+description: "Use whenever creating, changing, or reviewing ANY HTTP endpoint, route, or wire format — even when the request never says 'API': adding an endpoint, scaffolding CRUD routes, wiring the backend for a feature, exposing a service or module over HTTP, standardizing or paginating list responses, versioning a public API, or reviewing a PR that touches the network boundary. 'Add an endpoint', 'build the backend', 'make a route' are this skill's territory — consult it before writing the handler. Covers resource-oriented URLs, PATCH for state transitions (not sub-resource verbs), domain-expressive error codes, flat error envelopes, idempotency keys on side-effectful POSTs (retry/double-charge prevention), pagination, content negotiation, typed contracts (TS/Python/Go/Rust). Not for consuming third-party APIs, GraphQL/gRPC/WebSocket design, load testing, or infra-level rate limiting."
 ---
 
 # REST API Design
