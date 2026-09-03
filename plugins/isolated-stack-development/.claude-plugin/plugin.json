@@ -1,7 +1,7 @@
 {
   "name": "isolated-stack-development",
   "description": "One isolated local stack per worktree for Supabase-backed repos: derived project_id, ports discovered at allocation time (never recorded), env audit for shared-system pointers, order-critical teardown. Ships the stack tool (up/status/down/doctor with --dry-run), a PreToolUse guard that blocks destructive resets aimed at a stack the current directory doesn't own, and per-framework adapters (nuxt, node, vite, spring). Repos opt in with a tracked .isolated-stack.json. Common failure modes covered: a dev server pointed at the shared stack from a worktree, supabase stop killing the shared stack for everyone, a seed step landing in the shared database, a boot that rolls all the way back after applying every migration.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "ribrewguy"
   },
