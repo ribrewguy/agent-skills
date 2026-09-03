@@ -1,6 +1,6 @@
 ---
 name: throughline
-description: "Use when starting a tracked task (task id + \"start\"/\"work on\"/\"pick up\"/\"claim\"), closing one (\"close it out\"/\"ship it\"/\"wrap up\"), producing an implementation or closeout summary, requesting or performing code review, changing a public service method (MCP parity), or starting/ending non-trivial work (procedural memory). Dispatcher for the full lifecycle: requirements to architecture to task to implementation to commit to merge to closeout, with an auditable artifact at every hand-off. Symptoms, implementation starting with no kickoff declaration, design docs authored in the main checkout, a merge to the trunk the user never accepted, a closeout with no cleanup, a task closed before its branch landed."
+description: "Use when starting a tracked task (task id + 'start'/'work on'/'pick up'/'claim'), closing one ('close it out'/'ship it'/'wrap up'), producing an implementation or closeout summary, requesting or performing code review, changing a public service method (MCP parity), or starting/ending non-trivial work (procedural memory). Dispatcher for the full lifecycle: requirements to architecture to task to implementation to commit to merge to closeout, with an auditable artifact at every hand-off. Symptoms, implementation starting with no kickoff declaration, design docs authored in the main checkout, a merge to the trunk the user never accepted, a closeout with no cleanup, a task closed before its branch landed."
 ---
 
 # Throughline

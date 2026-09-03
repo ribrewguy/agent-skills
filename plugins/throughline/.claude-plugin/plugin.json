@@ -1,7 +1,7 @@
 {
   "name": "throughline",
   "description": "Lifecycle dispatcher for tracked engineering work: requirements to architecture to task to implementation to commit to merge to closeout, with an auditable artifact at every hand-off. Owns the Kickoff Declaration, the three completion phases, the source-of-truth ladder, and epic scaffolding order (worktree before any authored artifact, including design docs). Delegates branches/commits to multi-agent-git-workflow, tier promotion to branch-promotion-discipline, summary shapes to task-handoff-summaries, and review format to structured-code-review. Bundles the policies with no other home: feature governance, procedural memory, MCP parity, Beads protected-branch mechanics. Common failure modes covered: implementation starting with no kickoff, design docs authored in the main checkout, merging to the trunk without the user's acceptance, closing a task before its branch lands, cleanup deferred to a later session.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "ribrewguy"
   },
