@@ -1,0 +1,50 @@
+{
+  "skill_name": "kotlin-practices",
+  "evals": [
+    {
+      "id": 0,
+      "name": "current-ktlint-adapter-lag",
+      "prompt": "During an explicit Kotlin tooling setup, an adapter defaults to an old ktlint. Current docs show a preview engine under different coordinates. Configure stable current-compatible formatting.",
+      "expectations": [
+        "Checks official stable releases and migrations instead of treating preview/latest docs as stable.",
+        "Tracks adapter and engine versions independently and resolves/pins them in project configuration.",
+        "Verifies coordinates/main class/flags or a supported adapter; isolates CLI dependencies when used.",
+        "Keeps normal verification nonmutating and provides a separate format command.",
+        "Aligns .editorconfig and adapter overrides with IDE behavior."
+      ]
+    },
+    {
+      "id": 1,
+      "name": "mixed-compile-and-test",
+      "prompt": "Audit Maven Java/Kotlin sources with references in both directions and tests in both languages. Java default-compile runs before Kotlin; CI reports success but no Kotlin tests execute.",
+      "expectations": [
+        "Verifies source roots and explicit/default execution ordering for production and test compilation.",
+        "Checks references in both directions and both test languages are discovered.",
+        "Does not accept a green compile with skipped sources/tests.",
+        "Confines Java-only analyzers to applicable source modules."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "bytecode-target-and-type-resolution",
+      "prompt": "Kotlin jvmTarget matches our old runtime, but code calls a newer Java API. detekt returns success without classpaths while enabled rules require type information.",
+      "expectations": [
+        "Distinguishes bytecode target from Java API availability and uses a supported release option/toolchain.",
+        "Proves above-target API/runtime incompatibility is rejected.",
+        "Configures proper analyzed output/dependency/test classpaths and JDK/target for type resolution.",
+        "Checks analyzer/compiler compatibility and discloses unsupported syntax/metadata rather than claiming complete analysis."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "coverage-and-gradle-boundary",
+      "prompt": "A Kotlin Gradle project already uses Kover. A separate Maven project needs integration and child-JVM coverage. Should we add JaCoCo everywhere and copy Gradle configuration into Maven?",
+      "expectations": [
+        "Preserves the working Gradle integration without migration to Maven.",
+        "Selects one coverage implementation deliberately and avoids redundant instrumentation.",
+        "Verifies Maven-specific Kover suite limitations before choosing it for integration/child coverage.",
+        "Applies module floors and missing-data policy to actual Kotlin production classes."
+      ]
+    }
+  ]
+}

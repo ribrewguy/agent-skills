@@ -1,0 +1,17 @@
+[INFO] Scanning for projects...
+[INFO] Loaded 24153 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO]
+[INFO] ------------------------< skill.fixture:mixed >-------------------------
+[INFO] Building mixed 1
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- help:3.5.2:effective-pom (default-cli) @ mixed ---
+[INFO] Loaded 74 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO] Effective-POM written to: /private${FIXTURE}/effective-mixed.xml
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.181 s
+[INFO] Finished at: 2026-10-20T19:14:56-04:00
+[INFO] ------------------------------------------------------------------------

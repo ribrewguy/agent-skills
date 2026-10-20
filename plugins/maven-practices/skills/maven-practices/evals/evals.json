@@ -1,0 +1,50 @@
+{
+  "skill_name": "maven-practices",
+  "evals": [
+    {
+      "id": 0,
+      "name": "management-is-not-execution",
+      "prompt": "Audit a reactor where quality plugins exist only under pluginManagement. CI runs test on one JDK, a JDK-activated quality profile never activates in required jobs, and coverage exists only as report-aggregate.",
+      "expectations": [
+        "Identifies missing executable declarations/bindings and verifies effective children plus actual logs.",
+        "Distinguishes aggregation from inheritance.",
+        "Does not treat aggregate reports as module threshold enforcement.",
+        "Documents and wires a complete wrapper verify command/profile into required CI."
+      ]
+    },
+    {
+      "id": 1,
+      "name": "failsafe-and-argline",
+      "prompt": "Configure Maven unit/integration coverage. Surefire and Failsafe have custom JVM flags and another agent. Failsafe currently binds only integration-test; tests start child application JVMs.",
+      "expectations": [
+        "Binds both Failsafe integration-test and verify with teardown through verify.",
+        "Preserves existing test JVM flags and other agents using suitable property composition and late evaluation.",
+        "Provides resolved empty defaults for supported noninstrumented paths.",
+        "Explicitly propagates instrumentation to child JVMs and uses safe data paths for concurrent writers.",
+        "Collects/checks required integration data separately or deliberately combines it."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "missing-and-stale-coverage",
+      "prompt": "After a green reactor build, remove the coverage agent and rerun verify without clean. It still succeeds. Implement enforcement without requiring coverage in the POM aggregator.",
+      "expectations": [
+        "Resets intended execution/report data before suites or otherwise prevents stale evidence.",
+        "Adds failure guards for required suite data and expected analyzed population.",
+        "Keeps production-module floors and deliberate empty-module handling.",
+        "Proves missing unit and integration instrumentation fail for the intended reason."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "format-and-dependency-rules",
+      "prompt": "Improve build hygiene for an existing Maven project. A formatting execution uses apply during verify and a suggested Enforcer bundle conflicts with the project BOM.",
+      "expectations": [
+        "Makes verify nonmutating and exposes an explicit local format command.",
+        "Uses the wrapper and project-owned exact plugin/engine pins.",
+        "Evaluates convergence, upper bounds, duplicates and bytecode checks individually rather than applying incompatible rules blindly.",
+        "Preserves compatible existing dependency management and proves chosen checks execute."
+      ]
+    }
+  ]
+}

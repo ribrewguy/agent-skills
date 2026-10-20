@@ -1,0 +1,33 @@
+{
+  "resolved_at": "2026-10-20T23:00:33Z",
+  "source": "https://repo.maven.apache.org/maven2/",
+  "versions": {
+    "maven": "3.10.0",
+    "wrapper": "3.3.4",
+    "compiler": "3.16.0",
+    "surefire": "3.6.0",
+    "failsafe": "3.6.0",
+    "jacoco": "0.8.15",
+    "enforcer": "3.6.3",
+    "antrun": "3.2.0",
+    "spotless": "3.10.4",
+    "formatter": "1.36.1",
+    "checkstyle_plugin": "3.6.0",
+    "checkstyle": "14.3.0",
+    "spotbugs": "4.10.5.0",
+    "findsecbugs": "1.14.0",
+    "pmd": "3.28.0",
+    "errorprone": "2.50.0",
+    "kotlin": "2.4.21",
+    "ktlint": "1.8.0",
+    "detekt": "1.23.8",
+    "junit": "6.1.3",
+    "clean": "3.5.0",
+    "resources": "3.5.0",
+    "jar": "3.5.1",
+    "help": "3.5.2"
+  },
+  "compatibility_notes": {
+    "formatter": "Newest stable candidate failed in the selected Spotless adapter; immediately preceding stable release passed the formatter probe. See formatter compatibility logs."
+  }
+}

@@ -1,0 +1,810 @@
+{
+  "date": "2026-10-20",
+  "status": "validated implementation; verification recorded before commit; installation and integration not performed",
+  "complete_fixture_gate": "./mvnw -B -ntp -Pquality,java-analysis verify",
+  "fixture_build_jdk": "OpenJDK 25",
+  "supported_runtime_test_jdk": "OpenJDK 17",
+  "harness_sha256": "114ad5855ad864a3f3695938d4bb098011607c057cccaf774d463d49e4f850cc",
+  "negative_probes_passed": 16,
+  "records": [
+    {
+      "name": "wrapper",
+      "log": "logs/reactor-wrapper.log",
+      "sources_unchanged": true,
+      "command": [
+        "mvn",
+        "-B",
+        "-ntp",
+        "org.apache.maven.plugins:maven-wrapper-plugin:3.3.4:wrapper",
+        "-Dmaven=3.10.0"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.81,
+      "fixture": "reactor"
+    },
+    {
+      "name": "format",
+      "log": "logs/reactor-format.log",
+      "sources_unchanged": false,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 4.2,
+      "fixture": "reactor"
+    },
+    {
+      "name": "clean-reactor",
+      "log": "logs/reactor-clean-reactor.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "clean",
+        "verify"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 27.83,
+      "fixture": "reactor"
+    },
+    {
+      "name": "effective-java-only",
+      "log": "logs/reactor-effective-java-only.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "help:effective-pom",
+        "-Doutput=/private/tmp/jvm-quality-final/effective-java-only.xml"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 2.26,
+      "fixture": "reactor"
+    },
+    {
+      "name": "effective-kotlin-only",
+      "log": "logs/reactor-effective-kotlin-only.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "kotlin-only",
+        "help:effective-pom",
+        "-Doutput=/private/tmp/jvm-quality-final/effective-kotlin-only.xml"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 2.29,
+      "fixture": "reactor"
+    },
+    {
+      "name": "effective-mixed",
+      "log": "logs/reactor-effective-mixed.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "mixed",
+        "help:effective-pom",
+        "-Doutput=/private/tmp/jvm-quality-final/effective-mixed.xml"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 2.1,
+      "fixture": "reactor"
+    },
+    {
+      "name": "incremental-reactor",
+      "log": "logs/reactor-incremental-reactor.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "verify"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 24.6,
+      "fixture": "reactor"
+    },
+    {
+      "name": "java-format",
+      "log": "logs/reactor-java-format.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "spotless",
+      "passed": true,
+      "seconds": 10.86,
+      "fixture": "reactor"
+    },
+    {
+      "name": "kotlin-format",
+      "log": "logs/reactor-kotlin-format.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "kotlin-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "spotless",
+      "passed": true,
+      "seconds": 11.6,
+      "fixture": "reactor"
+    },
+    {
+      "name": "integration-failure-format",
+      "log": "logs/reactor-integration-failure-format.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "java-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.87,
+      "fixture": "reactor"
+    },
+    {
+      "name": "integration-failure",
+      "log": "logs/reactor-integration-failure.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "There are test failures",
+      "passed": true,
+      "seconds": 10.23,
+      "fixture": "reactor"
+    },
+    {
+      "name": "module-branch-floor-format",
+      "log": "logs/reactor-module-branch-floor-format.log",
+      "sources_unchanged": false,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "java-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.81,
+      "fixture": "reactor"
+    },
+    {
+      "name": "module-branch-floor",
+      "log": "logs/reactor-module-branch-floor.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "coverage checks have not been met",
+      "passed": true,
+      "seconds": 11.6,
+      "fixture": "reactor"
+    },
+    {
+      "name": "missing-agent",
+      "log": "logs/reactor-missing-agent.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-Djacoco.skip=true",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "Required coverage data missing or empty",
+      "passed": true,
+      "seconds": 4.36,
+      "fixture": "reactor"
+    },
+    {
+      "name": "missing-integration-coverage",
+      "log": "logs/reactor-missing-integration-coverage.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-DskipITs=true",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "Required coverage data missing or empty",
+      "passed": true,
+      "seconds": 3.28,
+      "fixture": "reactor"
+    },
+    {
+      "name": "missing-required-tests",
+      "log": "logs/reactor-missing-required-tests.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-DskipTests",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "Required coverage data missing or empty",
+      "passed": true,
+      "seconds": 3.42,
+      "fixture": "reactor"
+    },
+    {
+      "name": "java-api-format",
+      "log": "logs/reactor-java-api-format.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "java-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.41,
+      "fixture": "reactor"
+    },
+    {
+      "name": "java-api",
+      "log": "logs/reactor-java-api.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "cannot find symbol",
+      "passed": true,
+      "seconds": 2.88,
+      "fixture": "reactor"
+    },
+    {
+      "name": "kotlin-api-format",
+      "log": "logs/reactor-kotlin-api-format.log",
+      "sources_unchanged": false,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "kotlin-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.8,
+      "fixture": "reactor"
+    },
+    {
+      "name": "kotlin-api",
+      "log": "logs/reactor-kotlin-api.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "kotlin-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "getFirst",
+      "passed": true,
+      "seconds": 3.57,
+      "fixture": "reactor"
+    },
+    {
+      "name": "detekt-finding-format",
+      "log": "logs/reactor-detekt-finding-format.log",
+      "sources_unchanged": false,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "kotlin-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 2.3,
+      "fixture": "reactor"
+    },
+    {
+      "name": "detekt-finding",
+      "log": "logs/reactor-detekt-finding.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "kotlin-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "UnnecessaryNotNullOperator",
+      "passed": true,
+      "seconds": 8.04,
+      "fixture": "reactor"
+    },
+    {
+      "name": "java-style-test-format",
+      "log": "logs/reactor-java-style-test-format.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "java-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.45,
+      "fixture": "reactor"
+    },
+    {
+      "name": "java-style-test",
+      "log": "logs/reactor-java-style-test.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "AvoidStarImport",
+      "passed": true,
+      "seconds": 9.76,
+      "fixture": "reactor"
+    },
+    {
+      "name": "restored-reactor",
+      "log": "logs/reactor-restored-reactor.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-final/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "verify"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 22.19,
+      "fixture": "reactor"
+    },
+    {
+      "name": "wrapper",
+      "log": "logs/analyzers-wrapper.log",
+      "sources_unchanged": true,
+      "command": [
+        "mvn",
+        "-B",
+        "-ntp",
+        "org.apache.maven.plugins:maven-wrapper-plugin:3.3.4:wrapper",
+        "-Dmaven=3.10.0"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.52,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "analysis-format",
+      "log": "logs/analyzers-analysis-format.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "java-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.4,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "analysis-clean",
+      "log": "logs/analyzers-analysis-clean.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "clean",
+        "verify"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 10.28,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "errorprone-finding-format",
+      "log": "logs/analyzers-errorprone-finding-format.log",
+      "sources_unchanged": false,
+      "command": [
+        "/private/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "java-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 2.08,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "errorprone-finding",
+      "log": "logs/analyzers-errorprone-finding.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "DeadException",
+      "passed": true,
+      "seconds": 3.41,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "spotbugs-finding-format",
+      "log": "logs/analyzers-spotbugs-finding-format.log",
+      "sources_unchanged": false,
+      "command": [
+        "/private/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "java-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.87,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "spotbugs-finding",
+      "log": "logs/analyzers-spotbugs-finding.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "NP_ALWAYS_NULL",
+      "passed": true,
+      "seconds": 7.54,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "pmd-finding-format",
+      "log": "logs/analyzers-pmd-finding-format.log",
+      "sources_unchanged": false,
+      "command": [
+        "/private/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "java-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.79,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "pmd-finding",
+      "log": "logs/analyzers-pmd-finding.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "EmptyCatchBlock",
+      "passed": true,
+      "seconds": 9.76,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "cpd-finding-format",
+      "log": "logs/analyzers-cpd-finding-format.log",
+      "sources_unchanged": false,
+      "command": [
+        "/private/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "java-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.72,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "cpd-finding",
+      "log": "logs/analyzers-cpd-finding.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "duplicated",
+      "passed": true,
+      "seconds": 9.04,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "analysis-restored",
+      "log": "logs/analyzers-analysis-restored.log",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 12.3,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "compiler-warning-format",
+      "log": "logs/analyzers-compiler-warning-format.log",
+      "sources_unchanged": true,
+      "command": [
+        "/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality",
+        "-pl",
+        "java-only",
+        "spotless:apply"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 1.61,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "compiler-warning",
+      "log": "logs/analyzers-compiler-warning.log",
+      "sources_unchanged": true,
+      "command": [
+        "/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 1,
+      "expected_diagnostic": "warnings found and -Werror specified",
+      "passed": true,
+      "seconds": 3.15,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "warning-restored",
+      "log": "logs/analyzers-warning-restored.log",
+      "sources_unchanged": true,
+      "command": [
+        "/tmp/jvm-quality-analyzer-proof/mvnw",
+        "-B",
+        "-ntp",
+        "-Pquality,java-analysis",
+        "-pl",
+        "java-only",
+        "verify"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 11.49,
+      "fixture": "analyzers"
+    },
+    {
+      "name": "wrapper",
+      "sources_unchanged": true,
+      "command": [
+        "mvn",
+        "-B",
+        "-ntp",
+        "org.apache.maven.plugins:maven-wrapper-plugin:3.3.4:wrapper",
+        "-Dmaven=3.10.0"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 2.07,
+      "fixture": "runtime",
+      "log": "logs/runtime-wrapper.log"
+    },
+    {
+      "name": "runtime-tests",
+      "sources_unchanged": true,
+      "command": [
+        "/private/tmp/jvm-quality-runtime/mvnw",
+        "-B",
+        "-ntp",
+        "-Denforcer.skip=true",
+        "-Pquality",
+        "test"
+      ],
+      "exit_code": 0,
+      "expected_diagnostic": null,
+      "passed": true,
+      "seconds": 16.12,
+      "fixture": "runtime",
+      "log": "logs/runtime-runtime-tests.log"
+    }
+  ],
+  "packaging": {
+    "skills_validated": 4,
+    "authored_prompt_cases": 16,
+    "canonical_discovery_links_checked": 4,
+    "agent_discovery_links_checked": 16
+  },
+  "model_benchmark": "not run; no comparative model performance claim",
+  "limits": [
+    "Common fixture syntax and selected rules only; not all compiler/analyzer combinations.",
+    "JaCoCo exercised; Kover and Gradle alternatives not executed.",
+    "Vulnerability policy authored; no live dependency database scan.",
+    "No global installation or publication performed."
+  ],
+  "log_normalization": "Fixture/cache paths replaced with placeholders and trailing whitespace removed; diagnostics and exit evidence retained."
+}

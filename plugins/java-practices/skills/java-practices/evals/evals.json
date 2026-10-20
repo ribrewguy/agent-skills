@@ -1,0 +1,50 @@
+{
+  "skill_name": "java-practices",
+  "evals": [
+    {
+      "id": 0,
+      "name": "target-and-compiler-internals",
+      "prompt": "We build Java on a newer JDK for older runtimes. Only source/target is set. Add Error Prone and formatting while keeping existing processors and test JVM agents.",
+      "expectations": [
+        "Sets an explicit release/API target and verifies a newer platform API is rejected.",
+        "Checks current stable Error Prone and formatter compatibility with actual compiler JDK.",
+        "Distinguishes in-process build JVM access from forked javac JVM flags.",
+        "Preserves annotation processor paths and delegates test JVM agent wiring to the build integration.",
+        "Pins tool versions only in the consuming project."
+      ]
+    },
+    {
+      "id": 1,
+      "name": "formatter-style-conflict",
+      "prompt": "After the formatter runs, our full Checkstyle preset rejects output and test sources are not checked. Fix the configuration without excluding every test.",
+      "expectations": [
+        "Keeps one formatter and reconciles contradictory Checkstyle rules with clear ownership.",
+        "Includes applicable Java production and test sources.",
+        "Checks effective severity/failure behavior as well as failOnViolation.",
+        "Proves formatter output passes style checks and verify does not mutate files."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "analyzer-overlap",
+      "prompt": "Set up Java correctness/security analysis for a mixed Java/Kotlin reactor. Proposed tools are Error Prone, SpotBugs/FindSecBugs and every PMD/CPD rule.",
+      "expectations": [
+        "Curates complementary rule ownership rather than enabling every rule or duplicate concern.",
+        "Verifies failing check goals rather than reports alone.",
+        "Confines Java source rules to Java sources and reviews Kotlin bytecode signal deliberately.",
+        "Uses narrow justified suppressions and preserves existing compatible choices."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "feature-work-boundary",
+      "prompt": "Fix one Java behavior bug in a legacy repo with pinned tools and accepted generated-source exclusions. The current build has an unrelated baseline finding.",
+      "expectations": [
+        "Keeps feature work focused and does not silently upgrade tools or reformat the repository.",
+        "Adds meaningful tests and reports remaining gate failures honestly.",
+        "Does not lower thresholds, regenerate baselines or widen exclusions just to pass.",
+        "Uses the configured verification command and exact project pins."
+      ]
+    }
+  ]
+}

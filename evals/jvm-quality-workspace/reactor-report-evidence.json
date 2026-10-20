@@ -1,0 +1,109 @@
+{
+  "java-only": {
+    "test_counts": {
+      "surefire": 1,
+      "failsafe": 2
+    },
+    "classes": [
+      "sample/ChildMain",
+      "sample/Logic"
+    ],
+    "counters": {
+      "INSTRUCTION": {
+        "missed": 0,
+        "covered": 19
+      },
+      "BRANCH": {
+        "missed": 0,
+        "covered": 2
+      },
+      "LINE": {
+        "missed": 0,
+        "covered": 7
+      },
+      "COMPLEXITY": {
+        "missed": 0,
+        "covered": 5
+      },
+      "METHOD": {
+        "missed": 0,
+        "covered": 4
+      },
+      "CLASS": {
+        "missed": 0,
+        "covered": 2
+      }
+    }
+  },
+  "kotlin-only": {
+    "test_counts": {
+      "surefire": 1,
+      "failsafe": 1
+    },
+    "classes": [
+      "sample/Logic"
+    ],
+    "counters": {
+      "INSTRUCTION": {
+        "missed": 0,
+        "covered": 12
+      },
+      "BRANCH": {
+        "missed": 0,
+        "covered": 2
+      },
+      "LINE": {
+        "missed": 0,
+        "covered": 3
+      },
+      "COMPLEXITY": {
+        "missed": 0,
+        "covered": 4
+      },
+      "METHOD": {
+        "missed": 0,
+        "covered": 3
+      },
+      "CLASS": {
+        "missed": 0,
+        "covered": 1
+      }
+    }
+  },
+  "mixed": {
+    "test_counts": {
+      "surefire": 2,
+      "failsafe": 1
+    },
+    "classes": [
+      "sample/Bridge",
+      "sample/Logic"
+    ],
+    "counters": {
+      "INSTRUCTION": {
+        "missed": 0,
+        "covered": 27
+      },
+      "BRANCH": {
+        "missed": 0,
+        "covered": 2
+      },
+      "LINE": {
+        "missed": 0,
+        "covered": 7
+      },
+      "COMPLEXITY": {
+        "missed": 0,
+        "covered": 8
+      },
+      "METHOD": {
+        "missed": 0,
+        "covered": 7
+      },
+      "CLASS": {
+        "missed": 0,
+        "covered": 2
+      }
+    }
+  }
+}

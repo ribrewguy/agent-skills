@@ -1,0 +1,186 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] jvm-quality-fixture                                                [pom]
+[INFO] java-only                                                          [jar]
+[INFO] kotlin-only                                                        [jar]
+[INFO] mixed                                                              [jar]
+[INFO] empty                                                              [pom]
+[INFO]
+[INFO] -----------------< skill.fixture:jvm-quality-fixture >------------------
+[INFO] Building jvm-quality-fixture 1                                     [1/5]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] Loaded 24153 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO]
+[INFO] --- enforcer:3.6.3:enforce (tools) @ jvm-quality-fixture ---
+[INFO] Skipping Rule Enforcement.
+[INFO]
+[INFO] ----------------------< skill.fixture:java-only >-----------------------
+[INFO] Building java-only 1                                               [2/5]
+[INFO]   from java-only/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- enforcer:3.6.3:enforce (tools) @ java-only ---
+[INFO] Skipping Rule Enforcement.
+[INFO]
+[INFO] --- jacoco:0.8.15:prepare-agent (unit-agent) @ java-only ---
+[INFO] Loaded 74 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO] coverage.unit.args set to -javaagent:${M2_REPOSITORY}/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/private${FIXTURE}/java-only/target/unit.exec
+[INFO]
+[INFO] --- antrun:3.2.0:run (coverage-reset) @ java-only ---
+[INFO] Executing tasks
+[INFO] Executed tasks
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ java-only ---
+[INFO] skip non existing resourceDirectory /private${FIXTURE}/java-only/src/main/resources
+[INFO]
+[INFO] --- compiler:3.16.0:compile (default-compile) @ java-only ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 2 source files with javac [debug release 17] to target/classes
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ java-only ---
+[INFO] skip non existing resourceDirectory /private${FIXTURE}/java-only/src/test/resources
+[INFO]
+[INFO] --- compiler:3.16.0:testCompile (default-testCompile) @ java-only ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [debug release 17] to target/test-classes
+[INFO]
+[INFO] --- surefire:3.6.0:test (default-test) @ java-only ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running sample.JavaTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.067 s -- in sample.JavaTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] ---------------------< skill.fixture:kotlin-only >----------------------
+[INFO] Building kotlin-only 1                                             [3/5]
+[INFO]   from kotlin-only/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- enforcer:3.6.3:enforce (tools) @ kotlin-only ---
+[INFO] Skipping Rule Enforcement.
+[INFO]
+[INFO] --- jacoco:0.8.15:prepare-agent (unit-agent) @ kotlin-only ---
+[INFO] coverage.unit.args set to -javaagent:${M2_REPOSITORY}/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/private${FIXTURE}/kotlin-only/target/unit.exec
+[INFO]
+[INFO] --- antrun:3.2.0:run (coverage-reset) @ kotlin-only ---
+[INFO] Executing tasks
+[INFO] Executed tasks
+[INFO]
+[INFO] --- kotlin:2.4.21:compile (kotlin-compile) @ kotlin-only ---
+[WARNING] Source root doesn't exist: /private${FIXTURE}/kotlin-only/src/main/java
+[INFO] starting the daemon as: /opt/homebrew/Cellar/openjdk@17/17.0.18/libexec/openjdk.jdk/Contents/Home/bin/java -cp ${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-build-tools-impl/2.4.21/kotlin-build-tools-impl-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-build-tools-api/2.4.21/kotlin-build-tools-api-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-stdlib/2.4.21/kotlin-stdlib-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/annotations/13.0/annotations-13.0.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-build-tools-cri-impl/2.4.21/kotlin-build-tools-cri-impl-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-tooling-core/2.4.21/kotlin-tooling-core-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.4.21/kotlin-compiler-embeddable-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-script-runtime/2.4.21/kotlin-script-runtime-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-reflect/1.6.10/kotlin-reflect-1.6.10.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.4.21/kotlin-daemon-embeddable-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.8.0/kotlinx-coroutines-core-jvm-1.8.0.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-compiler-runner/2.4.21/kotlin-compiler-runner-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-daemon-client/2.4.21/kotlin-daemon-client-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.4.21/kotlin-scripting-compiler-embeddable-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-scripting-common/2.4.21/kotlin-scripting-common-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-scripting-jvm/2.4.21/kotlin-scripting-jvm-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.4.21/kotlin-scripting-compiler-impl-embeddable-2.4.21.jar -Djava.awt.headless=true -Djava.rmi.server.hostname=127.0.0.1 -Xmx12288m -XX:ReservedCodeCacheSize=320m -ea -Dkotlin.daemon.custom.run.files.path.for.tests=/Users/user/Library/Application Support/kotlin/daemon -XX:+UseCodeCacheFlushing -XX:+UseParallelGC -Dkotlin.daemon.initiator.marker.file=/tmp/kotlin-compiler-client-10761055748700077067-is-running --add-exports java.base/sun.nio.ch=ALL-UNNAMED org.jetbrains.kotlin.daemon.KotlinCompileDaemon --daemon-logsPath /tmp --daemon-logsFileSizeLimit=1048576 --daemon-logsFileCountLimit=3 --daemon-runFilesPath /Users/user/Library/Application Support/kotlin/daemon --daemon-autoshutdownIdleSeconds=7200 --daemon-shutdownDelayMilliseconds=1800000 --daemon-compilerClasspath ${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-build-tools-impl/2.4.21/kotlin-build-tools-impl-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-build-tools-api/2.4.21/kotlin-build-tools-api-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-stdlib/2.4.21/kotlin-stdlib-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/annotations/13.0/annotations-13.0.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-build-tools-cri-impl/2.4.21/kotlin-build-tools-cri-impl-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-tooling-core/2.4.21/kotlin-tooling-core-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.4.21/kotlin-compiler-embeddable-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-script-runtime/2.4.21/kotlin-script-runtime-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-reflect/1.6.10/kotlin-reflect-1.6.10.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.4.21/kotlin-daemon-embeddable-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.8.0/kotlinx-coroutines-core-jvm-1.8.0.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-compiler-runner/2.4.21/kotlin-compiler-runner-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-daemon-client/2.4.21/kotlin-daemon-client-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.4.21/kotlin-scripting-compiler-embeddable-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-scripting-common/2.4.21/kotlin-scripting-common-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-scripting-jvm/2.4.21/kotlin-scripting-jvm-2.4.21.jar:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.4.21/kotlin-scripting-compiler-impl-embeddable-2.4.21.jar
+[INFO] #1 retrying connecting to the daemon
+[INFO] Options for KOTLIN DAEMON: CompilationOptions(compilerMode=NON_INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=null, generateCompilerRefIndex=false)
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ kotlin-only ---
+[INFO] skip non existing resourceDirectory /private${FIXTURE}/kotlin-only/src/main/resources
+[INFO]
+[INFO] --- compiler:3.16.0:compile (default-compile) @ kotlin-only ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- kotlin:2.4.21:test-compile (kotlin-test) @ kotlin-only ---
+[WARNING] Source root doesn't exist: /private${FIXTURE}/kotlin-only/src/test/java
+[INFO] Options for KOTLIN DAEMON: CompilationOptions(compilerMode=NON_INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=null, generateCompilerRefIndex=false)
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ kotlin-only ---
+[INFO] skip non existing resourceDirectory /private${FIXTURE}/kotlin-only/src/test/resources
+[INFO]
+[INFO] --- compiler:3.16.0:testCompile (default-testCompile) @ kotlin-only ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.6.0:test (default-test) @ kotlin-only ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running sample.KotlinTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.052 s -- in sample.KotlinTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] ------------------------< skill.fixture:mixed >-------------------------
+[INFO] Building mixed 1                                                   [4/5]
+[INFO]   from mixed/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- enforcer:3.6.3:enforce (tools) @ mixed ---
+[INFO] Skipping Rule Enforcement.
+[INFO]
+[INFO] --- jacoco:0.8.15:prepare-agent (unit-agent) @ mixed ---
+[INFO] coverage.unit.args set to -javaagent:${M2_REPOSITORY}/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/private${FIXTURE}/mixed/target/unit.exec
+[INFO]
+[INFO] --- antrun:3.2.0:run (coverage-reset) @ mixed ---
+[INFO] Executing tasks
+[INFO] Executed tasks
+[INFO]
+[INFO] --- kotlin:2.4.21:compile (kotlin-compile) @ mixed ---
+[INFO] Options for KOTLIN DAEMON: CompilationOptions(compilerMode=NON_INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=null, generateCompilerRefIndex=false)
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ mixed ---
+[INFO] skip non existing resourceDirectory /private${FIXTURE}/mixed/src/main/resources
+[INFO]
+[INFO] --- compiler:3.16.0:compile (default-compile) @ mixed ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 1 source file with javac [debug release 17] to target/classes
+[INFO]
+[INFO] --- kotlin:2.4.21:test-compile (kotlin-test) @ mixed ---
+[INFO] Options for KOTLIN DAEMON: CompilationOptions(compilerMode=NON_INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=null, generateCompilerRefIndex=false)
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ mixed ---
+[INFO] skip non existing resourceDirectory /private${FIXTURE}/mixed/src/test/resources
+[INFO]
+[INFO] --- compiler:3.16.0:testCompile (default-testCompile) @ mixed ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 2 source files with javac [debug release 17] to target/test-classes
+[INFO]
+[INFO] --- surefire:3.6.0:test (default-test) @ mixed ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running sample.KotlinTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.253 s -- in sample.KotlinTest
+[INFO] Running sample.JavaTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in sample.JavaTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] ------------------------< skill.fixture:empty >-------------------------
+[INFO] Building empty 1                                                   [5/5]
+[INFO]   from empty/pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- enforcer:3.6.3:enforce (tools) @ empty ---
+[INFO] Skipping Rule Enforcement.
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for jvm-quality-fixture 1:
+[INFO]
+[INFO] jvm-quality-fixture ................................ SUCCESS [  0.505 s]
+[INFO] java-only .......................................... SUCCESS [  3.465 s]
+[INFO] kotlin-only ........................................ SUCCESS [  6.622 s]
+[INFO] mixed .............................................. SUCCESS [  3.205 s]
+[INFO] empty .............................................. SUCCESS [  0.002 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  13.938 s
+[INFO] Finished at: 2026-10-20T19:11:58-04:00
+[INFO] ------------------------------------------------------------------------

@@ -1,0 +1,9 @@
+{
+  "name": "jvm-quality",
+  "description": "Shared JVM quality policy for tests, module coverage, runtime compatibility, exceptions and dependency vulnerability scanning.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}
