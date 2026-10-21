@@ -25,7 +25,7 @@ Each diff has 4 packages: **redacted** (skill applied: implementer's self-assess
 
 Each package goes to two reviewer providers (Claude opus-4-7, Codex gpt-5.5) for two runs each. **Total cells:** 6 × 4 × 2 × 2 = 96. All 96 completed.
 
-The corpus is at [`plugins/cross-agent-review/skills/cross-agent-review/framing-corpus/`](https://github.com/ribrewguy/agent-skills/tree/main/plugins/cross-agent-review/skills/cross-agent-review/framing-corpus). The runner is [`tools/run_framing_codex.sh`](https://github.com/ribrewguy/agent-skills/blob/main/tools/run_framing_codex.sh) plus 48 dispatched Claude Code subagents. The grader is [`tools/grade_framing_experiment.py`](https://github.com/ribrewguy/agent-skills/blob/main/tools/grade_framing_experiment.py) (heuristic keyword + section parsing).
+The corpus is at [`skills/cross-agent-review-workspace/framing-corpus/`](https://github.com/ribrewguy/agent-skills/tree/main/skills/cross-agent-review-workspace/framing-corpus). The runner is [`tools/run_framing_codex.sh`](https://github.com/ribrewguy/agent-skills/blob/main/tools/run_framing_codex.sh) plus 48 dispatched Claude Code subagents. The grader is [`tools/grade_framing_experiment.py`](https://github.com/ribrewguy/agent-skills/blob/main/tools/grade_framing_experiment.py) (heuristic keyword + section parsing).
 
 ## Headline results
 
@@ -111,7 +111,7 @@ The skill's claim that redaction matters for review quality is empirically defen
 ## Browse the full data
 
 - **[Workspace](https://github.com/ribrewguy/agent-skills/tree/main/skills/cross-agent-review-workspace/iteration-1/framing-experiment)**: 96 `output.md` files + per-cell `grading.json`, plus `benchmark.json` and `benchmark.md`.
-- **[Corpus](https://github.com/ribrewguy/agent-skills/tree/main/plugins/cross-agent-review/skills/cross-agent-review/framing-corpus)**: the 6 diffs with their designs, planted-bug rubrics, and 4 packages each.
+- **[Corpus](https://github.com/ribrewguy/agent-skills/tree/main/skills/cross-agent-review-workspace/framing-corpus)**: the 6 diffs with their designs, planted-bug rubrics, and 4 packages each.
 - **[Runner](https://github.com/ribrewguy/agent-skills/blob/main/tools/run_framing_codex.sh)** and **[grader](https://github.com/ribrewguy/agent-skills/blob/main/tools/grade_framing_experiment.py)** sources.
 
 ## Back to skill

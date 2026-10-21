@@ -79,7 +79,8 @@ cannot go stale-but-plausible:
 - `supabase.config` — the tracked config the tool edits under skip-worktree.
 - `apps[]` — each app the stack serves: which env file points it at the stack,
   which adapter knows how to start and health-check it. Adapter details:
-  `references/adapters/<adapter>.md`.
+  [nuxt](references/adapters/nuxt.md), [node](references/adapters/node.md),
+  [vite](references/adapters/vite.md), [spring](references/adapters/spring.md).
 
 ## Ports
 
@@ -230,4 +231,4 @@ isolated-stack-development skill...".
 
 - [`multi-agent-git-workflow`](../../../multi-agent-git-workflow/skills/multi-agent-git-workflow/SKILL.md) — worktree location, run-from-the-worktree, cleanup ordering
 - [`throughline`](../../../throughline/skills/throughline/SKILL.md) — when isolation is stood up (kickoff) and torn down (closeout)
-- `references/adapters/` — nuxt, node, vite, spring: env wiring, start, health-check per framework
+- Adapters: [nuxt](references/adapters/nuxt.md), [node](references/adapters/node.md), [vite](references/adapters/vite.md), [spring](references/adapters/spring.md) — env wiring, start, health-check per framework

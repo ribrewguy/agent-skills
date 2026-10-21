@@ -13,7 +13,7 @@
 set -uo pipefail
 
 REPO="/Users/user/Projects/agent-skills"
-CORPUS="$REPO/plugins/cross-agent-review/skills/cross-agent-review/framing-corpus"
+CORPUS="$REPO/skills/cross-agent-review-workspace/framing-corpus"
 WORKSPACE="$REPO/skills/cross-agent-review-workspace/iteration-1/framing-experiment"
 
 DIFFS=(

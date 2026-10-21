@@ -3,7 +3,7 @@
 Build the framing-anchors-review-outcome eval corpus.
 
 Materializes 6 diffs (5 with planted bugs + 1 control) under
-plugins/cross-agent-review/skills/cross-agent-review/framing-corpus/.
+skills/cross-agent-review-workspace/framing-corpus/.
 
 Per diff:
   design.md        spec the implementer worked from
@@ -22,7 +22,7 @@ import os
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-CORPUS = REPO / "plugins/cross-agent-review/skills/cross-agent-review/framing-corpus"
+CORPUS = REPO / "skills/cross-agent-review-workspace/framing-corpus"
 
 
 # ============================================================

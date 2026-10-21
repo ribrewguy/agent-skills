@@ -493,20 +493,3 @@ Use `bd update <id> --status in_progress` (instead of `--claim`) only when you e
 - The parent bead remains `in_progress` until all required child beads are accepted, the integration branch reaches its target (typically `develop`), and the integration workflow is complete.
 
 Other trackers work the same way, substitute their issue ID format and adjust the lifecycle commands. The topology (parent task with N child tasks, one per worker) is the same shape regardless of tracker.
-
-## Invocation examples
-
-- "Set up the multi-agent topology for this epic, 3 workers."
-- "I'm a worker, I just finished. What's the close-out flow?"
-- "The orchestrator should review my branch, what's the handoff?"
-- "Write the commit message for this change."
-- "Reject this worker branch, the gates are failing." (uses this skill's rejection discipline + structured-code-review for the format)
-- "Should this commit need a UAT gate before I push?"
-- "How do I clean up after merge?"
-
-## See also
-
-- [`task-handoff-summaries`](../../../task-handoff-summaries/skills/task-handoff-summaries/SKILL.md), the worker handoff format and orchestrator close-out summary reference this skill's role and branch vocabulary.
-- [`structured-code-review`](../../../structured-code-review/skills/structured-code-review/SKILL.md), the format for orchestrator rejection notes and PR reviews.
-- [`cross-agent-review`](../../../cross-agent-review/skills/cross-agent-review/SKILL.md), when a worker branch goes through cross-vendor review before orchestrator acceptance, this is the workflow.
-- `branch-promotion-discipline`, the next layer up: 3-tier `develop` → `uat` → `main` promotion, UAT branch as a long-lived environment, CI gate matrix, source-ref enforcement, pre-commit hook setup.
