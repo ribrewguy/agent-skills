@@ -1,7 +1,7 @@
 {
   "name": "java-practices",
-  "description": "Java compilation, deterministic formatting, style, correctness and security analysis with compatible project tooling.",
-  "version": "0.1.0",
+  "description": "Bloch-inspired Java design: immutability, defensive boundaries, small APIs, value contracts and composition, alongside compiler, formatter and analyzer practices.",
+  "version": "0.2.0",
   "author": {
     "name": "ribrewguy"
   },

@@ -1,0 +1,122 @@
+{
+  "array-escape": {
+    "expected_failure": "array-output-alias",
+    "cases": [
+      {
+        "case": 4,
+        "compile_exit": 0,
+        "compile_output": "",
+        "run_exit": 1,
+        "output": "PASS\tinput-aliases\nPASS\tnested-output-alias\nFAIL\tarray-output-alias\tjava.lang.AssertionError: condition false\nPASS\tcollection-output-alias\nPASS\tnull-and-blank-boundaries\nPASS\tinvalid-elements\nPASS\tempty-controls\nPASS\tvalidate-retained-element\n",
+        "stderr": "Exception in thread \"main\" java.lang.AssertionError: 1 failed probes\n\tat Probe.finish(Probe.java:16)\n\tat ContractProbe.main(ContractProbe.java:41)\n",
+        "probes": [
+          {
+            "name": "input-aliases",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "nested-output-alias",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "array-output-alias",
+            "passed": false,
+            "detail": "java.lang.AssertionError: condition false"
+          },
+          {
+            "name": "collection-output-alias",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "null-and-blank-boundaries",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "invalid-elements",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "empty-controls",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "validate-retained-element",
+            "passed": true,
+            "detail": ""
+          }
+        ]
+      }
+    ]
+  },
+  "backed-stock-view": {
+    "expected_failure": "snapshot-not-live-view",
+    "cases": [
+      {
+        "case": 6,
+        "compile_exit": 0,
+        "compile_output": "",
+        "run_exit": 1,
+        "output": "PASS\tconstructor-owns-map\nPASS\tvalid-mutation-control\nPASS\tunknown-key-atomicity\nPASS\tlate-invalid-atomicity\nFAIL\tsnapshot-not-live-view\tjava.lang.AssertionError: condition false\nPASS\tsnapshot-read-only\nPASS\tnull-request-entries\nPASS\tnonpositive-request\nPASS\tinitial-invariants\nPASS\tempty-and-zero-controls\n",
+        "stderr": "Exception in thread \"main\" java.lang.AssertionError: 1 failed probes\n\tat Probe.finish(Probe.java:16)\n\tat ContractProbe.main(ContractProbe.java:17)\n",
+        "probes": [
+          {
+            "name": "constructor-owns-map",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "valid-mutation-control",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "unknown-key-atomicity",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "late-invalid-atomicity",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "snapshot-not-live-view",
+            "passed": false,
+            "detail": "java.lang.AssertionError: condition false"
+          },
+          {
+            "name": "snapshot-read-only",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "null-request-entries",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "nonpositive-request",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "initial-invariants",
+            "passed": true,
+            "detail": ""
+          },
+          {
+            "name": "empty-and-zero-controls",
+            "passed": true,
+            "detail": ""
+          }
+        ]
+      }
+    ]
+  }
+}

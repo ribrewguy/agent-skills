@@ -27,7 +27,7 @@ Other tools (Gemini CLI, Codex CLI, Copilot CLI, Cline, Cursor, Aider) plus the 
 
 - **[jvm-quality](https://ribrewguy.github.io/agent-skills/skills/jvm-quality/)**: Shared JVM quality policy for tests, module coverage, runtime compatibility, exceptions and dependency vulnerability scanning.
 - **[maven-practices](https://ribrewguy.github.io/agent-skills/skills/maven-practices/)**: Reproducible Maven builds and effective lifecycle enforcement across modules, profiles and test JVMs.
-- **[java-practices](https://ribrewguy.github.io/agent-skills/skills/java-practices/)**: Java compilation, deterministic formatting, style, correctness and security analysis with compatible project tooling.
+- **[java-practices](https://ribrewguy.github.io/agent-skills/skills/java-practices/)**: Bloch-inspired Java design: immutability, defensive boundaries, small APIs, value contracts and composition, alongside compiler, formatter and analyzer practices.
 - **[kotlin-practices](https://ribrewguy.github.io/agent-skills/skills/kotlin-practices/)**: Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability.
 
 Full catalog: **[Skills](https://ribrewguy.github.io/agent-skills/skills/)**.

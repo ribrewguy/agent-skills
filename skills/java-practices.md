@@ -6,10 +6,13 @@ nav_order: 11
 
 # java-practices
 
-Java compilation, deterministic formatting, style, correctness and security analysis with compatible project tooling.
+Bloch-inspired Java design: immutability, defensive boundaries, small APIs, value contracts and composition, alongside compiler, formatter and analyzer practices.
 
 ## Key opinions
 
+- Favor immutable values with owned mutable components; records and unmodifiable wrappers alone do not establish immutability.
+- Validate retained state and preserve invariants on failure, while keeping purposeful mutation and existing API contracts.
+- Prefer small APIs and composition; keep value equality, hashing, ordering and exact amounts consistent.
 - Set an explicit Java release/API target and a selected failing compiler-warning policy.
 - Choose one formatter and make Checkstyle agree with its output, including test sources.
 - Use complementary analyzers with clear rule ownership and verified build-JDK compatibility.
@@ -49,4 +52,5 @@ Installation alone does not guarantee a skill is applied.
 
 - [Canonical SKILL.md](https://github.com/ribrewguy/agent-skills/blob/main/plugins/java-practices/skills/java-practices/SKILL.md)
 - [Behavioral eval cases](https://github.com/ribrewguy/agent-skills/blob/main/plugins/java-practices/skills/java-practices/evals/evals.json)
-- [Family verification](../evals/jvm-quality)
+- [Java design behavior evaluation](../evals/java-practices)
+- [Family tooling verification](../evals/jvm-quality)

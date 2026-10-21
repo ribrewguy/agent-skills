@@ -1,0 +1,361 @@
+{
+  "candidates": {
+    "candidate-a": {
+      "cases": [
+        {
+          "id": 4,
+          "assertions": [
+            {
+              "expectation": "Owns the input collection, every mutable Parcel element, and label array rather than relying only on final fields or a record.",
+              "passed": true,
+              "evidence": "ShipmentSnapshot.java:7,19-31 stores newly built immutable ParcelValue entries in List.copyOf and clones label; caller Parcels/list are not retained."
+            },
+            {
+              "expectation": "Prevents accessor mutations (including nested Parcel setters and array changes) from modifying retained shipment state.",
+              "passed": true,
+              "evidence": "ShipmentSnapshot.java:38-47 constructs fresh Parcels in an unmodifiable list and returns a fresh label clone."
+            },
+            {
+              "expectation": "Validates the retained snapshot, preserves order/duplicates and allows an empty parcel list.",
+              "passed": true,
+              "evidence": "ShipmentSnapshot.java:14-27 validates id, inputs and captured SKU/quantity; the loop preserves ordering and duplicates and accepts zero elements."
+            },
+            {
+              "expectation": "Uses a small compatible API; does not require a builder or change the existing Parcel class.",
+              "passed": true,
+              "evidence": "ShipmentSnapshot.java:13,34-47 preserves required constructor/accessors; Parcel.java:1-6 retains the existing mutable API."
+            }
+          ],
+          "notes": [
+            "Independent execution evidence supplied in candidate-a-contracts.json: Java release 17 compilation and probe run exited 0, with 8 passing probes and empty compiler output/stderr. This grader inspected the supplied output; it did not execute the probes or inspect their source."
+          ]
+        },
+        {
+          "id": 5,
+          "assertions": [
+            {
+              "expectation": "Creates trusted owned values/copies from mutable inputs without trusting subtype clone implementations.",
+              "passed": true,
+              "evidence": "DateRange.java:9-15 captures primitive milliseconds via getTime once per endpoint, retaining no Date and invoking no subtype clone."
+            },
+            {
+              "expectation": "Checks ordering on the retained values rather than validating original dates and copying afterward.",
+              "passed": true,
+              "evidence": "DateRange.java:9-15 checks capturedEnd against capturedStart and stores those same primitives; equality is allowed."
+            },
+            {
+              "expectation": "Prevents mutable accessor results from exposing internal state and preserves the legacy signatures.",
+              "passed": true,
+              "evidence": "DateRange.java:8,18-23 preserves Date signatures and returns new base Date objects on each access."
+            },
+            {
+              "expectation": "Explains ownership assumptions without claiming an atomic snapshot of arbitrary concurrently modified inputs.",
+              "passed": true,
+              "evidence": "notes.md:1 states construction requires no concurrent mutation and describes captured millisecond ownership, without an atomic concurrent snapshot claim."
+            }
+          ],
+          "notes": [
+            "Independent execution evidence supplied in candidate-a-contracts.json: Java release 17 compilation and probe run exited 0, with 6 passing probes and empty compiler output/stderr. This grader inspected the supplied output; it did not execute the probes or inspect their source."
+          ]
+        },
+        {
+          "id": 6,
+          "assertions": [
+            {
+              "expectation": "Validates/snapshots the complete request and prepares changes before publishing deductions, avoiding partial mutation on rejection.",
+              "passed": true,
+              "evidence": "StockLedger.java:25-38 validates and stages the complete request before the mutation loop at 39-42; argument rejection cannot publish a partial deduction."
+            },
+            {
+              "expectation": "Owns constructor map state and returns stable read-only snapshots rather than backed views.",
+              "passed": true,
+              "evidence": "StockLedger.java:11-22 builds owned constructor storage; 45-46 returns an unmodifiable independent HashMap copy."
+            },
+            {
+              "expectation": "Handles required invalid inputs, empty batches and ordinary valid in-place reservations.",
+              "passed": true,
+              "evidence": "StockLedger.java:10,15-18,26,31-35,49-52 rejects required invalid arguments; empty request skips both loops and valid entries deduct at 41."
+            },
+            {
+              "expectation": "Keeps purposeful mutation and avoids an unauthorized immutable API redesign or unnecessary copying of immutable Integer/String values.",
+              "passed": true,
+              "evidence": "StockLedger.java:25-42 retains void in-place reserve on an owned mutable map; only map structure is copied and String/Integer references are shared."
+            }
+          ],
+          "notes": [
+            "Independent execution evidence supplied in candidate-a-contracts.json: Java release 17 compilation and probe run exited 0, with 10 passing probes and empty compiler output/stderr. This grader inspected the supplied output; it did not execute the probes or inspect their source."
+          ]
+        },
+        {
+          "id": 7,
+          "assertions": [
+            {
+              "expectation": "Uses composition/delegation for storage rather than inheriting HashSet implementation behavior.",
+              "passed": true,
+              "evidence": "CountingSet.java:8-9 extends skeletal AbstractSet and owns a composed HashSet, without subclassing HashSet."
+            },
+            {
+              "expectation": "Counts bulk inserts exactly once, including duplicates and subsequent removal/reinsertion.",
+              "passed": true,
+              "evidence": "CountingSet.java:19-30 increments only on successful underlying insertion; 34-40 funnels addAll through add; remove/clear at 59-65 leave the lifetime count intact."
+            },
+            {
+              "expectation": "Preserves the Set contract, iterator removal and meaningful standard abstract extension points.",
+              "passed": true,
+              "evidence": "CountingSet.java:8,44-65 supplies AbstractSet iteration/size and ordinary operations; iterator delegates directly, preserving iterator.remove and skeletal Set equality/hash/bulk operations."
+            },
+            {
+              "expectation": "Avoids double-counting inherited self-calls and does not turn intentional mutable collection state into an immutable API.",
+              "passed": true,
+              "evidence": "CountingSet.java:26-27 is the sole increment point; addAll invokes add once per item; mutable add/remove/clear are preserved."
+            }
+          ],
+          "notes": [
+            "Independent execution evidence supplied in candidate-a-contracts.json: Java release 17 compilation and probe run exited 0, with 6 passing probes and empty compiler output/stderr. This grader inspected the supplied output; it did not execute the probes or inspect their source."
+          ]
+        },
+        {
+          "id": 8,
+          "assertions": [
+            {
+              "expectation": "Provides consistent scale-insensitive value equality/hashCode and ordering including currency; verifies hash-collection use.",
+              "passed": true,
+              "evidence": "Money.java:5-12 canonicalizes scale with stripTrailingZeros, making generated record equals/hashCode scale-insensitive; 15-18 orders by currency then numeric amount. Independent execution evidence in candidate-a-contracts.json case 8 reports PASS for scale-equality, hash-collection-lookup, currency-identity-and-order, and numeric-order (compile_exit=0, run_exit=0). This verifies the relevant runtime properties independently, not as author-supplied verification."
+            },
+            {
+              "expectation": "Uses exact BigDecimal/integer operations rather than a double round trip and rejects cross-currency arithmetic.",
+              "passed": true,
+              "evidence": "Money.java:21-26 rejects unequal currencies and uses BigDecimal.add directly, with no floating-point conversion."
+            },
+            {
+              "expectation": "Establishes constructor invariants without forbidding negative amounts or changing the public record components.",
+              "passed": true,
+              "evidence": "Money.java:4-12 preserves record components/signatures, rejects nulls and malformed uppercase codes, and imposes no nonnegative constraint."
+            },
+            {
+              "expectation": "Shares immutable BigDecimal/String values as appropriate instead of indiscriminate defensive copying.",
+              "passed": true,
+              "evidence": "Money.java:11 normalizes an immutable amount for value identity, 26 uses exact arithmetic, and currency is shared; no defensive copying of immutable values."
+            }
+          ],
+          "notes": [
+            "Value equality/hash/order properties are correct by source inspection and independently verified in the supplied probe output. Neither candidate supplies an explicit hash-collection example/check in its own Money.java or notes.md. The implementation prompt asks for Money.java and notes.md, not an authored test artifact; final scoring accepts independent verification of this criterion. A rubric expressly requiring author-supplied verification would retain the original 23/24 score.",
+            "Independent execution evidence supplied in candidate-a-contracts.json: Java release 17 compilation and probe run exited 0, with 8 passing probes and empty compiler output/stderr. This grader inspected the supplied output; it did not execute the probes or inspect their source."
+          ]
+        },
+        {
+          "id": 9,
+          "assertions": [
+            {
+              "expectation": "Identifies shared mutable state/order hazards in the parallel stream and swallowed IOException; proposes observable ordered writes.",
+              "passed": true,
+              "evidence": "review.md:1 identifies unordered concurrent shared-state mutation and swallowed IOException; corrected loop at 20-22 performs sequential writes and lets IOException propagate."
+            },
+            {
+              "expectation": "Validates the whole input before effects and records a row only after a completed write.",
+              "passed": true,
+              "evidence": "review.md:15-19 fully validates/copies input before the write loop; 21-22 records each row only after write returns."
+            },
+            {
+              "expectation": "Preserves borrowed-resource ownership, the intentional live view and purposeful mutation; does not prescribe closing the Writer or forcing immutable service state.",
+              "passed": true,
+              "evidence": "review.md:26-27 retains Collections.unmodifiableList(audit), a live view; 32 explicitly leaves Writer open/unflushed and retains single-owner mutation."
+            },
+            {
+              "expectation": "Distinguishes local state guarantees from external partial output; does not claim copying creates a transactional Writer.",
+              "passed": true,
+              "evidence": "review.md:32 explains prefix audit, possible partial failing-row output, no rollback/durability promise, and allocation-failure limits; copying is not presented as a transaction."
+            }
+          ],
+          "notes": []
+        }
+      ],
+      "passed": 24,
+      "total": 24,
+      "score_interpretation": "24/24 for prompt-required code and review properties, with independent runtime verification accepted for the Money hash-collection clause. Author-supplied hash-collection verification remains absent; a strict authorship-specific reading scores 23/24. The original static result is preserved in grading-static.json."
+    },
+    "candidate-b": {
+      "cases": [
+        {
+          "id": 4,
+          "assertions": [
+            {
+              "expectation": "Owns the input collection, every mutable Parcel element, and label array rather than relying only on final fields or a record.",
+              "passed": true,
+              "evidence": "ShipmentSnapshot.java:18-30 clones the label, snapshots list structure and converts all Parcels into immutable ParcelValue entries (63); original mutable references are not retained."
+            },
+            {
+              "expectation": "Prevents accessor mutations (including nested Parcel setters and array changes) from modifying retained shipment state.",
+              "passed": true,
+              "evidence": "ShipmentSnapshot.java:38-47 returns newly constructed mutable Parcel copies inside an unmodifiable list and a cloned label array."
+            },
+            {
+              "expectation": "Validates the retained snapshot, preserves order/duplicates and allows an empty parcel list.",
+              "passed": true,
+              "evidence": "ShipmentSnapshot.java:13-30 validates all required null/blank/quantity constraints on retained values; ordered loops/List.copyOf preserve duplicates and allow empty lists."
+            },
+            {
+              "expectation": "Uses a small compatible API; does not require a builder or change the existing Parcel class.",
+              "passed": true,
+              "evidence": "ShipmentSnapshot.java:12,33-47 preserves the requested API and needs no builder; Parcel.java:1-6 preserves the existing collaborator."
+            }
+          ],
+          "notes": [
+            "Independent execution evidence supplied in candidate-b-contracts.json: Java release 17 compilation and probe run exited 0, with 8 passing probes and empty compiler output/stderr. This grader inspected the supplied output; it did not execute the probes or inspect their source."
+          ]
+        },
+        {
+          "id": 5,
+          "assertions": [
+            {
+              "expectation": "Creates trusted owned values/copies from mutable inputs without trusting subtype clone implementations.",
+              "passed": true,
+              "evidence": "DateRange.java:10-18 obtains primitive times once and retains only longs; it never trusts clone or retains subtype instances."
+            },
+            {
+              "expectation": "Checks ordering on the retained values rather than validating original dates and copying afterward.",
+              "passed": true,
+              "evidence": "DateRange.java:12-18 validates and stores the same first/last values, accepting equal endpoints."
+            },
+            {
+              "expectation": "Prevents mutable accessor results from exposing internal state and preserves the legacy signatures.",
+              "passed": true,
+              "evidence": "DateRange.java:9,21-26 preserves legacy constructor/accessors and returns fresh Date objects."
+            },
+            {
+              "expectation": "Explains ownership assumptions without claiming an atomic snapshot of arbitrary concurrently modified inputs.",
+              "passed": true,
+              "evidence": "notes.md:1 explicitly requires stable inputs and says capturing two mutable dates is not an atomic concurrent operation."
+            }
+          ],
+          "notes": [
+            "Independent execution evidence supplied in candidate-b-contracts.json: Java release 17 compilation and probe run exited 0, with 6 passing probes and empty compiler output/stderr. This grader inspected the supplied output; it did not execute the probes or inspect their source."
+          ]
+        },
+        {
+          "id": 6,
+          "assertions": [
+            {
+              "expectation": "Validates/snapshots the complete request and prepares changes before publishing deductions, avoiding partial mutation on rejection.",
+              "passed": true,
+              "evidence": "StockLedger.java:23-32 snapshots and validates the complete request; only the subsequent loop at 33-35 publishes deductions."
+            },
+            {
+              "expectation": "Owns constructor map state and returns stable read-only snapshots rather than backed views.",
+              "passed": true,
+              "evidence": "StockLedger.java:11-19 owns a LinkedHashMap copy of initial; 38-39 returns a read-only independent snapshot."
+            },
+            {
+              "expectation": "Handles required invalid inputs, empty batches and ordinary valid in-place reservations.",
+              "passed": true,
+              "evidence": "StockLedger.java:11-17,23-30,42-46 rejects required invalid arguments. Empty requests run zero iterations; valid requests mutate counts at 34."
+            },
+            {
+              "expectation": "Keeps purposeful mutation and avoids an unauthorized immutable API redesign or unnecessary copying of immutable Integer/String values.",
+              "passed": true,
+              "evidence": "StockLedger.java:22-35 retains purposeful void in-place mutation; map copies share immutable String/Integer values, as notes.md:1 also explains."
+            }
+          ],
+          "notes": [
+            "Independent execution evidence supplied in candidate-b-contracts.json: Java release 17 compilation and probe run exited 0, with 10 passing probes and empty compiler output/stderr. This grader inspected the supplied output; it did not execute the probes or inspect their source."
+          ]
+        },
+        {
+          "id": 7,
+          "assertions": [
+            {
+              "expectation": "Uses composition/delegation for storage rather than inheriting HashSet implementation behavior.",
+              "passed": true,
+              "evidence": "CountingSet.java:7-8 uses AbstractSet's skeletal extension contract and a composed HashSet."
+            },
+            {
+              "expectation": "Counts bulk inserts exactly once, including duplicates and subsequent removal/reinsertion.",
+              "passed": true,
+              "evidence": "CountingSet.java:18-23 increments only on successful delegate insertion. Inherited AbstractCollection.addAll invokes this add per input item; remove/clear at 42-49 never reset the count, so removal/reinsertion counts again."
+            },
+            {
+              "expectation": "Preserves the Set contract, iterator removal and meaningful standard abstract extension points.",
+              "passed": true,
+              "evidence": "CountingSet.java:27-49 delegates iterator, size, contains, remove and clear, preserving iterator.remove and inherited Set equality/hash/bulk contracts."
+            },
+            {
+              "expectation": "Avoids double-counting inherited self-calls and does not turn intentional mutable collection state into an immutable API.",
+              "passed": true,
+              "evidence": "CountingSet.java:19-21 has one increment location; inherited bulk insertion routes through it without HashSet self-call dependence; mutable Set operations remain available."
+            }
+          ],
+          "notes": [
+            "The lifetime counter wraps after Long.MAX_VALUE successful insertions; this theoretical boundary is documented and not treated as a required overflow-policy failure.",
+            "Independent execution evidence supplied in candidate-b-contracts.json: Java release 17 compilation and probe run exited 0, with 6 passing probes and empty compiler output/stderr. This grader inspected the supplied output; it did not execute the probes or inspect their source."
+          ]
+        },
+        {
+          "id": 8,
+          "assertions": [
+            {
+              "expectation": "Provides consistent scale-insensitive value equality/hashCode and ordering including currency; verifies hash-collection use.",
+              "passed": true,
+              "evidence": "Money.java:6-13 canonicalizes scale, allowing generated record equals/hashCode to agree across numeric scales, and 16-19 orders by currency and amount. Independent execution evidence in candidate-b-contracts.json case 8 reports PASS for scale-equality, hash-collection-lookup, currency-identity-and-order, and numeric-order (compile_exit=0, run_exit=0). This verifies the relevant runtime properties independently, not as author-supplied verification."
+            },
+            {
+              "expectation": "Uses exact BigDecimal/integer operations rather than a double round trip and rejects cross-currency arithmetic.",
+              "passed": true,
+              "evidence": "Money.java:22-27 rejects mismatched currency and performs exact BigDecimal.add, with no double round trip."
+            },
+            {
+              "expectation": "Establishes constructor invariants without forbidding negative amounts or changing the public record components.",
+              "passed": true,
+              "evidence": "Money.java:5-13 preserves record components and validates nulls/uppercase three-letter codes without rejecting negative amounts."
+            },
+            {
+              "expectation": "Shares immutable BigDecimal/String values as appropriate instead of indiscriminate defensive copying.",
+              "passed": true,
+              "evidence": "Money.java:12 canonicalizes amount for value identity while sharing immutable currency; 27 directly uses immutable BigDecimal arithmetic without defensive-copy machinery."
+            }
+          ],
+          "notes": [
+            "Value equality/hash/order properties are correct by source inspection and independently verified in the supplied probe output. Neither candidate supplies an explicit hash-collection example/check in its own Money.java or notes.md. The implementation prompt asks for Money.java and notes.md, not an authored test artifact; final scoring accepts independent verification of this criterion. A rubric expressly requiring author-supplied verification would retain the original 23/24 score.",
+            "Independent execution evidence supplied in candidate-b-contracts.json: Java release 17 compilation and probe run exited 0, with 8 passing probes and empty compiler output/stderr. This grader inspected the supplied output; it did not execute the probes or inspect their source."
+          ]
+        },
+        {
+          "id": 9,
+          "assertions": [
+            {
+              "expectation": "Identifies shared mutable state/order hazards in the parallel stream and swallowed IOException; proposes observable ordered writes.",
+              "passed": true,
+              "evidence": "review.md:1 identifies shared ArrayList/Writer concurrency, ordering, premature audit and swallowed exceptions; sequential writes at 18-20 leave errors observable."
+            },
+            {
+              "expectation": "Validates the whole input before effects and records a row only after a completed write.",
+              "passed": true,
+              "evidence": "review.md:15-17 requires nonnull collection and uses List.copyOf to reject any null element before effects; 19-20 audits after normal write return."
+            },
+            {
+              "expectation": "Preserves borrowed-resource ownership, the intentional live view and purposeful mutation; does not prescribe closing the Writer or forcing immutable service state.",
+              "passed": true,
+              "evidence": "review.md:24-25 retains the intentional live unmodifiable view; 30 preserves borrowed Writer ownership and sequential mutable service state."
+            },
+            {
+              "expectation": "Distinguishes local state guarantees from external partial output; does not claim copying creates a transactional Writer.",
+              "passed": true,
+              "evidence": "review.md:32 explicitly distinguishes completed-prefix audit from external partial output, describes no rollback or durability guarantee, and acknowledges resource-failure limits."
+            }
+          ],
+          "notes": []
+        }
+      ],
+      "passed": 24,
+      "total": 24,
+      "score_interpretation": "24/24 for prompt-required code and review properties, with independent runtime verification accepted for the Money hash-collection clause. Author-supplied hash-collection verification remains absent; a strict authorship-specific reading scores 23/24. The original static result is preserved in grading-static.json."
+    }
+  },
+  "limitations": [
+    "Source/contract review plus inspection of supplied independent compiler/probe output in candidate-a-contracts.json and candidate-b-contracts.json. This grader did not execute compilation/probes or inspect harness source; reported probe passes establish the named exercised cases, not exhaustive correctness. No candidate identities or external paths were accessed.",
+    "Final Money scoring distinguishes correct implementation, absent author-supplied verification, and supplied independently executed verification. Both pass the implementation/property reading after the hash-collection-lookup probe passes; requiring an authored verification artifact instead yields 23/24 each. The original user prompt does not expressly require a test or hash-collection demonstration artifact.",
+    "CountingSet candidate-b documents theoretical long counter overflow (case-7/notes.md:1); its implementation increments with long wraparound at case-7/CountingSet.java:21. No failure is assigned for exceeding the representable lifetime count because the contract supplies a long and no overflow policy.",
+    "Both DateRange implementations throw ArithmeticException for mathematical durations exceeding Long.MAX_VALUE and document this choice; the prompt specifies no overflow policy. Ordinary representable ranges satisfy the requested behavior.",
+    "Ownership and failure-atomic reasoning assumes the stated single-owner/sequential contracts, conforming collections, and no catastrophic VM/resource failures; no atomic concurrent input snapshot is inferred.",
+    "The supplied empirical results cover cases 4 through 8 only (38 passing probes per candidate). Case 9 remains graded entirely from the corrected code and failure-guarantee reasoning in review.md; no executed Writer/audit behavior is inferred."
+  ]
+}

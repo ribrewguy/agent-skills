@@ -1,0 +1,245 @@
+{
+  "release": 17,
+  "cases": [
+    {
+      "case": 4,
+      "compile_exit": 0,
+      "compile_output": "",
+      "run_exit": 0,
+      "output": "PASS\tinput-aliases\nPASS\tnested-output-alias\nPASS\tarray-output-alias\nPASS\tcollection-output-alias\nPASS\tnull-and-blank-boundaries\nPASS\tinvalid-elements\nPASS\tempty-controls\nPASS\tvalidate-retained-element\n",
+      "stderr": "",
+      "probes": [
+        {
+          "name": "input-aliases",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "nested-output-alias",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "array-output-alias",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "collection-output-alias",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "null-and-blank-boundaries",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "invalid-elements",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "empty-controls",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "validate-retained-element",
+          "passed": true,
+          "detail": ""
+        }
+      ]
+    },
+    {
+      "case": 5,
+      "compile_exit": 0,
+      "compile_output": "",
+      "run_exit": 0,
+      "output": "PASS\tinput-dates-owned\nPASS\toutput-dates-owned\nPASS\tsubtype-clone-not-trusted\nPASS\trange-validation\nPASS\tequal-endpoint-control\nPASS\tvalidate-retained-date\n",
+      "stderr": "",
+      "probes": [
+        {
+          "name": "input-dates-owned",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "output-dates-owned",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "subtype-clone-not-trusted",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "range-validation",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "equal-endpoint-control",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "validate-retained-date",
+          "passed": true,
+          "detail": ""
+        }
+      ]
+    },
+    {
+      "case": 6,
+      "compile_exit": 0,
+      "compile_output": "",
+      "run_exit": 0,
+      "output": "PASS\tconstructor-owns-map\nPASS\tvalid-mutation-control\nPASS\tunknown-key-atomicity\nPASS\tlate-invalid-atomicity\nPASS\tsnapshot-not-live-view\nPASS\tsnapshot-read-only\nPASS\tnull-request-entries\nPASS\tnonpositive-request\nPASS\tinitial-invariants\nPASS\tempty-and-zero-controls\n",
+      "stderr": "",
+      "probes": [
+        {
+          "name": "constructor-owns-map",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "valid-mutation-control",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "unknown-key-atomicity",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "late-invalid-atomicity",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "snapshot-not-live-view",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "snapshot-read-only",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "null-request-entries",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "nonpositive-request",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "initial-invariants",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "empty-and-zero-controls",
+          "passed": true,
+          "detail": ""
+        }
+      ]
+    },
+    {
+      "case": 7,
+      "compile_exit": 0,
+      "compile_output": "",
+      "run_exit": 0,
+      "output": "PASS\tbulk-and-duplicates\nPASS\tremove-and-reinsert\nPASS\titerator-removal\nPASS\tclear-preserves-total\nPASS\tset-equality-hash\nPASS\tset-removeAll-retainAll\n",
+      "stderr": "",
+      "probes": [
+        {
+          "name": "bulk-and-duplicates",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "remove-and-reinsert",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "iterator-removal",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "clear-preserves-total",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "set-equality-hash",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "set-removeAll-retainAll",
+          "passed": true,
+          "detail": ""
+        }
+      ]
+    },
+    {
+      "case": 8,
+      "compile_exit": 0,
+      "compile_output": "",
+      "run_exit": 0,
+      "output": "PASS\tscale-equality\nPASS\thash-collection-lookup\nPASS\tcurrency-identity-and-order\nPASS\tnumeric-order\nPASS\texact-decimal-addition\nPASS\tcross-currency-rejection\nPASS\tconstructor-invariants\nPASS\tnegative-and-zero-controls\n",
+      "stderr": "",
+      "probes": [
+        {
+          "name": "scale-equality",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "hash-collection-lookup",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "currency-identity-and-order",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "numeric-order",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "exact-decimal-addition",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "cross-currency-rejection",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "constructor-invariants",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "negative-and-zero-controls",
+          "passed": true,
+          "detail": ""
+        }
+      ]
+    }
+  ]
+}

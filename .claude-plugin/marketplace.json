@@ -59,7 +59,7 @@
     {
       "name": "java-practices",
       "source": "./plugins/java-practices",
-      "description": "Java compilation, deterministic formatting, style, correctness and security analysis with compatible project tooling."
+      "description": "Bloch-inspired Java design: immutability, defensive boundaries, small APIs, value contracts and composition, alongside compiler, formatter and analyzer practices."
     },
     {
       "name": "kotlin-practices",

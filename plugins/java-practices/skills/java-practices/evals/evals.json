@@ -45,6 +45,72 @@
         "Does not lower thresholds, regenerate baselines or widen exclusions just to pass.",
         "Uses the configured verification command and exact project pins."
       ]
+    },
+    {
+      "id": 4,
+      "name": "immutable-shipment-snapshot",
+      "prompt": "Implement Java 17 ShipmentSnapshot (default package), a value snapshot with public constructor ShipmentSnapshot(String id, List<Parcel> parcels, byte[] label) and accessors String id(), List<Parcel> parcels(), byte[] label(). Parcel is an existing mutable collaborator: constructor Parcel(String sku, int quantity), getters sku()/quantity(), setters setSku(String)/setQuantity(int). You may not change Parcel or these signatures. Preserve parcel order and duplicates; empty parcels is valid. Reject null/blank id, null collection/label, null elements, and parcels with null/blank SKU or nonpositive quantity. The instance must remain the same shipment after construction. Provide ShipmentSnapshot.java and concise notes.md; no build changes.",
+      "expectations": [
+        "Owns the input collection, every mutable Parcel element, and label array rather than relying only on final fields or a record.",
+        "Prevents accessor mutations (including nested Parcel setters and array changes) from modifying retained shipment state.",
+        "Validates the retained snapshot, preserves order/duplicates and allows an empty parcel list.",
+        "Uses a small compatible API; does not require a builder or change the existing Parcel class."
+      ]
+    },
+    {
+      "id": 5,
+      "name": "legacy-date-range",
+      "prompt": "Implement Java 17 DateRange with public DateRange(java.util.Date start, java.util.Date end), start()/end() returning Date, and long durationMillis(). This public legacy signature must remain. Dates may be Date subtypes. Require nonnull dates and end >= start; equal endpoints are valid. The range is a stable value independent of later caller activity. Supply DateRange.java and notes.md. Do not change public signatures or add libraries.",
+      "expectations": [
+        "Creates trusted owned values/copies from mutable inputs without trusting subtype clone implementations.",
+        "Checks ordering on the retained values rather than validating original dates and copying afterward.",
+        "Prevents mutable accessor results from exposing internal state and preserves the legacy signatures.",
+        "Explains ownership assumptions without claiming an atomic snapshot of arbitrary concurrently modified inputs."
+      ]
+    },
+    {
+      "id": 6,
+      "name": "failure-atomic-stock-ledger",
+      "prompt": "Implement Java 17 StockLedger with constructor StockLedger(Map<String,Integer> initial), void reserve(Map<String,Integer> request), and Map<String,Integer> stock(). This is intentionally mutable, single-owner, single-threaded state: reserve deducts requested counts in place. Initial entries require nonblank keys and nonnegative counts. Requests require known nonblank keys and strictly positive counts no larger than available stock. Null maps, null keys and null counts are invalid. Empty requests are valid. Any rejected request must leave every count unchanged. stock() returns a read-only snapshot at call time. Supply StockLedger.java and notes.md; preserve signatures and use standard Java only.",
+      "expectations": [
+        "Validates/snapshots the complete request and prepares changes before publishing deductions, avoiding partial mutation on rejection.",
+        "Owns constructor map state and returns stable read-only snapshots rather than backed views.",
+        "Handles required invalid inputs, empty batches and ordinary valid in-place reservations.",
+        "Keeps purposeful mutation and avoids an unauthorized immutable API redesign or unnecessary copying of immutable Integer/String values."
+      ]
+    },
+    {
+      "id": 7,
+      "name": "counting-set-composition",
+      "prompt": "Implement Java 17 public CountingSet<E> usable as a Set<E>, with a no-arg constructor and long totalAdded(). totalAdded is the lifetime count of successful element insertions: duplicate adds do not increment it; removing and re-adding an element increments again. addAll must count exactly the successful insertions. Preserve ordinary Set operations including iterator.remove and clear. Default HashSet null behavior is acceptable. Supply CountingSet.java and notes.md, using standard Java only.",
+      "expectations": [
+        "Uses composition/delegation for storage rather than inheriting HashSet implementation behavior.",
+        "Counts bulk inserts exactly once, including duplicates and subsequent removal/reinsertion.",
+        "Preserves the Set contract, iterator removal and meaningful standard abstract extension points.",
+        "Avoids double-counting inherited self-calls and does not turn intentional mutable collection state into an immutable API."
+      ]
+    },
+    {
+      "id": 8,
+      "name": "money-value-contracts",
+      "prompt": "Repair this Java 17 value API without changing its public components or signatures. Domain policy: currency is a nonnull uppercase three-letter code; amount is nonnull and may be negative. Numerically equal amounts in one currency represent the same value regardless of decimal scale. Different currencies are different values. Natural order is currency code then numeric amount, consistent with equality. plus rejects mismatched currencies and performs exact decimal addition. Supply Money.java and notes.md. Current draft:\npublic record Money(java.math.BigDecimal amount, String currency) implements Comparable<Money> {\n public int compareTo(Money other) { return amount.compareTo(other.amount); }\n public Money plus(Money other) { return new Money(new java.math.BigDecimal(amount.doubleValue()+other.amount.doubleValue()), currency); }\n}\nDo not add dependencies.",
+      "expectations": [
+        "Provides consistent scale-insensitive value equality/hashCode and ordering including currency; verifies hash-collection use.",
+        "Uses exact BigDecimal/integer operations rather than a double round trip and rejects cross-currency arithmetic.",
+        "Establishes constructor invariants without forbidding negative amounts or changing the public record components.",
+        "Shares immutable BigDecimal/String values as appropriate instead of indiscriminate defensive copying."
+      ]
+    },
+    {
+      "id": 9,
+      "name": "api-review-with-mutation-control",
+      "prompt": "Review this Java service and propose focused corrections, with a corrected export method or equivalent code. Contract: a single owner invokes methods sequentially; the Writer is borrowed and must remain open; audit() deliberately returns a live read-only view for existing consumers. export rejects a null row collection or null elements before output, writes rows in input order, and records only rows whose write completed normally. Errors must remain observable. Explain the failure guarantee you can honestly offer. No changes to tooling or public signatures.\npublic final class ExportService {\n private final java.io.Writer writer;\n private final java.util.List<String> audit = new java.util.ArrayList<>();\n public ExportService(java.io.Writer writer) { this.writer = writer; }\n public void export(java.util.List<String> rows) throws java.io.IOException {\n  rows.parallelStream().forEach(row -> {\n   audit.add(row);\n   try { writer.write(row); } catch (java.io.IOException ignored) { }\n  });\n }\n public java.util.List<String> audit() { return java.util.Collections.unmodifiableList(audit); }\n}\nWrite review.md.",
+      "expectations": [
+        "Identifies shared mutable state/order hazards in the parallel stream and swallowed IOException; proposes observable ordered writes.",
+        "Validates the whole input before effects and records a row only after a completed write.",
+        "Preserves borrowed-resource ownership, the intentional live view and purposeful mutation; does not prescribe closing the Writer or forcing immutable service state.",
+        "Distinguishes local state guarantees from external partial output; does not claim copying creates a transactional Writer."
+      ]
     }
   ]
 }

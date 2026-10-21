@@ -57,6 +57,13 @@ fixtures and 16 authored behavioral prompts. Fixture results are reported
 separately from with-skill/baseline model benchmarks; no comparative model
 pass rate is claimed.
 
+## Java design preferences
+
+The [Java design evaluation](java-practices) compares the previous tooling-focused
+skill with the expanded Bloch-inspired guidance in fresh contexts. Both pass
+38/38 executable ownership/value probes and 24/24 independently graded design
+criteria. This single-run comparison shows no measured improvement.
+
 ## Skills evaluated
 
 - [rest-api-design evaluations](rest-api-design)
