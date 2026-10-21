@@ -1,0 +1,9 @@
+{
+  "name": "java-practices",
+  "description": "Java compilation, deterministic formatting, style, correctness and security analysis with compatible project tooling.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}

@@ -1,0 +1,183 @@
+{
+  "java-only": {
+    "maven-enforcer-plugin": [
+      "enforce"
+    ],
+    "maven-antrun-plugin": [
+      "run",
+      "run"
+    ],
+    "maven-compiler-plugin": [
+      "compile",
+      "testCompile"
+    ],
+    "maven-surefire-plugin": [
+      "test"
+    ],
+    "maven-failsafe-plugin": [
+      "integration-test",
+      "verify"
+    ],
+    "jacoco-maven-plugin": [
+      "prepare-agent",
+      "prepare-agent",
+      "merge",
+      "report",
+      "check",
+      "prepare-agent"
+    ],
+    "spotless-maven-plugin": [
+      "check"
+    ],
+    "maven-checkstyle-plugin": [
+      "check"
+    ],
+    "spotbugs-maven-plugin": [
+      "check"
+    ],
+    "maven-pmd-plugin": [
+      "check",
+      "cpd-check"
+    ],
+    "maven-clean-plugin": [
+      "clean"
+    ],
+    "maven-resources-plugin": [
+      "testResources",
+      "resources"
+    ],
+    "maven-jar-plugin": [
+      "jar"
+    ],
+    "maven-install-plugin": [
+      "install"
+    ],
+    "maven-deploy-plugin": [
+      "deploy"
+    ],
+    "maven-site-plugin": [
+      "site",
+      "deploy"
+    ]
+  },
+  "kotlin-only": {
+    "maven-enforcer-plugin": [
+      "enforce"
+    ],
+    "kotlin-maven-plugin": [
+      "compile",
+      "test-compile"
+    ],
+    "maven-compiler-plugin": [
+      "compile",
+      "testCompile"
+    ],
+    "maven-surefire-plugin": [
+      "test"
+    ],
+    "maven-failsafe-plugin": [
+      "integration-test",
+      "verify"
+    ],
+    "jacoco-maven-plugin": [
+      "prepare-agent",
+      "prepare-agent",
+      "merge",
+      "report",
+      "check"
+    ],
+    "spotless-maven-plugin": [
+      "check"
+    ],
+    "maven-antrun-plugin": [
+      "run",
+      "run",
+      "run"
+    ],
+    "maven-clean-plugin": [
+      "clean"
+    ],
+    "maven-resources-plugin": [
+      "testResources",
+      "resources"
+    ],
+    "maven-jar-plugin": [
+      "jar"
+    ],
+    "maven-install-plugin": [
+      "install"
+    ],
+    "maven-deploy-plugin": [
+      "deploy"
+    ],
+    "maven-site-plugin": [
+      "site",
+      "deploy"
+    ]
+  },
+  "mixed": {
+    "maven-enforcer-plugin": [
+      "enforce"
+    ],
+    "kotlin-maven-plugin": [
+      "compile",
+      "test-compile"
+    ],
+    "maven-compiler-plugin": [
+      "compile",
+      "testCompile"
+    ],
+    "maven-surefire-plugin": [
+      "test"
+    ],
+    "maven-failsafe-plugin": [
+      "integration-test",
+      "verify"
+    ],
+    "jacoco-maven-plugin": [
+      "prepare-agent",
+      "prepare-agent",
+      "merge",
+      "report",
+      "check"
+    ],
+    "spotless-maven-plugin": [
+      "check"
+    ],
+    "maven-checkstyle-plugin": [
+      "check"
+    ],
+    "maven-antrun-plugin": [
+      "run",
+      "run",
+      "run"
+    ],
+    "spotbugs-maven-plugin": [
+      "check"
+    ],
+    "maven-pmd-plugin": [
+      "check",
+      "cpd-check"
+    ],
+    "maven-clean-plugin": [
+      "clean"
+    ],
+    "maven-resources-plugin": [
+      "testResources",
+      "resources"
+    ],
+    "maven-jar-plugin": [
+      "jar"
+    ],
+    "maven-install-plugin": [
+      "install"
+    ],
+    "maven-deploy-plugin": [
+      "deploy"
+    ],
+    "maven-site-plugin": [
+      "site",
+      "deploy"
+    ]
+  }
+}

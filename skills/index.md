@@ -20,6 +20,11 @@ The catalog. Each skill has its own page with a summary, its key opinions, insta
 - **[throughline](throughline)**: the lifecycle spine — requirements to architecture to task to implementation to commit to merge to closeout. Owns the Kickoff Declaration, the three completion phases and the source-of-truth ladder; dispatches everything else to the skill that owns it.
 - **[isolated-stack-development](isolated-stack-development)**: one isolated local Supabase stack per worktree. Derived project_id, ports discovered at allocation time, copied-env audit, order-critical teardown — plus a `stack` tool and a PreToolUse guard that blocks resets aimed at a stack the current directory doesn't own. Repos opt in with `.isolated-stack.json`.
 
+- **[jvm-quality](jvm-quality)**: Shared JVM quality policy for tests, module coverage, runtime compatibility, exceptions and dependency vulnerability scanning.
+- **[maven-practices](maven-practices)**: Reproducible Maven builds and effective lifecycle enforcement across modules, profiles and test JVMs.
+- **[java-practices](java-practices)**: Java compilation, deterministic formatting, style, correctness and security analysis with compatible project tooling.
+- **[kotlin-practices](kotlin-practices)**: Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability.
+
 ## How skills are evaluated
 
 Every skill in this collection passes through an evaluation loop before it ships:

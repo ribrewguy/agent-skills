@@ -1,0 +1,50 @@
+{
+  "skill_name": "jvm-quality",
+  "evals": [
+    {
+      "id": 0,
+      "name": "existing-module-adoption",
+      "prompt": "Audit a legacy JVM reactor. Module A has high coverage, module B has low coverage, an aggregate report looks healthy, and the team asks for a universal coverage target. No policy changes have been authorized.",
+      "expectations": [
+        "Reports module-specific evidence instead of treating the aggregate as adequate enforcement.",
+        "Measures existing floors and proposes reviewed adoption decisions without inventing a universal percentage.",
+        "Does not change thresholds or broaden generated-code exclusions during the audit.",
+        "Distinguishes audit authority from setup authorization."
+      ]
+    },
+    {
+      "id": 1,
+      "name": "missing-data-and-empty-modules",
+      "prompt": "Our verify job is green when coverage agents are removed. We also have a POM aggregator, a test-only module, and a production module with no tests. Fix the quality gap.",
+      "expectations": [
+        "Requires fresh expected execution data and expected production classes/counters, not just successful report/check goals.",
+        "Checks the incremental path after a prior successful run to rule out stale coverage.",
+        "Handles aggregator and test-only modules deliberately without exempting untested production code.",
+        "Includes a deliberate missing-instrumentation failure and verifies the diagnostic."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "ordinary-development-no-upgrade",
+      "prompt": "Add tests for this JVM bug. The repo has pinned tooling and a working canonical CI command. You notice newer formatter and analyzer releases are available.",
+      "expectations": [
+        "Uses project pins and existing canonical verification.",
+        "Does not upgrade unrelated tools or reformat untouched code.",
+        "Adds meaningful tests for changed behavior.",
+        "Does not weaken floors, exclusions or findings to pass."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "setup-version-and-vulnerability-policy",
+      "prompt": "Set up quality policy for a new mixed JVM project. Give reusable guidance for selecting tool versions, runtime compatibility, dependency scanning and CI.",
+      "expectations": [
+        "Distinguishes tool JDK, runtime, bytecode and API target.",
+        "Resolves stable compatible releases from official sources at setup and pins them in the project.",
+        "Keeps reusable skill guidance free of specific tool release pins and distinguishes adapter/engine versions.",
+        "Defines scanning cadence, severity/failure and reviewed expiring exceptions as explicit project decisions.",
+        "Names a required CI path for all gates and separates compatibility jobs where needed."
+      ]
+    }
+  ]
+}

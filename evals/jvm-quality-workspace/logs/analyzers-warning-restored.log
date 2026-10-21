@@ -1,0 +1,146 @@
+[INFO] Scanning for projects...
+[INFO]
+[INFO] ----------------------< skill.fixture:java-only >-----------------------
+[INFO] Building java-only 1
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24153 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO] Loaded 74 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO]
+[INFO] --- enforcer:3.6.3:enforce (tools) @ java-only ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireMavenVersion passed
+[INFO] Rule 1: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] Rule 2: org.apache.maven.enforcer.rules.BanDuplicatePomDependencyVersions passed
+[INFO]
+[INFO] --- antrun:3.2.0:run (coverage-reset) @ java-only ---
+[INFO] Executing tasks
+[INFO] Executed tasks
+[INFO]
+[INFO] --- jacoco:0.8.15:prepare-agent (unit-agent) @ java-only ---
+[INFO] coverage.unit.args set to -javaagent:${M2_REPOSITORY}/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/private${FIXTURE}/java-only/target/unit.exec
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ java-only ---
+[INFO] skip non existing resourceDirectory /private${FIXTURE}/java-only/src/main/resources
+[INFO]
+[INFO] --- compiler:3.16.0:compile (default-compile) @ java-only ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 2 source files with javac [forked debug release 17] to target/classes
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ java-only ---
+[INFO] skip non existing resourceDirectory /private${FIXTURE}/java-only/src/test/resources
+[INFO]
+[INFO] --- compiler:3.16.0:testCompile (default-testCompile) @ java-only ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 3 source files with javac [forked debug release 17] to target/test-classes
+[INFO]
+[INFO] --- surefire:3.6.0:test (default-test) @ java-only ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running sample.JavaTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.041 s -- in sample.JavaTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] >>> spotbugs:4.10.5.0:check (bugs) > :spotbugs @ java-only >>>
+[INFO]
+[INFO] --- spotbugs:4.10.5.0:spotbugs (spotbugs) @ java-only ---
+[INFO] Done SpotBugs Analysis....
+[INFO] Skipping com.github.spotbugs:spotbugs-maven-plugin:4.10.5.0:spotbugs report goal
+[INFO]
+[INFO] <<< spotbugs:4.10.5.0:check (bugs) < :spotbugs @ java-only <<<
+[INFO]
+[INFO]
+[INFO] --- spotbugs:4.10.5.0:check (bugs) @ java-only ---
+[INFO] BugInstance size is 0
+[INFO] Error size is 0
+[INFO] No errors/warnings found
+[INFO]
+[INFO] >>> pmd:3.28.0:check (pmd) > :pmd @ java-only >>>
+[INFO]
+[INFO] --- pmd:3.28.0:pmd (pmd) @ java-only ---
+[INFO] PMD version: 7.17.0
+[INFO] Rendering content with org.apache.maven.skins:maven-fluido-skin:jar:2.0.0-M9 skin
+[INFO]
+[INFO] <<< pmd:3.28.0:check (pmd) < :pmd @ java-only <<<
+[INFO]
+[INFO]
+[INFO] --- pmd:3.28.0:check (pmd) @ java-only ---
+[INFO]
+[INFO] >>> pmd:3.28.0:cpd-check (pmd) > :cpd @ java-only >>>
+[INFO]
+[INFO] --- pmd:3.28.0:cpd (cpd) @ java-only ---
+[INFO] Rendering content with org.apache.maven.skins:maven-fluido-skin:jar:2.0.0-M9 skin
+[INFO]
+[INFO] <<< pmd:3.28.0:cpd-check (pmd) < :cpd @ java-only <<<
+[INFO]
+[INFO]
+[INFO] --- pmd:3.28.0:cpd-check (pmd) @ java-only ---
+[INFO]
+[INFO] --- jar:3.5.1:jar (default-jar) @ java-only ---
+[INFO] Building jar: /private${FIXTURE}/java-only/target/java-only-1.jar
+[INFO]
+[INFO] --- jacoco:0.8.15:prepare-agent (it-agent) @ java-only ---
+[INFO] coverage.it.args set to -javaagent:${M2_REPOSITORY}/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/private${FIXTURE}/java-only/target/it.exec
+[INFO]
+[INFO] --- jacoco:0.8.15:prepare-agent (child-agent) @ java-only ---
+[INFO] coverage.child.args set to -javaagent:${M2_REPOSITORY}/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/private${FIXTURE}/java-only/target/child.exec
+[INFO]
+[INFO] --- failsafe:3.6.0:integration-test (integration) @ java-only ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running sample.ChildIT
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.182 s -- in sample.ChildIT
+[INFO] Running sample.LogicIT
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in sample.LogicIT
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- jacoco:0.8.15:merge (merge-coverage) @ java-only ---
+[INFO] Loading execution data file /private${FIXTURE}/java-only/target/it.exec
+[INFO] Loading execution data file /private${FIXTURE}/java-only/target/unit.exec
+[INFO] Loading execution data file /private${FIXTURE}/java-only/target/child.exec
+[INFO] Writing merged execution data to /private${FIXTURE}/java-only/target/combined.exec
+[INFO]
+[INFO] --- jacoco:0.8.15:report (coverage-report) @ java-only ---
+[INFO] Loading execution data file /private${FIXTURE}/java-only/target/combined.exec
+[INFO] Analyzed bundle 'java-only' with 2 classes
+[INFO]
+[INFO] --- antrun:3.2.0:run (coverage-presence) @ java-only ---
+[INFO] Executing tasks
+[INFO] Executed tasks
+[INFO]
+[INFO] --- failsafe:3.6.0:verify (integration-results) @ java-only ---
+[INFO]
+[INFO] --- jacoco:0.8.15:check (coverage-floor) @ java-only ---
+[INFO] Loading execution data file /private${FIXTURE}/java-only/target/combined.exec
+[INFO] Analyzed bundle 'java-only' with 2 classes
+[INFO] All coverage checks have been met.
+[INFO]
+[INFO] --- spotless:3.10.4:check (format-check) @ java-only ---
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.diffplug.spotless.java.ModuleHelper (file:${M2_REPOSITORY}/com/diffplug/spotless/spotless-lib/4.10.4/spotless-lib-4.10.4.jar)
+WARNING: Please consider reporting this to the maintainers of class com.diffplug.spotless.java.ModuleHelper
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Spotless.Java is keeping 5 files clean - 0 needs changes to be clean, 1 were already clean, 4 were skipped because caching determined they were already clean
+[INFO]
+[INFO] --- checkstyle:3.6.0:check (style) @ java-only ---
+[WARNING] Could not transfer metadata /.meta/prefixes.txt from/to jvnet-nexus-releases (https://maven.java.net/content/repositories/releases/): (certificate_expired) PKIX path validation failed: java.security.cert.CertPathValidatorException: validity check failed
+[INFO] You have 0 Checkstyle violations.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  10.634 s
+[INFO] Finished at: 2026-10-20T19:17:48-04:00
+[INFO] ------------------------------------------------------------------------

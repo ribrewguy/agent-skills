@@ -45,6 +45,26 @@
       "name": "throughline",
       "source": "./plugins/throughline",
       "description": "Lifecycle dispatcher: requirements to architecture to task to implementation to commit to merge to closeout. Owns the Kickoff Declaration, the three completion phases, the source-of-truth ladder, and epic scaffolding order. Delegates to multi-agent-git-workflow, branch-promotion-discipline, task-handoff-summaries and structured-code-review; bundles feature governance, procedural memory, MCP parity and Beads mechanics."
+    },
+    {
+      "name": "jvm-quality",
+      "source": "./plugins/jvm-quality",
+      "description": "Shared JVM quality policy for tests, module coverage, runtime compatibility, exceptions and dependency vulnerability scanning."
+    },
+    {
+      "name": "maven-practices",
+      "source": "./plugins/maven-practices",
+      "description": "Reproducible Maven builds and effective lifecycle enforcement across modules, profiles and test JVMs."
+    },
+    {
+      "name": "java-practices",
+      "source": "./plugins/java-practices",
+      "description": "Java compilation, deterministic formatting, style, correctness and security analysis with compatible project tooling."
+    },
+    {
+      "name": "kotlin-practices",
+      "source": "./plugins/kotlin-practices",
+      "description": "Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability."
     }
   ]
 }

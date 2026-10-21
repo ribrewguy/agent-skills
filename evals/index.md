@@ -50,6 +50,13 @@ Each per-skill page below has:
 - A link to the **eval definitions** (the prompts and assertions, in `evals.json`)
 - A link to the raw model outputs and `grading.json` files in the workspace
 
+## JVM family verification
+
+The [JVM quality family](jvm-quality) includes executable Maven enforcement
+fixtures and 16 authored behavioral prompts. Fixture results are reported
+separately from with-skill/baseline model benchmarks; no comparative model
+pass rate is claimed.
+
 ## Skills evaluated
 
 - [rest-api-design evaluations](rest-api-design)

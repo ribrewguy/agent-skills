@@ -1,0 +1,85 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] jvm-quality-fixture                                                [pom]
+[INFO] java-only                                                          [jar]
+[INFO] kotlin-only                                                        [jar]
+[INFO] mixed                                                              [jar]
+[INFO] empty                                                              [pom]
+[INFO] Loaded 24153 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO]
+[INFO] -----------------< skill.fixture:jvm-quality-fixture >------------------
+[INFO] Building jvm-quality-fixture 1                                     [1/5]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- spotless:3.10.4:apply (default-cli) @ jvm-quality-fixture ---
+[INFO] Index file does not exist. Fallback to an empty index
+[INFO]
+[INFO] ----------------------< skill.fixture:java-only >-----------------------
+[INFO] Building java-only 1                                               [2/5]
+[INFO]   from java-only/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- spotless:3.10.4:apply (default-cli) @ java-only ---
+[INFO] Index file does not exist. Fallback to an empty index
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.diffplug.spotless.java.ModuleHelper (file:${M2_REPOSITORY}/com/diffplug/spotless/spotless-lib/4.10.4/spotless-lib-4.10.4.jar)
+WARNING: Please consider reporting this to the maintainers of class com.diffplug.spotless.java.ModuleHelper
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] clean file: /private${FIXTURE}/java-only/src/test/java/sample/LogicIT.java
+[INFO] clean file: /private${FIXTURE}/java-only/src/test/java/sample/JavaTest.java
+[INFO] clean file: /private${FIXTURE}/java-only/src/test/java/sample/ChildIT.java
+[INFO] clean file: /private${FIXTURE}/java-only/src/main/java/sample/ChildMain.java
+[INFO] clean file: /private${FIXTURE}/java-only/src/main/java/sample/Logic.java
+[INFO] Spotless.Java is keeping 5 files clean - 5 were changed to be clean, 0 were already clean, 0 were skipped because caching determined they were already clean
+[INFO]
+[INFO] ---------------------< skill.fixture:kotlin-only >----------------------
+[INFO] Building kotlin-only 1                                             [3/5]
+[INFO]   from kotlin-only/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- spotless:3.10.4:apply (default-cli) @ kotlin-only ---
+[INFO] Index file does not exist. Fallback to an empty index
+[INFO] clean file: /private${FIXTURE}/kotlin-only/src/test/kotlin/sample/LogicIT.kt
+[INFO] clean file: /private${FIXTURE}/kotlin-only/src/test/kotlin/sample/KotlinTest.kt
+[INFO] clean file: /private${FIXTURE}/kotlin-only/src/main/kotlin/sample/Logic.kt
+[INFO] Spotless.Kotlin is keeping 3 files clean - 3 were changed to be clean, 0 were already clean, 0 were skipped because caching determined they were already clean
+[INFO]
+[INFO] ------------------------< skill.fixture:mixed >-------------------------
+[INFO] Building mixed 1                                                   [4/5]
+[INFO]   from mixed/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- spotless:3.10.4:apply (default-cli) @ mixed ---
+[INFO] Index file does not exist. Fallback to an empty index
+[INFO] clean file: /private${FIXTURE}/mixed/src/test/java/sample/LogicIT.java
+[INFO] clean file: /private${FIXTURE}/mixed/src/test/java/sample/JavaTest.java
+[INFO] clean file: /private${FIXTURE}/mixed/src/main/java/sample/Bridge.java
+[INFO] Spotless.Java is keeping 3 files clean - 3 were changed to be clean, 0 were already clean, 0 were skipped because caching determined they were already clean
+[INFO] clean file: /private${FIXTURE}/mixed/src/test/kotlin/sample/KotlinTest.kt
+[INFO] clean file: /private${FIXTURE}/mixed/src/main/kotlin/sample/Logic.kt
+[INFO] Spotless.Kotlin is keeping 2 files clean - 2 were changed to be clean, 0 were already clean, 0 were skipped because caching determined they were already clean
+[INFO]
+[INFO] ------------------------< skill.fixture:empty >-------------------------
+[INFO] Building empty 1                                                   [5/5]
+[INFO]   from empty/pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- spotless:3.10.4:apply (default-cli) @ empty ---
+[INFO] Index file does not exist. Fallback to an empty index
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for jvm-quality-fixture 1:
+[INFO]
+[INFO] jvm-quality-fixture ................................ SUCCESS [  0.296 s]
+[INFO] java-only .......................................... SUCCESS [  0.698 s]
+[INFO] kotlin-only ........................................ SUCCESS [  1.132 s]
+[INFO] mixed .............................................. SUCCESS [  0.215 s]
+[INFO] empty .............................................. SUCCESS [  0.004 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.573 s
+[INFO] Finished at: 2026-10-20T19:14:21-04:00
+[INFO] ------------------------------------------------------------------------

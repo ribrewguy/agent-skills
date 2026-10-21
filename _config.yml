@@ -48,6 +48,10 @@ exclude:
   - .DS_Store
   - "*.swp"
   - plugins/
+  - .worktrees/
+  - tasks/
+  - tools/jvm-quality/
+  - evals/jvm-quality-workspace/
   - "plugins/**/evals/"
   - "**/.claude-plugin/"
   # Eval workspace markdown is model-generated and frequently contains

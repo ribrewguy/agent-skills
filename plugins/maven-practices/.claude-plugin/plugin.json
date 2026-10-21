@@ -1,0 +1,9 @@
+{
+  "name": "maven-practices",
+  "description": "Reproducible Maven builds and effective lifecycle enforcement across modules, profiles and test JVMs.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}

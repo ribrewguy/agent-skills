@@ -1,0 +1,32 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO]
+[INFO] jvm-quality-fixture                                                [pom]
+[INFO] java-only                                                          [jar]
+[INFO] kotlin-only                                                        [jar]
+[INFO] mixed                                                              [jar]
+[INFO] empty                                                              [pom]
+[INFO]
+[INFO] -----------------< skill.fixture:jvm-quality-fixture >------------------
+[INFO] Building jvm-quality-fixture 1                                     [1/5]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO]
+[INFO] --- wrapper:3.3.4:wrapper (default-cli) @ jvm-quality-fixture ---
+[INFO] Unpacked only-script type wrapper distribution org.apache.maven.wrapper:maven-wrapper-distribution:zip:only-script:3.3.4
+[INFO] Configuring .mvn/wrapper/maven-wrapper.properties to use Maven 3.10.0 and download from https://repo.maven.apache.org/maven2
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for jvm-quality-fixture 1:
+[INFO]
+[INFO] jvm-quality-fixture ................................ SUCCESS [  0.333 s]
+[INFO] java-only .......................................... SKIPPED
+[INFO] kotlin-only ........................................ SKIPPED
+[INFO] mixed .............................................. SKIPPED
+[INFO] empty .............................................. SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  0.534 s
+[INFO] Finished at: 2026-10-20T19:11:42-04:00
+[INFO] ------------------------------------------------------------------------

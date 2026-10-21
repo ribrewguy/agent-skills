@@ -1,0 +1,9 @@
+{
+  "name": "kotlin-practices",
+  "description": "Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}

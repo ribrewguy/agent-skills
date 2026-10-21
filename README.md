@@ -25,6 +25,11 @@ Other tools (Gemini CLI, Codex CLI, Copilot CLI, Cline, Cursor, Aider) plus the 
 - **[throughline](https://ribrewguy.github.io/agent-skills/skills/throughline/)**: the lifecycle spine — requirements to architecture to task to implementation to commit to merge to closeout. Owns the Kickoff Declaration, the three completion phases and the source-of-truth ladder; dispatches everything else to the skill that owns it.
 - **[isolated-stack-development](https://ribrewguy.github.io/agent-skills/skills/isolated-stack-development/)**: one isolated local Supabase stack per worktree, so parallel worktrees don't collide. Ships a `stack` tool and a PreToolUse guard alongside the skill; repos opt in with `.isolated-stack.json`.
 
+- **[jvm-quality](https://ribrewguy.github.io/agent-skills/skills/jvm-quality/)**: Shared JVM quality policy for tests, module coverage, runtime compatibility, exceptions and dependency vulnerability scanning.
+- **[maven-practices](https://ribrewguy.github.io/agent-skills/skills/maven-practices/)**: Reproducible Maven builds and effective lifecycle enforcement across modules, profiles and test JVMs.
+- **[java-practices](https://ribrewguy.github.io/agent-skills/skills/java-practices/)**: Java compilation, deterministic formatting, style, correctness and security analysis with compatible project tooling.
+- **[kotlin-practices](https://ribrewguy.github.io/agent-skills/skills/kotlin-practices/)**: Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability.
+
 Full catalog: **[Skills](https://ribrewguy.github.io/agent-skills/skills/)**.
 
 ## Repo layout

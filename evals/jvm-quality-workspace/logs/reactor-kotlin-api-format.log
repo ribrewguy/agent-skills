@@ -1,0 +1,21 @@
+[INFO] Scanning for projects...
+[INFO] Loaded 24153 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO]
+[INFO] ---------------------< skill.fixture:kotlin-only >----------------------
+[INFO] Building kotlin-only 1
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- spotless:3.10.4:apply (default-cli) @ kotlin-only ---
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.jetbrains.kotlin.com.intellij.util.containers.Unsafe (file:${M2_REPOSITORY}/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.2.21/kotlin-compiler-embeddable-2.2.21.jar)
+WARNING: Please consider reporting this to the maintainers of class org.jetbrains.kotlin.com.intellij.util.containers.Unsafe
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] clean file: /private${FIXTURE}/kotlin-only/src/main/kotlin/sample/Logic.kt
+[INFO] Spotless.Kotlin is keeping 3 files clean - 1 were changed to be clean, 0 were already clean, 2 were skipped because caching determined they were already clean
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.035 s
+[INFO] Finished at: 2026-10-20T19:17:12-04:00
+[INFO] ------------------------------------------------------------------------
