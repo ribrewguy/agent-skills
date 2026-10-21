@@ -22,7 +22,7 @@ The catalog. Each skill has its own page with a summary, its key opinions, insta
 
 - **[jvm-quality](jvm-quality)**: Shared JVM quality policy for tests, module coverage, runtime compatibility, exceptions and dependency vulnerability scanning.
 - **[maven-practices](maven-practices)**: Reproducible Maven builds and effective lifecycle enforcement across modules, profiles and test JVMs.
-- **[java-practices](java-practices)**: Java compilation, deterministic formatting, style, correctness and security analysis with compatible project tooling.
+- **[java-practices](java-practices)**: Bloch-inspired Java design: immutability, defensive boundaries, small APIs, value contracts and composition, alongside compiler, formatter and analyzer practices.
 - **[kotlin-practices](kotlin-practices)**: Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability.
 
 ## How skills are evaluated
@@ -30,7 +30,7 @@ The catalog. Each skill has its own page with a summary, its key opinions, insta
 Every skill in this collection passes through an evaluation loop before it ships:
 
 1. Draft the SKILL.md based on real policies or design intent
-2. Write 4 test prompts in `evals/evals.json` that probe the skill's distinct opinions
+2. Write focused test prompts in `evals/evals.json` that probe the skill's distinct opinions
 3. Spawn parallel runs, one with the skill loaded, one baseline without
 4. Grade outputs against per-case assertions; aggregate into a benchmark
 5. Iterate until the with-skill output is materially better than the baseline on the assertions that matter

@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-20",
+  "design_cases": 6,
+  "runs_per_case_per_condition": 1,
+  "comparison": "previous tool-focused skill versus updated design-and-tooling skill",
+  "generation": "Two independent fresh contexts with identical prompts; each generated all six cases. No shared parent conversation or criteria were supplied.",
+  "grading": "A third context reviewed anonymized candidates; initial static grading and final grading with blinded executed probe evidence are preserved.",
+  "scored_criteria": {
+    "previous": {
+      "passed": 24,
+      "total": 24
+    },
+    "updated": {
+      "passed": 24,
+      "total": 24
+    }
+  },
+  "contracts": {
+    "previous": {
+      "compiled_cases": 5,
+      "passed": 38,
+      "total": 38
+    },
+    "updated": {
+      "compiled_cases": 5,
+      "passed": 38,
+      "total": 38
+    }
+  },
+  "harness_sha256": "a07bc432908cf924cb648108e9356ac05734af1f4912ca0be3a89931204867a9",
+  "model": "session-inherited model; exact runtime identifier and token accounting unavailable",
+  "limitations": [
+    "One generation per condition; prompts explicitly constrain many behaviors. No observed improvement is claimed.",
+    "Five Java implementations per condition compiled and ran under the fixture JDK/release. The API review case is graded statically.",
+    "Initial static scoring was 23/24 per condition because neither output supplied a Money hash-collection test; independent runtime evidence verifies the behavior and final property-based scoring is 24/24 each.",
+    "The four existing tooling prompt cases were retained, not rerun as model evaluations in this iteration.",
+    "The two contexts each saw all six cases, so cases within a condition are not independent samples."
+  ]
+}

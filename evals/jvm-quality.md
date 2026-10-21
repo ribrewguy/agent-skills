@@ -103,7 +103,9 @@ syntax. It does not certify every compiler feature, detekt metadata combination,
 rule, runtime or operating system. Kover and Gradle integrations are documented
 selection paths, not executed alternatives in this fixture. Dependency
 vulnerability policy is documented; no live dependency-database scan was run.
-The 16 behavioral prompts are authored, not scored model evaluation results.
+The original 16 tooling prompts are authored, not scored model evaluation
+results. Subsequent Java design additions are evaluated separately in the
+[Java design report](java-practices).
 
 ## Primary sources checked
 

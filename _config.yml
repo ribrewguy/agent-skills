@@ -52,6 +52,8 @@ exclude:
   - tasks/
   - tools/jvm-quality/
   - evals/jvm-quality-workspace/
+  - evals/java-practices-workspace/
+  - tools/java-practices/
   - "plugins/**/evals/"
   - "**/.claude-plugin/"
   # Eval workspace markdown is model-generated and frequently contains
