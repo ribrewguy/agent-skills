@@ -271,6 +271,7 @@ Name it something like `<project>-telemetry` and have it reference this skill as
 - [references/jvm-spring-tests.md](references/jvm-spring-tests.md): Spring component tests on in-memory exporters and the Testcontainers collector test.
 - [references/jvm-other.md](references/jvm-other.md): Ktor, JAX-RS, plain JVM on the OTel SDK; the Java agent; Lambda-style handlers.
 - [references/node.md](references/node.md): Nuxt/Nitro long-lived and serverless, plain Node, Express-style; `withSpan`; `amqplib`; pino.
+- [references/node-tests.md](references/node-tests.md): vitest component tests on in-memory exporters against the built Nitro app, and the Testcontainers collector test.
 - [references/verification.md](references/verification.md): component, integration, and local compose layers.
 - [assets/collector-test.yaml](assets/collector-test.yaml) and [assets/docker-compose.otel.yaml](assets/docker-compose.otel.yaml).
 - [`java-practices`](../../../java-practices/skills/java-practices/SKILL.md) and [`kotlin-practices`](../../../kotlin-practices/skills/kotlin-practices/SKILL.md): JVM code conventions the wiring follows.
