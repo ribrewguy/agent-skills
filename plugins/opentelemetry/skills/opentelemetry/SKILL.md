@@ -42,7 +42,7 @@ The application exports traces, metrics, and logs over **OTLP to a collector**. 
 | `OTEL_TRACES_SAMPLER_ARG` | Sampler argument. |
 | `OTEL_LOG_LEVEL` | SDK's own diagnostic level. |
 
-**No endpoint or sampler is hard-coded in application code.** Code that builds an exporter with a URL literal, or a sampler with a ratio literal, is wrong even if the value matches today's deployment.
+**No endpoint or sampler is hard-coded in application code.** On Spring these variables reach the Micrometer path through `management.*` property mapping in configuration; see [Metrics](#metrics). Code that builds an exporter with a URL literal, or a sampler with a ratio literal, is wrong even if the value matches today's deployment.
 
 **Required resource attributes:**
 
@@ -71,7 +71,7 @@ The application exports traces, metrics, and logs over **OTLP to a collector**. 
 | 2 | Public methods on services and repositories | Class-level annotation or aspect (JVM); `withSpan` wrapper (Node) | Always. Applied at the class so new methods are covered without remembering. |
 | 3 | Anything else | Explicit span | Only if it would earn a bar on a flame graph: does IO, can plausibly exceed a few milliseconds, or is a decision point worth debugging later (cache miss, branch taken). Otherwise an attribute or span event on the parent. |
 
-**Tier 2 on the JVM is a custom aspect, not `@WithSpan` alone.** `@WithSpan` is method-target only and records no metrics, so it cannot deliver class-level coverage plus the default instruments. On Spring the aspect records each call through a Micrometer `Observation` (or `Timer`) named `app.service.duration`, which yields the span and the duration histogram, and increments an explicit Counter `app.service.calls`. Elsewhere it uses the OTel tracer and meter directly. On Node, a `withSpan` wrapper applied to the service and repository objects does the same.
+**Tier 2 on the JVM is a custom aspect, not `@WithSpan` alone.** `@WithSpan` is method-target only and records no metrics, so it cannot deliver class-level coverage plus the default instruments. On Spring the aspect records each call through a Micrometer `Observation` named `app.service.duration`, which yields the span and the duration histogram, and increments an explicit Counter `app.service.calls`. Elsewhere it uses the OTel tracer and meter directly. On Node, a `withSpan` wrapper applied to the service and repository objects does the same.
 
 **Don'ts.** No spans on:
 
@@ -79,9 +79,9 @@ The application exports traces, metrics, and logs over **OTLP to a collector**. 
 - mappers, validators, getters, utilities;
 - items inside a loop over a collection, unless the body does IO. Use one span with an `item.count` attribute instead.
 
-**Naming.** Low-cardinality. Tier 2 spans are `ClassName.method` (`OrderService.getOrder`, `OrderRepository.findById`) with `code.namespace` and `code.function.name` attributes per semantic conventions. IDs and other high-cardinality values go in attributes (`order.id`), never in the name. `OrderService.getOrder 42` breaks every aggregation the backend does.
+**Naming.** Low-cardinality. Tier 2 spans are `ClassName.method` (`OrderService.getOrder`, `OrderRepository.findById`) with a fully qualified `code.function.name` attribute per semantic conventions (JVM `fixture.OrderService.getOrder`, Node `OrderService.getOrder`). `code.namespace` is deprecated; do not emit it. IDs and other high-cardinality values go in attributes (`order.id`), never in the name. `OrderService.getOrder 42` breaks every aggregation the backend does.
 
-**Error rule.** Set status `ERROR` and record the exception **only on the span whose operation failed**. Ancestors stay `UNSET` unless the failure propagates out of them. A handled 404 is not an error on the server span: `GET /orders/404` ends with no span in `ERROR`; `GET /orders/boom`, where `OrderService.getOrder` throws and the 500 propagates, marks the service span and the server span, and records the exception once.
+**Error rule.** The span whose operation failed **records the exception event and sets status `ERROR`**. Ancestors the failure propagates out of set status `ERROR` only, without recording the exception again. Ancestors that catch and handle the failure stay `UNSET`. An auto-instrumented server span that records the exception by default is accepted as the ecosystem norm; do not fight it. A handled 404 is not an error on the server span: `GET /orders/404` ends with no span in `ERROR`; `GET /orders/boom`, where `OrderService.getOrder` throws and the 500 propagates, marks the service span (exception event plus `ERROR`) and the server span (`ERROR`).
 
 **Async rule.** A job that runs later gets **its own root span with a span link to the triggering trace**, not a parent relationship. `AuditJob.record` enqueued during `GET /orders/42` starts a new trace and links back to the request's span. A parent relationship would stretch the request trace over the job's lifetime and misattribute its duration.
 
@@ -91,8 +91,8 @@ The application exports traces, metrics, and logs over **OTLP to a collector**. 
 
 | Name | Instrument | Unit | Attributes |
 |---|---|---|---|
-| `app.service.calls` | Counter | `{call}` | `code.namespace`, `code.function.name`, `outcome` |
-| `app.service.duration` | Histogram | `s` | `code.namespace`, `code.function.name`, `outcome` |
+| `app.service.calls` | Counter | `{call}` | `code.function.name`, `outcome` |
+| `app.service.duration` | Histogram | `s` | `code.function.name`, `outcome` |
 
 `outcome` is `success` or `error`, nothing else. Together they give rate, errors, and duration per service method. Auto-instrumentation supplies the HTTP and database layers. **Runtime metrics are turned on**: JVM memory and GC, Node event loop and heap.
 
@@ -102,19 +102,20 @@ The application exports traces, metrics, and logs over **OTLP to a collector**. 
 
 | Instrument | Use for | Example |
 |---|---|---|
-| Counter | Events that only go up | `orders.placed` |
-| UpDownCounter | Levels that rise and fall | `orders.in_flight` |
+| Counter | Events that only go up | `order.placed` (`{order}`) |
+| UpDownCounter | Levels that rise and fall | `order.in_flight` (`{order}`) |
 | Histogram | Durations and sizes | `pricing.quote.duration` (`s`) |
 | Observable gauge | Sampled values the app does not own | `audit.queue.depth` read from the broker |
 
 **Naming rules:**
 
-- Dotted lowercase, domain first: `orders.placed`, not `placed_orders`.
-- No plural nouns or suffixes the backend adds: `orders.placed`, not `orders_placed_total`.
+- Dotted lowercase, singular namespace, domain first: `order.placed`, not `orders.placed` or `placed_orders`.
+- A plural final noun only when the instrument counts those things and the unit is `{thing}`: `app.service.calls` with unit `{call}`.
+- Never a `_total` suffix or any other suffix the backend adds: `order.placed`, not `order_placed_total`.
 - Units in UCUM (`s`, `By`, `{order}`); durations in seconds, never milliseconds in the name.
 - Attributes are low-cardinality. **Never an ID, email, or free text.** `order.id` belongs on a span, not on a metric.
 
-**Spring uses the ecosystem path.** A Spring app uses Actuator with Micrometer for metrics exported over OTLP, Micrometer Tracing with the OTel bridge for traces, and the OTel Logback appender for logs. Tier 1 metric names are therefore Micrometer's (`http.server.requests`, `jvm.memory.used`) on Spring and semantic-convention names on Node. That difference is accepted: a Spring developer expects Micrometer names, and the collector can rename if a deployment needs uniformity. **Tier 2 and business metrics use OTel naming on every stack**, registered through Micrometer on Spring and through the OTel API elsewhere. Non-Spring JVM frameworks (Ktor, JAX-RS, plain JVM) use the OTel SDK and its instrumentation directly. Node uses the OTel JS SDK.
+**Spring uses the ecosystem path.** A Spring app uses Actuator with Micrometer for metrics exported over OTLP, Micrometer Tracing with the OTel bridge for traces, and the OTel Logback appender for logs. Tier 1 metric names are therefore Micrometer's (`http.server.requests`, `jvm.memory.used`) on Spring and semantic-convention names on Node. That difference is accepted: a Spring developer expects Micrometer names, and the collector can rename if a deployment needs uniformity. **Tier 2 and business metrics use OTel naming on every stack**, registered through Micrometer on Spring and through the OTel API elsewhere. Spring's Micrometer OTLP path reads `management.otlp.*` and `management.tracing.sampling.probability` (default 0.1), not most `OTEL_*` variables, so the Spring reference maps the `OTEL_*` variables onto the `management.*` properties in configuration, never in code, with sampling 1.0 unless the variable says otherwise. Micrometer's OTLP registry also defaults to milliseconds; set `management.otlp.metrics.export.base-time-unit=seconds` so `app.service.duration` is really in `s` ([references/jvm-spring.md](references/jvm-spring.md) has the mapping). Non-Spring JVM frameworks (Ktor, JAX-RS, plain JVM) use the OTel SDK and its instrumentation directly. Node uses the OTel JS SDK.
 
 ## Logs
 
@@ -130,7 +131,7 @@ On Spring the OTel Logback appender must be installed into the same `OpenTelemet
 ## Background and messaging
 
 - **Background jobs:** own root span, span link to the triggering span. The link context is captured at enqueue time and carried with the job.
-- **Messaging:** producer and consumer spans follow the messaging semantic conventions. The producer injects context into message headers; the consumer **extracts context from the headers before opening the consumer span**, and the consumer span links to the producer's context.
+- **Messaging:** producer and consumer spans follow the messaging semantic conventions. The producer injects context into message headers; the consumer **extracts context from the headers before opening the consumer span**; the consumer span is a child of the extracted context (same trace) and also carries a link to it.
 - **Tested mechanisms:** the stack references carry tested recipes for Spring `@Async` and `@Scheduled`, Spring AMQP with RabbitMQ (producer and consumer spans with links, context in message headers), Nitro scheduled tasks, and RabbitMQ from Node via the `amqplib` instrumentation. Other brokers and job runners get the generic rule above.
 
 ## Serverless
@@ -138,9 +139,9 @@ On Spring the OTel Logback appender must be installed into the same `OpenTelemet
 Serverless and edge deployments are in scope. The process can end at any moment after the handler returns, so **nothing may be buffered**:
 
 - use the simple span and log processors, which export immediately; or
-- call `forceFlush` on every signal (traces, metrics, logs) before the handler returns;
+- call `forceFlush` on the tracer and logger providers before the handler returns;
 
-whichever the runtime supports. Where the framework or platform offers a streaming export path, use it instead. Batch processors with a background flush lose the last invocation's telemetry when the platform freezes the process. Nitro serverless and edge presets lack some auto-instrumentations and replace the preload hook with explicit initialisation at module load; [references/node.md](references/node.md) carries that path, and [references/jvm-other.md](references/jvm-other.md) carries the Lambda-style JVM handler.
+whichever the runtime supports. **Metrics always need `forceFlush` on the MeterProvider before the handler returns**, whichever option is chosen: there is no simple metric reader, so a periodic reader holds the last invocation's points. Where the framework or platform offers a streaming export path, use it instead. Batch processors with a background flush lose the last invocation's telemetry when the platform freezes the process. Nitro serverless and edge presets lack some auto-instrumentations and replace the preload hook with explicit initialisation at module load; [references/node.md](references/node.md) carries that path, and [references/jvm-other.md](references/jvm-other.md) carries the Lambda-style JVM handler.
 
 ## Known dropped balls
 
@@ -167,8 +168,8 @@ Component tests:
 - [ ] An outbound call during the request produces a client span, and the receiving side (an in-process stub server) reports a server span with the same trace ID.
 - [ ] A coroutine or async hop inside the service keeps the parent span.
 - [ ] A log emitted inside the request carries `trace_id` and `span_id` equal to the active span.
-- [ ] `app.service.calls` and `app.service.duration` were recorded with `code.namespace`, `code.function.name`, and `outcome`.
-- [ ] No span has `ERROR` status on the happy path; exactly the failing operation's span (and ancestors it propagated out of) does on the failure path, with the exception recorded once.
+- [ ] `app.service.calls` and `app.service.duration` were recorded with `code.function.name` and `outcome`; no `code.namespace`.
+- [ ] No span has `ERROR` status on the happy path. On the failure path the failing operation's span carries the exception event and `ERROR`; ancestors the failure propagated out of carry `ERROR` (an auto-instrumented server span may also record the exception); ancestors that handled it stay `UNSET`.
 - [ ] A background job triggered during the request starts its own trace and carries a span link to the triggering span.
 
 Integration test:
@@ -195,7 +196,8 @@ Configuration and wiring:
 - `@WithSpan` on individual methods as the Tier 2 mechanism.
 - A span opened in a controller, route handler, mapper, validator, getter, or per loop item.
 - An ID, timestamp, or user value in a span name.
-- `ERROR` status on every ancestor of a failure, or on a handled 404.
+- `ERROR` on an ancestor that caught and handled the failure, or on a handled 404.
+- `code.namespace` emitted, or `code.function.name` not fully qualified.
 - A background job that becomes a child of the request span, or has no link to it.
 - `GlobalScope.launch`, a raw `Executors` pool, or `CompletableFuture.supplyAsync` without context wrapping in instrumented code.
 - A message consumer that opens its span before extracting header context.
@@ -212,14 +214,14 @@ Configuration and wiring:
 |---|---|
 | "The agent will auto-instrument everything." | Auto-instrumentation gives Tier 1 only: the edges of the process. Your services and repositories are invisible, and coroutines, Reactor, executors, and queues still drop context unless wired. |
 | "We'll add tracing when we need it." | You need it during the incident, and the incident is not the time to discover the trace stops at `PricingClient`. Wiring is a few files today. |
-| "Batch export is fine on Lambda." | The platform freezes the process after the handler returns; the batch never ships. Simple processors or `forceFlush` per invocation. |
+| "Batch export is fine on Lambda." | The platform freezes the process after the handler returns; the batch never ships. Simple span and log processors or `forceFlush` per invocation, plus `forceFlush` on the MeterProvider every time. |
 | "A span per item makes the trace complete." | It makes the trace unreadable and expensive. One span with `item.count`; per-item spans only when each item does IO. |
 | "The log line has the order ID, that's enough correlation." | The order ID finds this order's lines, not the request's other lines, the downstream service's lines, or the span that was slow. `trace_id` does all of that. |
 | "Micrometer names are wrong, use semconv." | On Spring the ecosystem norm wins for Tier 1: developers and dashboards expect `http.server.requests`. The collector can rename. Tier 2 and business metrics use OTel names everywhere. |
 | "`NOT_FOUND` should be an error span." | A 404 is a correct answer to a question about something that is not there. Marking it `ERROR` turns every missing order into an error-rate spike. |
 | "One `@WithSpan` on the controller covers it." | The server span already covers the controller. `@WithSpan` is method-only, records no metrics, and misses every new method; Tier 2 is a class-level aspect on services and repositories. |
 | "We hard-code the endpoint, it never changes." | It changes per environment, per test, and per laptop. `OTEL_EXPORTER_OTLP_ENDPOINT` is the one place everyone looks. |
-| "The ancestor spans should be red too, the request failed." | Status belongs to the operation that failed; ancestors are marked only when the failure propagates out of them. Otherwise every error points at the root and the culprit is hidden. |
+| "The ancestor spans should be red too, the request failed." | The exception event belongs to the operation that failed; ancestors get `ERROR` only when the failure propagates out of them, and stay `UNSET` when they handled it. Otherwise every error points at the root and the culprit is hidden. |
 
 ## How to present findings
 
@@ -237,7 +239,7 @@ Severity ladder, shared with `application-logging`:
 |---|---|---|
 | **Critical** | Secrets or PII in logs; context lost across a process boundary. | Outbound call without propagation; consumer that does not extract headers; a token in a span or log attribute. |
 | **High** | Tier 1 or Tier 2 span missing; log without trace context; metric with an ID attribute. | Repository with no spans; a record under an active span without `trace_id`; `order.id` on `app.service.calls`; coroutine hop that loses the parent. |
-| **Medium** | Naming or unit convention miss; exception logged at multiple layers; missing resource attribute. | `orders_placed_total`; duration in ms; ID in a span name; no `service.version`; `ERROR` on a handled 404. |
+| **Medium** | Naming or unit convention miss; exception logged at multiple layers; missing resource attribute. | `order_placed_total`; duration in ms; ID in a span name; no `service.version`; `ERROR` on a handled 404. |
 | **Low** | Level nit; message wording. | A Tier 3 span that should be an attribute; a span event that could name its entity more clearly. |
 
 ## Invocation examples

@@ -19,7 +19,7 @@
     {
       "name": "task-handoff-summaries",
       "source": "./plugins/task-handoff-summaries",
-      "description": "Three rigorous structured report formats: implementation summary (before commit, single-agent or orchestrator), worker handoff summary (multi-agent worker → orchestrator), closeout summary (after completion). Hard rules against using the summary to mask incomplete work."
+      "description": "Three rigorous structured report formats: implementation summary (before commit, single-agent or orchestrator), worker handoff summary (multi-agent worker \u2192 orchestrator), closeout summary (after completion). Hard rules against using the summary to mask incomplete work."
     },
     {
       "name": "cross-agent-review",
