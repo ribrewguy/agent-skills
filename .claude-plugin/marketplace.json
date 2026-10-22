@@ -19,7 +19,7 @@
     {
       "name": "task-handoff-summaries",
       "source": "./plugins/task-handoff-summaries",
-      "description": "Three rigorous structured report formats: implementation summary (before commit, single-agent or orchestrator), worker handoff summary (multi-agent worker \u2192 orchestrator), closeout summary (after completion). Hard rules against using the summary to mask incomplete work."
+      "description": "Three rigorous structured report formats: implementation summary (before commit, single-agent or orchestrator), worker handoff summary (multi-agent worker → orchestrator), closeout summary (after completion). Hard rules against using the summary to mask incomplete work."
     },
     {
       "name": "cross-agent-review",
@@ -70,6 +70,11 @@
       "name": "application-logging",
       "source": "./plugins/application-logging",
       "description": "Application logging rules: level meanings, structured fields, a never-log denylist, exception-once at the handling boundary, a readable console appender with a LOG_FORMAT=json switch, and request-scoped context. Composes with opentelemetry, which owns the pipeline appender and trace correlation."
+    },
+    {
+      "name": "opentelemetry",
+      "source": "./plugins/opentelemetry",
+      "description": "OpenTelemetry rules for server apps: OTLP to a collector via OTEL_* variables, W3C propagation, span tiers, default service metrics, log correlation, serverless flush, and verification against a real collector. Composes with application-logging, which owns record content and the console appender."
     }
   ]
 }
