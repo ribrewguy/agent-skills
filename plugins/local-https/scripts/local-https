@@ -10,6 +10,10 @@
 #
 # This tool never edits /etc/hosts or the shell profile and never copies
 # rootCA-key.pem: steps that need the owner are printed prefixed OWNER:.
+#
+# Declaration values are untrusted (the file is tracked; it may arrive with
+# a clone). decl.py validates them first; here they travel only as array
+# elements and quoted arguments, never inside a command string or sed program.
 
 set -euo pipefail
 
@@ -43,18 +47,22 @@ REPO_ROOT=$(git -C "$DIR_ABS" rev-parse --show-toplevel 2>/dev/null) || die "not
 REPO_ROOT=$(cd "$REPO_ROOT" && pwd -P)
 case "$DIR_ABS/" in "$REPO_ROOT"/*) ;; *) die "$DIR_ABS is outside $REPO_ROOT" ;; esac
 SERVER_DIR=${DIR_ABS#"$REPO_ROOT"}; SERVER_DIR=${SERVER_DIR#/}; SERVER_DIR=${SERVER_DIR:-.}
+# Name derivation uses the main checkout, so every linked worktree agrees.
+MAIN_ROOT=$(dirname "$(git -C "$DIR_ABS" rev-parse --path-format=absolute --git-common-dir)")
 
 # Declaration facts (validated). decl.py exits 3 with INVALID lines; pass both through.
 load_decl() { # load_decl [--write]
   local out rc=0 key val
-  out=$(python3 "$LIB/decl.py" "$REPO_ROOT" --server "$SERVER_DIR" "$@") || rc=$?
+  out=$(python3 "$LIB/decl.py" "$REPO_ROOT" --main-root "$MAIN_ROOT" --server "$SERVER_DIR" "$@") || rc=$?
   if [ $rc = 3 ]; then printf '%s\n' "$out"; exit 3; fi
   [ $rc = 0 ] || die "decl.py failed ($rc)"
   while IFS='=' read -r key val; do
     case "$key" in
-      declared) DECLARED=$val ;;      project) PROJECT=$val ;;   host) HOST=$val ;;
+      declared) DECLARED=$val ;;      server_declared) SERVER_DECLARED=$val ;;
+      project) PROJECT=$val ;;        host) HOST=$val ;;
       server_https) SERVER_HTTPS=$val ;; server_reason) SERVER_REASON=$val ;;
-      sans) SANS_CSV=$val ;;          subdomains) SUBS_CSV=$val ;;
+      sans) SANS_CSV=$val ;;
+      host_names) IFS=, read -r -a HOST_NAMES <<<"$val" ;;
     esac
   done <<<"$out"
 }
@@ -64,8 +72,8 @@ CERT_DIR="$DIR_ABS/.cert"
 CERT="$CERT_DIR/$PROJECT.pem"
 KEY="$CERT_DIR/$PROJECT-key.pem"
 P12="$CERT_DIR/$PROJECT.p12"
-SETUP_FIX="local-https setup $SERVER_DIR"
-HOST_NAMES="$HOST${SUBS_CSV:+ $(printf '%s' "$SUBS_CSV" | tr ',' '\n' | sed "s/\$/.$HOST/" | tr '\n' ' ' | sed 's/ $//')}"
+IFS=, read -r -a SANS <<<"$SANS_CSV"
+printf -v SETUP_FIX 'local-https setup %q' "$SERVER_DIR"
 
 caroot_pem() { printf '%s/rootCA.pem' "$(mkcert -CAROOT)"; }
 
@@ -120,14 +128,18 @@ check_expiry() {
   [ "$days" -ge "$EXPIRY_MIN_DAYS" ] || FIX="expires $(cert_fact not_after): $SETUP_FIX"
 }
 
-hosts_line() { printf '%s %s' "$1" "$HOST_NAMES"; }
+hosts_line() { printf '%s %s' "$1" "${HOST_NAMES[*]}"; }
 
 check_hosts() { # check_hosts <ip>: every name on a non-comment line for <ip>
   FIX=""
-  local ip=$1 name names
+  local ip=$1 name names line
   names=$(sed 's/#.*//' "$HOSTS_FILE" 2>/dev/null | awk -v ip="$ip" '$1 == ip { for (i = 2; i <= NF; i++) print $i }')
-  for name in $HOST_NAMES; do
-    grep -qixF "$name" <<<"$names" || { FIX="echo '$(hosts_line "$ip")' | sudo tee -a $HOSTS_FILE"; return; }
+  for name in "${HOST_NAMES[@]}"; do
+    if ! grep -qixF -- "$name" <<<"$names"; then
+      printf -v line '%q' "$(hosts_line "$ip")"
+      FIX="printf '%s\n' $line | sudo tee -a $HOSTS_FILE"
+      return
+    fi
   done
 }
 check_hosts_v4() { check_hosts 127.0.0.1; }
@@ -154,14 +166,14 @@ case "$cmd" in
 
 # ------------------------------------------------------------------- setup
 setup)
-  SANS=$(printf '%s' "$SANS_CSV" | tr ',' ' ')
   note "project: $PROJECT   host: $HOST   server: $SERVER_DIR"
   note "cert: ${CERT#"$REPO_ROOT"/}"
   note "key:  ${KEY#"$REPO_ROOT"/}"
   [ $JVM = 1 ] && note "p12:  ${P12#"$REPO_ROOT"/} (password: changeit)"
-  note "SANs: $SANS"
+  note "SANs: ${SANS[*]}"
   grep -qxE '\.cert/?' "$REPO_ROOT/.gitignore" 2>/dev/null || note "will append .cert/ to .gitignore"
-  [ "$DECLARED" = 1 ] || note "will write .local-https.json (servers: $SERVER_DIR)"
+  if [ "$DECLARED" = 0 ]; then note "will write .local-https.json (servers: $SERVER_DIR)"
+  elif [ "$SERVER_DECLARED" = 0 ]; then note "will add $SERVER_DIR to servers in .local-https.json"; fi
 
   if [ $DRY_RUN = 1 ]; then
     note "dry-run: no files written"
@@ -169,19 +181,18 @@ setup)
     command -v mkcert >/dev/null 2>&1 || die "mkcert not on PATH — install mkcert (macOS: brew install mkcert)"
     mkdir -p "$CERT_DIR"
     # mkcert is chatty; its output is shown only when it fails.
-    # shellcheck disable=SC2086 # SANS is a deliberate word list
-    out=$(cd "$DIR_ABS" && mkcert -cert-file ".cert/$PROJECT.pem" -key-file ".cert/$PROJECT-key.pem" $SANS 2>&1) \
+    # `--` ends mkcert's flags: no SAN can be read as an option.
+    out=$(cd "$DIR_ABS" && mkcert -cert-file ".cert/$PROJECT.pem" -key-file ".cert/$PROJECT-key.pem" -- "${SANS[@]}" 2>&1) \
       || { printf '%s\n' "$out" >&2; die "mkcert failed"; }
     if [ $JVM = 1 ]; then
-      # shellcheck disable=SC2086
-      out=$(cd "$DIR_ABS" && mkcert -pkcs12 -p12-file ".cert/$PROJECT.p12" $SANS 2>&1) \
+      out=$(cd "$DIR_ABS" && mkcert -pkcs12 -p12-file ".cert/$PROJECT.p12" -- "${SANS[@]}" 2>&1) \
         || { printf '%s\n' "$out" >&2; die "mkcert -pkcs12 failed"; }
     fi
     if ! grep -qxE '\.cert/?' "$REPO_ROOT/.gitignore" 2>/dev/null; then
       [ ! -s "$REPO_ROOT/.gitignore" ] || [ -z "$(tail -c1 "$REPO_ROOT/.gitignore")" ] || echo >> "$REPO_ROOT/.gitignore"
       echo '.cert/' >> "$REPO_ROOT/.gitignore"
     fi
-    [ "$DECLARED" = 1 ] || load_decl --write
+    [ "$SERVER_DECLARED" = 1 ] || load_decl --write
     note "cert ready for $SERVER_DIR"
   fi
 

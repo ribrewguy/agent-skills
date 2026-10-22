@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
 """decl.py — read, validate, derive and write .local-https.json.
 
-    python3 decl.py <repo-root> [--server <dir>] [--write]
+    python3 decl.py <repo-root> [--main-root <dir>] [--server <dir>] [--write]
 
 Prints shell-consumable key=value lines:
-    declared=0|1      whether .local-https.json exists (before --write)
+    declared=0|1         whether .local-https.json exists (before --write)
+    server_declared=0|1  whether --server is listed in it (before --write)
     project=, host=, server_dir=, server_https=true|false, server_reason=,
-    sans=<comma-separated>, subdomains=<comma-separated>
-Without a declaration, project and host are derived from the repo directory
-name. --write creates the declaration when absent, listing --server.
-Validation errors print `INVALID <field>: <why>` and exit 3.
+    sans=, subdomains=, host_names=   (lists are comma-separated)
+host_names is <host> then <sub>.<host> per declared subdomain: the names
+the hosts lines must carry.
+Without a declaration, project and host are derived from the name of
+--main-root (the main checkout, so linked worktrees agree), else repo-root.
+--write creates the declaration when absent, or appends {"dir": <server>}
+to servers when the declaration exists but does not list it.
+Every value in the declaration is untrusted input (the file is tracked and
+may come from a cloned repo): anything that is not a plain name is rejected
+with `INVALID <field>: <why>`, exit 3, before any value is printed.
 """
+import ipaddress
 import json
 import os
 import re
@@ -30,6 +38,10 @@ FORBIDDEN_SUFFIXES = {
 }
 
 
+PROJECT_RE = re.compile(r"[a-z0-9]([a-z0-9-]*[a-z0-9])?")
+NAME_RE = re.compile(r"[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?")
+
+
 class Invalid(Exception):
     def __init__(self, field, why):
         super().__init__(f"{field}: {why}")
@@ -41,18 +53,47 @@ def derive_project(repo_root):
     return re.sub(r"[^a-z0-9]+", "-", name).strip("-")
 
 
-def _string_list(value, field):
-    if not isinstance(value, list) or not all(isinstance(v, str) and v for v in value):
-        raise Invalid(field, "must be a list of non-empty strings")
+def _is_ip(value):
+    try:
+        ipaddress.ip_address(value)
+        return True
+    except ValueError:
+        return False
+
+
+def _check_name(value, field, wildcard=False):
+    """A DNS name (letters, digits, '.', '-'; no leading '-') or an IP."""
+    if not isinstance(value, str):
+        raise Invalid(field, "must be a string")
+    bare = value[2:] if wildcard and value.startswith("*.") else value
+    if not (NAME_RE.fullmatch(bare) or _is_ip(value)):
+        raise Invalid(field, f"{value!r} is not a DNS name or IP address "
+                             "(letters, digits, '.', '-' only; must not start with '-')")
+
+
+def _name_list(value, field, wildcard=False):
+    if not isinstance(value, list):
+        raise Invalid(field, "must be a list")
+    for i, v in enumerate(value):
+        _check_name(v, f"{field}[{i}]", wildcard)
     return value
+
+
+def _check_dir(value, field):
+    if not isinstance(value, str) or not value or "\n" in value or "\r" in value:
+        raise Invalid(field, "each server needs a non-empty single-line dir")
+    if os.path.isabs(value) or ".." in value.replace("\\", "/").split("/"):
+        raise Invalid(field, f"{value!r} must be a path inside the repo, relative to its root")
 
 
 def validate(decl):
     if not isinstance(decl, dict):
         raise Invalid("declaration", "must be a JSON object")
-    for key in ("project", "host"):
-        if not isinstance(decl.get(key), str) or not decl[key]:
-            raise Invalid(key, "must be a non-empty string")
+    project = decl.get("project")
+    if not isinstance(project, str) or not PROJECT_RE.fullmatch(project):
+        raise Invalid("project", f"{project!r} must be lowercase letters, digits and '-', "
+                                 "starting and ending with a letter or digit")
+    _check_name(decl.get("host"), "host")
     host = decl["host"].lower()
     for suffix, why in FORBIDDEN_SUFFIXES.items():
         if host.endswith(suffix):
@@ -63,16 +104,28 @@ def validate(decl):
         raise Invalid("servers", "must be a list")
     for i, s in enumerate(servers):
         where = f"servers[{i}]"
-        if not isinstance(s, dict) or not isinstance(s.get("dir"), str) or not s["dir"]:
-            raise Invalid(f"{where}.dir", "each server needs a non-empty dir")
+        if not isinstance(s, dict):
+            raise Invalid(where, "each server must be an object")
+        _check_dir(s.get("dir"), f"{where}.dir")
         if "https" in s and not isinstance(s["https"], bool):
             raise Invalid(f"{where}.https", "must be true or false")
         if s.get("https") is False and not (isinstance(s.get("reason"), str) and s["reason"].strip()):
             raise Invalid(f"{where}.reason", f"{s['dir']} sets https:false without a reason")
         if "subdomain" in s:
-            _string_list([s["subdomain"]], f"{where}.subdomain")
-        _string_list(s.get("subdomains", []), f"{where}.subdomains")
-    _string_list(decl.get("extraNames", []), "extraNames")
+            _check_name(s["subdomain"], f"{where}.subdomain")
+        _name_list(s.get("subdomains", []), f"{where}.subdomains")
+        if "port" in s and (not isinstance(s["port"], int) or isinstance(s["port"], bool)
+                            or not 1 <= s["port"] <= 65535):
+            raise Invalid(f"{where}.port", "must be an integer 1-65535")
+        launch = s.get("launch", [])
+        if not isinstance(launch, list) or not all(isinstance(x, str) for x in launch):
+            raise Invalid(f"{where}.launch", "must be a list of regex strings")
+        for j, rx in enumerate(launch):
+            try:
+                re.compile(rx)
+            except re.error as e:
+                raise Invalid(f"{where}.launch[{j}]", f"not a valid regex ({e})")
+    _name_list(decl.get("extraNames", []), "extraNames", wildcard=True)
 
 
 def subdomains_of(decl):
@@ -89,11 +142,13 @@ def main(argv):
     if not args:
         print(__doc__.strip(), file=sys.stderr)
         return 2
-    repo_root, server_dir, write = args[0], None, False
+    repo_root, main_root, server_dir, write = args[0], None, None, False
     rest = args[1:]
     while rest:
         arg = rest.pop(0)
-        if arg == "--server" and rest:
+        if arg == "--main-root" and rest:
+            main_root = rest.pop(0)
+        elif arg == "--server" and rest:
             server_dir = os.path.normpath(rest.pop(0))
         elif arg == "--write":
             write = True
@@ -111,7 +166,7 @@ def main(argv):
             print(f"INVALID {DECL_NAME}: not valid JSON ({e})")
             return 3
     else:
-        project = derive_project(repo_root)
+        project = derive_project(main_root or repo_root)
         decl = {"project": project, "host": f"{project}-local",
                 "servers": [{"dir": server_dir}] if server_dir else [], "extraNames": []}
     try:
@@ -120,15 +175,22 @@ def main(argv):
         print(f"INVALID {e.field}: {e.why}")
         return 3
 
-    if write and not declared:
+    server = next((s for s in decl.get("servers", [])
+                   if os.path.normpath(s["dir"]) == server_dir), None) if server_dir else None
+    server_declared = declared and server is not None
+
+    if write and server_dir and not server_declared:
+        if declared:
+            decl.setdefault("servers", []).append({"dir": server_dir})
         with open(path, "w") as f:
             json.dump(decl, f, indent=2)
             f.write("\n")
 
-    server = next((s for s in decl.get("servers", [])
-                   if os.path.normpath(s["dir"]) == server_dir), {}) if server_dir else {}
+    server = server or {}
     subs = subdomains_of(decl)
+    host_names = [decl["host"]] + [f"{sub}.{decl['host']}" for sub in subs]
     print(f"declared={int(declared)}")
+    print(f"server_declared={int(server_declared)}")
     print(f"project={decl['project']}")
     print(f"host={decl['host']}")
     print(f"server_dir={server_dir or ''}")
@@ -136,6 +198,7 @@ def main(argv):
     print(f"server_reason={' '.join(server.get('reason', '').split())}")
     print(f"sans={','.join(expected_sans(decl['host'], subs, decl.get('extraNames', [])))}")
     print(f"subdomains={','.join(subs)}")
+    print(f"host_names={','.join(host_names)}")
     return 0
 
 

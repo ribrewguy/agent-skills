@@ -110,6 +110,61 @@ test_rejects_forbidden_host() {
   grep -q '^INVALID host: .*mDNS' <<<"$out" || fail_with "INVALID host line does not name mDNS: $out"
 }
 
+write_decl() { # write_decl <repo> <json>
+  printf '%s\n' "$2" > "$1/.local-https.json"
+}
+
+assert_rejected_untouched() { # assert_rejected_untouched <repo> <label>
+  local r=$1 out rc=0
+  out=$(cd "$r" && local-https setup apps/web 2>&1) || rc=$?
+  [ "$rc" = 3 ] || fail_with "$2: expected exit 3, got $rc: $out"
+  grep -q '^INVALID ' <<<"$out" || fail_with "$2: no INVALID line: $out"
+  [ ! -e "$r/apps/web/.cert" ] || fail_with "$2: .cert created"
+  [ ! -e "$r/.gitignore" ] || fail_with "$2: .gitignore written"
+}
+
+test_rejects_injected_host() {
+  local r; r=$(new_repo inject)
+  write_decl "$r" '{"project":"myapp","host":"x; rm -rf /","servers":[{"dir":"apps/web"}]}'
+  assert_rejected_untouched "$r" "injected host"
+}
+
+test_rejects_flag_extra_name() {
+  local r; r=$(new_repo flag)
+  write_decl "$r" '{"project":"myapp","host":"myapp-local","servers":[{"dir":"apps/web"}],"extraNames":["-flag"]}'
+  assert_rejected_untouched "$r" "flag extra name"
+}
+
+test_rejects_traversal_project() {
+  local r; r=$(new_repo traversal)
+  write_decl "$r" '{"project":"../../escape","host":"myapp-local","servers":[{"dir":"apps/web"}]}'
+  assert_rejected_untouched "$r" "traversal project"
+}
+
+test_worktree_derives_main_checkout_name() {
+  local r wt out; r=$(new_repo worktree)
+  git -C "$r" -c user.name=t -c user.email=t@example.invalid commit -q --allow-empty -m init
+  wt="$WORK/worktree/feature-x"
+  git -C "$r" worktree add -q "$wt" -b feature-x
+  mkdir -p "$wt/apps/web"
+  out=$(cd "$wt" && local-https setup apps/web --dry-run)
+  grep -qF "host: myapp-local" <<<"$out" || fail_with "worktree did not derive myapp-local: $out"
+}
+
+test_setup_adds_new_server_to_declaration() {
+  local r; r=$(new_repo addserver)
+  mkdir -p "$r/apps/api"
+  (cd "$r" && local-https setup apps/web) >/dev/null
+  (cd "$r" && local-https setup apps/api) >/dev/null
+  python3 - "$r/.local-https.json" <<'PY2' || fail_with "declaration wrong: $(cat "$r/.local-https.json")"
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert list(d)[:2] == ["project", "host"], d
+assert d["project"] == "myapp" and d["host"] == "myapp-local", d
+assert [s["dir"] for s in d["servers"]] == ["apps/web", "apps/api"], d
+PY2
+}
+
 # set -e is suppressed inside `if`/`&&` conditions, so run each test in a
 # subshell from plain context and inspect its status afterwards.
 for t in \
@@ -119,7 +174,12 @@ for t in \
   test_check_reports_missing_san \
   test_setup_regenerates_for_new_san \
   test_rejects_opt_out_without_reason \
-  test_rejects_forbidden_host
+  test_rejects_forbidden_host \
+  test_rejects_injected_host \
+  test_rejects_flag_extra_name \
+  test_rejects_traversal_project \
+  test_worktree_derives_main_checkout_name \
+  test_setup_adds_new_server_to_declaration
 do
   set +e; ( set -e; "$t" ); rc=$?; set -e
   if [ "$rc" = 0 ]; then echo "PASS $t"; pass=$((pass+1))
