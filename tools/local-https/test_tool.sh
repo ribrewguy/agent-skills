@@ -141,6 +141,18 @@ test_rejects_traversal_project() {
   assert_rejected_untouched "$r" "traversal project"
 }
 
+test_rejects_scoped_ipv6_extra_name() {
+  local r; r=$(new_repo scope)
+  write_decl "$r" '{"project":"myapp","host":"myapp-local","servers":[{"dir":"apps/web"}],"extraNames":["::1%eth0"]}'
+  assert_rejected_untouched "$r" "scoped IPv6 extra name"
+}
+
+test_rejects_line_protocol_injection() {
+  local r; r=$(new_repo lineproto)
+  write_decl "$r" '{"project":"myapp","host":"fe80::1%a\nproject=pwn","servers":[{"dir":"apps/web"}]}'
+  assert_rejected_untouched "$r" "newline in host"
+}
+
 test_worktree_derives_main_checkout_name() {
   local r wt out; r=$(new_repo worktree)
   git -C "$r" -c user.name=t -c user.email=t@example.invalid commit -q --allow-empty -m init
@@ -178,6 +190,8 @@ for t in \
   test_rejects_injected_host \
   test_rejects_flag_extra_name \
   test_rejects_traversal_project \
+  test_rejects_scoped_ipv6_extra_name \
+  test_rejects_line_protocol_injection \
   test_worktree_derives_main_checkout_name \
   test_setup_adds_new_server_to_declaration
 do

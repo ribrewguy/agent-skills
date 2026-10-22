@@ -40,6 +40,9 @@ FORBIDDEN_SUFFIXES = {
 
 PROJECT_RE = re.compile(r"[a-z0-9]([a-z0-9-]*[a-z0-9])?")
 NAME_RE = re.compile(r"[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?")
+# ipaddress accepts IPv6 scope ids ("fe80::1%<anything>"), so only strings
+# made of address characters may reach the parser.
+IP_CHARS_RE = re.compile(r"[0-9A-Fa-f:.]+")
 
 
 class Invalid(Exception):
@@ -54,11 +57,13 @@ def derive_project(repo_root):
 
 
 def _is_ip(value):
+    if not IP_CHARS_RE.fullmatch(value):
+        return False
     try:
-        ipaddress.ip_address(value)
-        return True
+        ip = ipaddress.ip_address(value)
     except ValueError:
         return False
+    return getattr(ip, "scope_id", None) is None
 
 
 def _check_name(value, field, wildcard=False):
@@ -179,6 +184,27 @@ def main(argv):
                    if os.path.normpath(s["dir"]) == server_dir), None) if server_dir else None
     server_declared = declared and server is not None
 
+    server = server or {}
+    subs = subdomains_of(decl)
+    host_names = [decl["host"]] + [f"{sub}.{decl['host']}" for sub in subs]
+    facts = [
+        ("declared", str(int(declared))),
+        ("server_declared", str(int(server_declared))),
+        ("project", decl["project"]),
+        ("host", decl["host"]),
+        ("server_dir", server_dir or ""),
+        ("server_https", "false" if server.get("https") is False else "true"),
+        ("server_reason", " ".join(server.get("reason", "").split())),
+        ("sans", ",".join(expected_sans(decl["host"], subs, decl.get("extraNames", [])))),
+        ("subdomains", ",".join(subs)),
+        ("host_names", ",".join(host_names)),
+    ]
+    # Defence in depth for the key=value line protocol: no value may carry a
+    # line break or '=', whatever validate() let through.
+    for key, value in facts:
+        if any(c in value for c in "\r\n="):
+            print(f"INVALID {key}: {value!r} contains a line break or '='")
+            return 3
     if write and server_dir and not server_declared:
         if declared:
             decl.setdefault("servers", []).append({"dir": server_dir})
@@ -186,19 +212,8 @@ def main(argv):
             json.dump(decl, f, indent=2)
             f.write("\n")
 
-    server = server or {}
-    subs = subdomains_of(decl)
-    host_names = [decl["host"]] + [f"{sub}.{decl['host']}" for sub in subs]
-    print(f"declared={int(declared)}")
-    print(f"server_declared={int(server_declared)}")
-    print(f"project={decl['project']}")
-    print(f"host={decl['host']}")
-    print(f"server_dir={server_dir or ''}")
-    print(f"server_https={'false' if server.get('https') is False else 'true'}")
-    print(f"server_reason={' '.join(server.get('reason', '').split())}")
-    print(f"sans={','.join(expected_sans(decl['host'], subs, decl.get('extraNames', [])))}")
-    print(f"subdomains={','.join(subs)}")
-    print(f"host_names={','.join(host_names)}")
+    for key, value in facts:
+        print(f"{key}={value}")
     return 0
 
 
