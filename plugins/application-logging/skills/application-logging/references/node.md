@@ -22,7 +22,7 @@ const REDACT_PATHS = [
   'password', '*.password', 'token', '*.token', 'accessToken', 'refreshToken',
   'secret', '*.secret', 'apiKey', '*.apiKey', 'clientSecret',
   'authorization', '*.authorization', 'cookie', '*.cookie', 'sessionId', '*.sessionId',
-  'cardNumber', '*.cardNumber', 'email', '*.email', '["user.email"]',
+  'cardNumber', '*.cardNumber', 'email', '*.email',
   'req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]',
 ]
 
@@ -62,10 +62,15 @@ async function createLogger() {
   const { default: pretty } = await import('pino-pretty')
   return pino(common, pretty({
     messageKey: 'body',
-    singleLine: true,
+    hideObject: true,   // fields are rendered as key=value by messageFormat below
     translateTime: "UTC:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
-    ignore: 'pid,hostname,service.name,logger,trace_id,span_id,trace_flags',
-    messageFormat: (log, key) => `${log.logger ?? ''} [${String(log.trace_id ?? '').slice(0, 8)}] ${log[key]}`,
+    ignore: 'pid,hostname',
+    messageFormat: (log, key) => {
+      const { [key]: msg, level, time, logger: name, trace_id, span_id, trace_flags, 'service.name': svc, err, ...fields } = log
+      const kv = Object.entries(fields).map(([k, v]) => `${k}=${typeof v === 'object' ? JSON.stringify(v) : v}`)
+      const line = [`${name ?? ''} [${String(trace_id ?? '').slice(0, 8)}] ${msg}`, ...kv].join(' ')
+      return err ? `${line}\n${(err as { stack?: string }).stack ?? ''}` : line   // stack trace after the line
+    },
   }))
 }
 
@@ -75,7 +80,7 @@ export const logger = await createLogger()
 A request to `GET /orders/42` produces, with `LOG_FORMAT=text`:
 
 ```text
-[2026-10-22T14:03:11.482Z] INFO: OrderService [4bf92f35] order fetched {"request.id":"9d1c0e2a","user.id":"u-7f3a","order.id":"42"}
+[2026-10-22T14:03:11.482Z] INFO: OrderService [4bf92f35] order fetched request.id=9d1c0e2a user.id=u-7f3a order.id=42
 ```
 
 and with `LOG_FORMAT=json`, one line:
@@ -138,12 +143,13 @@ Services and clients that run outside a request (`PricingClient` setup, the `Aud
     nitroApp.hooks.hook('error', (error, { event }) => {
       const status = (error as { statusCode?: number }).statusCode ?? 500
       if (status < 500) return
-      ;(event?.context.logger ?? logger).error({ err: error, 'http.route': event?.path }, 'request failed')
+      // matchedRoute is the route template (/orders/:id), never the raw path with the ID
+      ;(event?.context.logger ?? logger).error({ err: error, 'http.route': event?.context.matchedRoute?.path }, 'request failed')
     })
   })
   ```
 
-  `event.path` carries the raw path. Replace it with the route template where the app has one, so IDs stay out of `http.route`.
+  Nitro's default error handler also writes 5xx errors through consola, which would make this a second record of the same exception. Set `errorHandler` in the Nitro config to a handler that only builds the error response, so the hook's record is the only one.
 - **Presets.** `node-server` runs the setup above unchanged. Edge presets have no worker threads and no `pino-pretty`. Run them with `LOG_FORMAT=json`, and remember that a serverless invocation must flush the OTel side per invocation, as configured by the `opentelemetry` skill.
 
 ## Known complexities
@@ -153,6 +159,6 @@ Services and clients that run outside a request (`PricingClient` setup, the `Aud
 - **Instrumentation load order.** `@opentelemetry/instrumentation-pino` patches pino at import time. If pino is imported before the instrumentation is registered, records have no `trace_id` and never reach the pipeline. Registration order is configured by the `opentelemetry` skill.
 - **Custom keys versus the instrumentation.** `messageKey`, the custom `timestamp`, and `formatters` change the record the instrumentation parses when it builds the OTel log record. The numeric `level` is kept for that reason. Confirm severity, body, and timestamp on the pipeline side with the `opentelemetry` skill's correlation test after changing any of them.
 - **`formatters.level` and multiple transports.** pino rejects `formatters.level` together with `transport.targets`. The JSON path writes straight to stdout with no transport, which avoids the conflict; keep it that way.
-- **Redaction paths are exact.** `*.password` matches one level down, not deeper, and a dotted field name such as `user.email` needs bracket syntax (`["user.email"]`). Redaction catches mistakes; the review rule on field names in SKILL.md's [Never log](../SKILL.md#never-log) is what prevents them.
+- **Redaction paths are exact.** `*.password` matches one level down, not deeper, and a path such as `user.email` means the nested `user` → `email`, not a literal dotted key. Test any path you add against a real record. Redaction catches mistakes; the review rule on field names in SKILL.md's [Never log](../SKILL.md#never-log) is what prevents them.
 - **Top-level `await` in the logger module.** The dev-only dynamic import uses top-level `await`, which Nitro's ESM output supports. A CommonJS build would need the import moved into an async startup step.
 - **Platform-specific JSON (ECS, GCP).** This is an override, never the default. Swap the `json` options for the platform's formatter, for example `@elastic/ecs-pino-format`, or a `formatters.level` that emits GCP's `severity`. Keep `trace_id`, `span_id`, and the redaction paths.

@@ -25,7 +25,7 @@ The file goes in `src/main/resources`. Spring Boot projects name it `logback-spr
   <!-- Human console: timestamp, level, logger, message, short trace ID, key-value fields. -->
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX, UTC} %-5level %logger{0} [%.-8X{trace_id}] %msg %kvp{NONE}%replace( request.id=%X{request.id}){' request.id=$', ''}%replace( user.id=%X{user.id}){' user.id=$', ''}%n</pattern>
+      <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX, UTC} %-5level %logger{0} [%.-8X{trace_id}] %msg%replace( %kvp{NONE}){' $', ''}%replace( request.id=%X{request.id}){' request.id=$', ''}%replace( user.id=%X{user.id}){' user.id=$', ''}%n</pattern>
     </encoder>
   </appender>
 
@@ -33,14 +33,14 @@ The file goes in `src/main/resources`. Spring Boot projects name it `logback-spr
   <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
     <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
       <providers>
-        <timestamp><fieldName>timestamp</fieldName><timeZone>UTC</timeZone></timestamp>
+        <timestamp><fieldName>timestamp</fieldName><pattern>yyyy-MM-dd'T'HH:mm:ss.SSSXXX</pattern><timeZone>UTC</timeZone></timestamp>
         <logLevel><fieldName>severity_text</fieldName></logLevel>
         <message><fieldName>body</fieldName></message>
         <pattern><pattern>{"service.name":"${SERVICE_NAME}"}</pattern></pattern>
         <loggerName><fieldName>logger</fieldName><shortenedLoggerNameLength>0</shortenedLoggerNameLength></loggerName>
         <mdc/>            <!-- trace_id, span_id, request.id, user.id as top-level keys -->
         <keyValuePairs/>  <!-- addKeyValue(...) fields as top-level keys -->
-        <throwableClassName><fieldName>exception.type</fieldName></throwableClassName>
+        <throwableClassName><fieldName>exception.type</fieldName><useSimpleClassName>false</useSimpleClassName></throwableClassName>
         <throwableMessage><fieldName>exception.message</fieldName></throwableMessage>
         <stackTrace><fieldName>exception.stacktrace</fieldName></stackTrace>
       </providers>
@@ -79,7 +79,7 @@ and with `LOG_FORMAT=json`, one line:
 What the pieces do:
 
 - `%.-8X{trace_id}` keeps the first 8 characters of the MDC `trace_id`. The `-` truncates from the end; without it Logback keeps the last 8. When no span is active, the brackets are empty.
-- `%kvp{NONE}` prints the call's key-value pairs as unquoted `key=value`.
+- `%kvp{NONE}` prints the call's key-value pairs as unquoted `key=value`; the surrounding `%replace` drops the separating space when there are none.
 - `%replace(...)` prints a request-context key only when the MDC has it, so a log line written outside a request doesn't end in an empty `user.id=`.
 - Stack traces: the console pattern lets Logback append them after the line. The JSON encoder puts the whole trace in `exception.stacktrace` as one escaped string, so the record stays one line. The OTel appender records the exception as attributes on the log record.
 - With `captureMdcAttributes` set to `*`, `request.id` and `user.id` become record attributes on the pipeline path as well, so [Never log](../SKILL.md#never-log) covers MDC keys too.
@@ -163,7 +163,31 @@ In Spring Boot, the property `spring.reactor.context-propagation=auto` is equiva
 
 Both use the Logback configuration above unchanged. Outside Spring the file is `logback.xml`, minus the `springProperty` line. Only the place that sets the context changes:
 
-- **Ktor:** install `CallId` (`retrieveFromHeader(HttpHeaders.XRequestId)`, `generate { UUID.randomUUID().toString() }`) and `CallLogging` with `callIdMdc("request.id")` and `mdc("user.id") { call -> call.principal<UserIdPrincipal>()?.name }`. `CallLogging` sets and restores those MDC keys around each call's coroutines. Set its own access-log `level` to `DEBUG` so it stays within the one-`INFO`-per-request budget.
+- **Ktor:** install `CallId` and `CallLogging` with `callIdMdc("request.id")`. `CallLogging` sets and restores its MDC keys around each call's coroutines. Set its own access-log `level` to `DEBUG` so it stays within the one-`INFO`-per-request budget. Don't use `CallLogging`'s `mdc("user.id") { ... }` for the user: it is computed in the monitoring phase, before authentication runs, so it is always empty. `UserIdPrincipal.name` is also the basic-auth username, which may be an email. Add `user.id` after authentication instead, from an application principal that carries the opaque ID:
+
+  ```kotlin
+  install(CallId) {
+      retrieveFromHeader(HttpHeaders.XRequestId)
+      generate { UUID.randomUUID().toString() }
+  }
+  install(CallLogging) {
+      callIdMdc("request.id")
+      level = Level.DEBUG
+  }
+
+  routing {
+      authenticate("orders") {
+          route("/orders") {
+              intercept(ApplicationCallPipeline.Call) {    // runs after authentication
+                  val userId = call.principal<AppPrincipal>()?.userId   // opaque ID, never an email
+                  if (userId == null) proceed()
+                  else withContext(MDCContext(MDC.getCopyOfContextMap().orEmpty() + ("user.id" to userId))) { proceed() }
+              }
+              get("/{id}") { /* OrderService.getOrder(...) */ }
+          }
+      }
+  }
+  ```
 - **JAX-RS on a servlet container:** use a plain servlet `Filter` with the same put/`finally`/remove shape as the Spring filter above. A `ContainerRequestFilter` and `ContainerResponseFilter` pair has no `finally`, and the response filter is skipped on some failure paths, so a pooled thread can keep the last request's MDC. If filters are the only option, also remove the keys at the start of the request filter. Quarkus uses its own log manager instead of Logback; there the same fields and shape apply, but the configuration is Quarkus's.
 
 ## Spring Boot profile switch
@@ -180,7 +204,7 @@ Spring Boot loads `logback-spring.xml` (not `logback.xml`) after the `Environmen
 
 3. The `defaultValue="text"` on the `springProperty`, which selects the human `CONSOLE` appender for local runs.
 
-Deployments set `LOG_FORMAT=json` explicitly when the platform scrapes stdout. The profile default is a convenience and doesn't replace the deployment setting. Spring Boot's built-in `logging.structured.format.console` (ECS, GELF, Logstash) is the [override path](#known-complexities) for platform-specific shapes. It is not the default, because its field names differ from the shape in SKILL.md.
+Deployments set `LOG_FORMAT=json` explicitly when the platform scrapes stdout. The profile default is a convenience and doesn't replace the deployment setting. Spring Boot's built-in structured formats (ECS, GELF, Logstash) are the [override path](#known-complexities) for platform-specific shapes. They are not the default, because their field names differ from the shape in SKILL.md. The `logging.structured.format.console` property has no effect once a custom `logback-spring.xml` exists; it only drives Boot's own default Logback configuration.
 
 ## Kotlin and coroutines
 
@@ -201,9 +225,9 @@ auditScope.launch(MDCContext(mapOf("order.id" to id))) { auditJob.record(id) }
 
 Rules:
 
-- `MDC.put` inside a coroutine doesn't survive the next suspension. To add a key mid-coroutine, wrap the rest in `withContext(MDCContext(MDC.getCopyOfContextMap() + ("key" to value)))`.
-- Every `launch`, `async`, or `withContext` that switches dispatchers needs `MDCContext()` in its context, or it starts with whatever MDC the worker thread last held.
-- On WebFlux with coroutines, the Reactor Context bridge above already populates the MDC. Add `MDCContext()` only where code leaves the reactive chain.
+- `MDC.put` inside a coroutine doesn't survive the next suspension. To add a key mid-coroutine, wrap the rest in `withContext(MDCContext(MDC.getCopyOfContextMap().orEmpty() + ("key" to value)))`.
+- Child coroutines inherit their parent's context, `MDCContext` included. The gap is a coroutine started in a scope that has none (an application-level `CoroutineScope`, a scope built for background work): give it `MDCContext(...)` explicitly, or it starts with whatever MDC the worker thread last held.
+- On WebFlux, the Reactor Context bridge restores the MDC around Reactor operators, not around coroutine resumptions. A `suspend` handler that resumes on another thread after a suspension loses the MDC unless it runs under a coroutine context element: Spring's `PropagationContextElement` where the Spring version provides it (`withContext(PropagationContextElement())`), otherwise `withContext(MDCContext())` captured at handler entry.
 
 ## Known complexities
 
@@ -212,5 +236,5 @@ Rules:
 - **Nested variable lookup for the switch.** `${CONSOLE_FOR_${LOG_FORMAT:-text}:-CONSOLE}` uses Logback's nested substitution, so the switch needs no Janino `<if>` block. A misspelled value (`LOG_FORMAT=JSON`) falls back to `CONSOLE` instead of failing. Check that `json` is lowercase in deployment manifests.
 - **Key-value pairs need the SLF4J fluent API.** `addKeyValue` and `%kvp` are only in the fluent-API generation of SLF4J and Logback. A codebase on the older API has no key-value pairs at all; upgrade rather than reaching for `StructuredArguments` or string interpolation.
 - **`captureMdcAttributes` exports everything in the MDC.** `*` is right when the MDC holds only request context. A library that puts its own keys in the MDC sends them to the backend too; list the keys explicitly if that happens.
-- **Platform-specific JSON (ECS, GCP).** This is an override, never the default. Replace the `JSON` appender's encoder with `net.logstash.logback.encoder.LogstashEncoder` plus the platform's field mapping, or use Spring Boot's `logging.structured.format.console=ecs`. Keep `trace_id`, `span_id`, and the denylist intact under the new names.
+- **Platform-specific JSON (ECS, GCP).** This is an override, never the default. Replace the `JSON` appender's encoder with `net.logstash.logback.encoder.LogstashEncoder` plus the platform's field mapping, or, on Spring Boot, with `org.springframework.boot.logging.logback.StructuredLogEncoder` and `<format>ecs</format>` (the `logging.structured.format.console` property alone does nothing with a custom `logback-spring.xml`). Keep `trace_id`, `span_id`, and the denylist intact under the new names.
 - **Thread pools and `@Async`.** An executor thread doesn't inherit the submitting thread's MDC. Use a `TaskDecorator` that copies `MDC.getCopyOfContextMap()` into the task and clears it in `finally`, or the Micrometer context-propagation executor wrapper.
