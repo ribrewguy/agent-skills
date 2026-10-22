@@ -268,6 +268,7 @@ Name it something like `<project>-telemetry` and have it reference this skill as
 - [`application-logging`](../../../application-logging/skills/application-logging/SKILL.md): record content, levels, the console appender, and the denylist.
 - [references/semantic-conventions.md](references/semantic-conventions.md): HTTP, DB, messaging, code, error, resource, and log attribute names.
 - [references/jvm-spring.md](references/jvm-spring.md): Spring Boot MVC and WebFlux on Actuator, Micrometer, and the OTel bridge; Tier 2 aspect; `@Async`, `@Scheduled`, Spring AMQP.
+- [references/jvm-spring-tests.md](references/jvm-spring-tests.md): Spring component tests on in-memory exporters and the Testcontainers collector test.
 - [references/jvm-other.md](references/jvm-other.md): Ktor, JAX-RS, plain JVM on the OTel SDK; the Java agent; Lambda-style handlers.
 - [references/node.md](references/node.md): Nuxt/Nitro long-lived and serverless, plain Node, Express-style; `withSpan`; `amqplib`; pino.
 - [references/verification.md](references/verification.md): component, integration, and local compose layers.
