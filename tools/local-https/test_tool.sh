@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_tool.sh — behaviour tests for plugins/local-https/scripts/local-https
-# (setup + check). Each test builds a fresh throwaway git repo named `myapp`
+# (setup, check, copy, trust, doctor). Each test builds a fresh throwaway git repo named `myapp`
 # with an `apps/web` server. Requires mkcert (and a CA installed with
 # `mkcert -install`); skips cleanly when mkcert is absent.
 
@@ -177,6 +177,80 @@ assert [s["dir"] for s in d["servers"]] == ["apps/web", "apps/api"], d
 PY2
 }
 
+commit_all() { # commit_all <repo>
+  git -C "$1" add -A
+  git -C "$1" -c user.name=t -c user.email=t@example.invalid commit -q -m init
+}
+
+test_copy_from_worktree() {
+  local r wt out; r=$(new_repo copywt)
+  (cd "$r" && local-https setup apps/web) >/dev/null
+  echo 'not a real key' > "$r/apps/web/.cert/rootCA-key.pem"
+  commit_all "$r"
+  wt="$WORK/copywt/wt"
+  git -C "$r" worktree add -q "$wt" -b wt
+  out=$(cd "$wt" && local-https copy 2>&1) || fail_with "copy failed: $out"
+  [ -f "$wt/apps/web/.cert/myapp.pem" ] || fail_with "cert not copied: $out"
+  [ -f "$wt/apps/web/.cert/myapp-key.pem" ] || fail_with "key not copied: $out"
+  [ ! -e "$wt/apps/web/.cert/rootCA-key.pem" ] || fail_with "rootCA-key.pem copied: $out"
+}
+
+test_copy_refuses_in_main() {
+  local r out rc=0; r=$(new_repo copymain)
+  (cd "$r" && local-https setup apps/web) >/dev/null
+  commit_all "$r"
+  out=$(cd "$r" && local-https copy 2>&1) || rc=$?
+  [ "$rc" = 1 ] || fail_with "expected exit 1, got $rc: $out"
+}
+
+test_hosts_file_override() {
+  local r out hosts; r=$(new_repo hostsfile)
+  (cd "$r" && local-https setup apps/web) >/dev/null
+  hosts="$WORK/hostsfile/hosts"
+  printf '127.0.0.1 localhost\n127.0.0.1 myapp-local\n' > "$hosts"
+  out=$(cd "$r" && LOCAL_HTTPS_HOSTS_FILE=$hosts local-https check apps/web --ignore node-ca) && fail_with "check passed without ::1 line: $out"
+  grep -qx 'OK hosts-v4' <<<"$out" || fail_with "no OK hosts-v4: $out"
+  grep -q '^MISSING hosts-v6: ' <<<"$out" || fail_with "no MISSING hosts-v6: $out"
+  printf '::1 myapp-local\n' >> "$hosts"
+  out=$(cd "$r" && LOCAL_HTTPS_HOSTS_FILE=$hosts local-https check apps/web --ignore node-ca) || fail_with "check failed with both lines: $out"
+  grep -qx 'OK hosts-v6' <<<"$out" || fail_with "no OK hosts-v6: $out"
+}
+
+test_doctor_reports_sections() {
+  local r out hosts; r=$(new_repo doctor)
+  (cd "$r" && local-https setup apps/web) >/dev/null
+  hosts="$WORK/doctor/hosts"
+  printf '127.0.0.1 localhost\n127.0.0.1 myapp-local otherapp-local\n' > "$hosts"
+  out=$(cd "$r" && LOCAL_HTTPS_HOSTS_FILE=$hosts local-https doctor 2>&1) || true
+  grep -qx 'CHECK apps/web' <<<"$out" || fail_with "no CHECK apps/web: $out"
+  grep -qx 'HOSTS' <<<"$out" || fail_with "no HOSTS heading: $out"
+  grep -qx 'INFO' <<<"$out" || fail_with "no INFO heading: $out"
+  grep -q '^INFO .*otherapp-local' <<<"$out" || fail_with "other project's entry not INFO: $out"
+}
+
+test_doctor_warns_forbidden_san() {
+  local r out; r=$(new_repo legacy)
+  (cd "$r" && local-https setup apps/web) >/dev/null
+  (cd "$r/apps/web" && mkcert -cert-file .cert/myapp.pem -key-file .cert/myapp-key.pem \
+    myapp-local '*.myapp-local' localhost 127.0.0.1 ::1 legacy.local) >/dev/null 2>&1
+  out=$(cd "$r" && local-https doctor apps/web 2>&1) || true
+  grep -q '^WARN sans: legacy.local' <<<"$out" || fail_with "no WARN sans: legacy.local: $out"
+}
+
+test_doctor_checks_undeclared_server_once() {
+  local r out; r=$(new_repo undeclared)
+  out=$(cd "$r" && local-https doctor apps/web 2>&1) || true
+  [ "$(grep -cx 'CHECK apps/web' <<<"$out")" = 1 ] || fail_with "expected one CHECK apps/web: $out"
+}
+
+test_trust_reports_node_env() {
+  local out caroot; caroot=$(mkcert -CAROOT)
+  out=$(NODE_EXTRA_CA_CERTS="$caroot/rootCA.pem" local-https trust)
+  grep -q '^IN EFFECT NODE_EXTRA_CA_CERTS' <<<"$out" || fail_with "NODE_EXTRA_CA_CERTS not IN EFFECT: $out"
+  out=$(env -u NODE_EXTRA_CA_CERTS local-https trust)
+  grep -q '^NOT SET NODE_EXTRA_CA_CERTS' <<<"$out" || fail_with "NODE_EXTRA_CA_CERTS not NOT SET: $out"
+}
+
 # set -e is suppressed inside `if`/`&&` conditions, so run each test in a
 # subshell from plain context and inspect its status afterwards.
 for t in \
@@ -193,7 +267,14 @@ for t in \
   test_rejects_scoped_ipv6_extra_name \
   test_rejects_line_protocol_injection \
   test_worktree_derives_main_checkout_name \
-  test_setup_adds_new_server_to_declaration
+  test_setup_adds_new_server_to_declaration \
+  test_copy_from_worktree \
+  test_copy_refuses_in_main \
+  test_hosts_file_override \
+  test_doctor_reports_sections \
+  test_doctor_warns_forbidden_san \
+  test_doctor_checks_undeclared_server_once \
+  test_trust_reports_node_env
 do
   set +e; ( set -e; "$t" ); rc=$?; set -e
   if [ "$rc" = 0 ]; then echo "PASS $t"; pass=$((pass+1))

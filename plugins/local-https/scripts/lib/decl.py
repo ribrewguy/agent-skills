@@ -8,6 +8,8 @@ Prints shell-consumable key=value lines:
     server_declared=0|1  whether --server is listed in it (before --write)
     project=, host=, server_dir=, server_https=true|false, server_reason=,
     sans=, subdomains=, host_names=   (lists are comma-separated)
+    server=<dir>         one line per https server (key repeats; opted-out
+                         servers are omitted)
 host_names is <host> then <sub>.<host> per declared subdomain: the names
 the hosts lines must carry.
 Without a declaration, project and host are derived from the name of
@@ -199,6 +201,8 @@ def main(argv):
         ("subdomains", ",".join(subs)),
         ("host_names", ",".join(host_names)),
     ]
+    facts += [("server", os.path.normpath(s["dir"]))
+              for s in decl.get("servers", []) if s.get("https") is not False]
     # Defence in depth for the key=value line protocol: no value may carry a
     # line break or '=', whatever validate() let through.
     for key, value in facts:

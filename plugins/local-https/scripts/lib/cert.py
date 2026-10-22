@@ -5,16 +5,20 @@
 
 Prints shell-consumable lines:
     missing=<comma-separated expected SANs absent from the cert>
+    sans=<comma-separated SANs the cert carries; names outside
+          [A-Za-z0-9.*:-] are dropped, never printed>
     not_after=<YYYY-MM-DD>
     days_left=<int>
 Exit 2 when openssl cannot read the cert.
 """
 import ipaddress
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
 
 LOOPBACK = ["localhost", "127.0.0.1", "::1"]
+SAFE_SAN_RE = re.compile(r"[A-Za-z0-9.*:-]+")
 
 
 def expected_sans(host, subdomains, extra_names):
@@ -70,12 +74,14 @@ def main(argv):
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         print(f"cert.py: cannot read {pem}: {e}", file=sys.stderr)
         return 2
-    have = {_canon(n) for n in parse_sans(text)}
+    sans = parse_sans(text)
+    have = {_canon(n) for n in sans}
     expected = [n for n in expected_csv.split(",") if n]
     missing = [n for n in expected if _canon(n) not in have]
     not_after = parse_not_after(enddate)
     days_left = (not_after - datetime.now(timezone.utc)).days
     print(f"missing={','.join(missing)}")
+    print(f"sans={','.join(_canon(n) for n in sans if SAFE_SAN_RE.fullmatch(n))}")
     print(f"not_after={not_after.date().isoformat()}")
     print(f"days_left={days_left}")
     return 0
