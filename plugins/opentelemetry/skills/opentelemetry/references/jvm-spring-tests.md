@@ -141,6 +141,8 @@ class TelemetryComponentTest(@Autowired private val meters: MeterRegistry) {
         assertThat(client.isDescendantOf(request)).isTrue()
         assertThat(pricing.traceId).isEqualTo(request.traceId)
         assertThat(pricing.parentSpanId).isEqualTo(client.spanId)    // traceparent crossed the wire
+        // the client span hangs off the service span, not the server span: thread-local context followed the observation
+        assertThat(client.parentSpanId).isEqualTo(named("OrderService.getOrder").spanId)
     }
 
     @Test
@@ -148,6 +150,9 @@ class TelemetryComponentTest(@Autowired private val meters: MeterRegistry) {
         // MVC: findById runs inside withContext(Dispatchers.IO); WebFlux: on Schedulers.boundedElastic()
         assertThat(get("/orders/42")).isEqualTo(200); awaitOrder42()
         assertThat(named("OrderRepository.findById").parentSpanId).isEqualTo(named("OrderService.getOrder").spanId)
+        // the thread-local context inside the hop is the service span too (Boot 3 needs ObservationContextElement for this)
+        val record = LOGS.finishedLogRecordItems.single { it.bodyValue?.asString() == "order fetched" }
+        assertThat(record.spanContext.spanId).isEqualTo(named("OrderService.getOrder").spanId)
     }
 
     @Test
@@ -208,6 +213,7 @@ class TelemetryComponentTest(@Autowired private val meters: MeterRegistry) {
         assertThat(job.traceId).isNotEqualTo(request.traceId)                       // own trace
         // the link targets the span current at enqueue time (OrderService.getOrder), which is in the request's trace
         assertThat(job.links.map { it.spanContext.traceId }).contains(request.traceId)
+        assertThat(job.links.map { it.spanContext.spanId }).contains(named("OrderService.getOrder").spanId)
     }
 }
 ```
