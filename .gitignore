@@ -23,3 +23,6 @@ yarn-error.log
 
 # Isolated implementation worktrees
 /.worktrees/
+
+# Task/plan/design docs are never source controlled (tracking is beads)
+tasks/
