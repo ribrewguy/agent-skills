@@ -26,6 +26,7 @@ The catalog. Each skill has its own page with a summary, its key opinions, insta
 - **[kotlin-practices](kotlin-practices)**: Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability.
 - **[application-logging](application-logging)**: what a server logs, at which level, in which shape. Two appenders (console for humans, OpenTelemetry for the pipeline), fields as arguments, a never-log denylist, exceptions logged once.
 - **[opentelemetry](opentelemetry)**: make a server application support OpenTelemetry and prove it. OTLP via `OTEL_*` variables, three span tiers, context propagation, default service metrics, log correlation, serverless flush, verification against a real collector.
+- **[local-https](local-https)**: TLS for every locally run server. mkcert certs at `<project>-local`, a `local-https` tool, a PreToolUse guard that blocks a declared server launching without its cert, a TLS proxy for plain-HTTP builds, per-stack recipes and per-runtime client trust. Repos opt in with `.local-https.json`.
 
 ## How skills are evaluated
 

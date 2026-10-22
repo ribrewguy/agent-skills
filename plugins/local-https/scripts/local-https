@@ -1,0 +1,480 @@
+#!/usr/bin/env bash
+# local-https — every locally launched server runs on TLS with mkcert certs.
+#
+#   local-https setup [dir] [--dry-run] [--jvm]   mint/refresh <dir>/.cert/, declare the server
+#   local-https check [dir] [--ignore a,b]        OK/MISSING per item; exit 0 only if nothing MISSING
+#   local-https doctor [dir] [--ignore a,b]       check every declared server, then HOSTS, CERT, CA,
+#                                                 INFO; exit 0 only if no check item is MISSING
+#   local-https copy [--dry-run]                  from a linked worktree: copy the main checkout's
+#                                                 .cert/ dirs to the same paths here
+#   local-https trust                             each runtime's trust line: IN EFFECT / NOT SET
+#   local-https proxy TLS_PORT HTTP_PORT [dir] [--dry-run]
+#                                                 terminate TLS with <dir>'s cert and forward to a
+#                                                 plain-HTTP server on HTTP_PORT (tls-proxy.mjs)
+#
+# Reads the repo's .local-https.json when present, else derives project and
+# host (<project>-local) from the repo directory name. dir defaults to the
+# current directory and names the server whose .cert/ is minted or checked.
+# LOCAL_HTTPS_HOSTS_FILE names the hosts file to read (default /etc/hosts).
+#
+# This tool never edits /etc/hosts or the shell profile and never copies
+# rootCA-key.pem: steps that need the owner are printed prefixed OWNER:.
+#
+# Declaration values are untrusted (the file is tracked; it may arrive with
+# a clone). decl.py validates them first; here they travel only as array
+# elements and quoted arguments, never inside a command string or sed program.
+
+set -euo pipefail
+
+die()  { printf 'local-https: %s\n' "$*" >&2; exit 1; }
+note() { printf 'local-https: %s\n' "$*"; }
+
+SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+LIB="$(dirname "$SELF")/lib"
+HOSTS_FILE=${LOCAL_HTTPS_HOSTS_FILE:-/etc/hosts}
+CHECK_ITEMS="mkcert ca-trusted cert key sans expiry hosts-v4 hosts-v6 node-ca"
+EXPIRY_MIN_DAYS=30
+
+# ------------------------------------------------------------------ args
+cmd=${1:-help}; [ $# -gt 0 ] && shift
+POS=() DIR_ARG="" DRY_RUN=0 JVM=0 IGNORE=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run) DRY_RUN=1 ;;
+    --jvm)     JVM=1 ;;
+    --ignore)  [ $# -ge 2 ] || die "--ignore needs a comma-separated item list"; IGNORE=$2; shift ;;
+    -*)        die "unknown option $1" ;;
+    *)         POS+=("$1") ;;
+  esac
+  shift
+done
+
+if [ "$cmd" = proxy ]; then
+  [ ${#POS[@]} -ge 2 ] && [ ${#POS[@]} -le 3 ] || die "usage: local-https proxy TLS_PORT HTTP_PORT [dir]"
+  for p in "${POS[0]}" "${POS[1]}"; do
+    case "$p" in ""|*[!0-9]*|0*) die "port must be an integer 1-65535, got: '$p'" ;; esac
+    [ "${#p}" -le 5 ] && [ "$p" -le 65535 ] || die "port must be an integer 1-65535, got: '$p'"
+  done
+  TLS_PORT=${POS[0]} HTTP_PORT=${POS[1]} DIR_ARG=${POS[2]:-}
+else
+  [ ${#POS[@]} -le 1 ] || die "only one dir allowed"
+  DIR_ARG=${POS[0]:-}
+fi
+
+usage() { awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$SELF"; }
+case "$cmd" in
+  setup|check|doctor|copy|proxy) ;;
+  trust)            [ -z "$DIR_ARG" ] || die "trust takes no dir" ;;
+  help|-h|--help)   usage; exit 0 ;;
+  *)                usage >&2; die "unknown command: $cmd" ;;
+esac
+[ "$cmd" != copy ] || [ -z "$DIR_ARG" ] || die "copy takes no dir: run it from inside the linked worktree"
+
+# ------------------------------------------------- machine-wide checks
+# Each check_* sets FIX: empty when OK, else "<detail: >fix command".
+caroot_pem() { printf '%s/rootCA.pem' "$(mkcert -CAROOT)"; }
+
+check_mkcert() { FIX=""; command -v mkcert >/dev/null 2>&1 || FIX="install mkcert (macOS: brew install mkcert; Linux: your package manager)"; }
+
+check_ca_trusted() {
+  FIX=""
+  command -v mkcert >/dev/null 2>&1 || { FIX="install mkcert, then: mkcert -install"; return; }
+  if [ "$(uname -s)" = Darwin ]; then
+    security find-certificate -c "mkcert" /Library/Keychains/System.keychain >/dev/null 2>&1 \
+      || security find-certificate -c "mkcert" >/dev/null 2>&1 \
+      || FIX="mkcert -install"
+  else
+    local root fp f
+    root=$(caroot_pem)
+    fp=$(openssl x509 -in "$root" -noout -fingerprint -sha256 2>/dev/null) || { FIX="mkcert -install"; return; }
+    for f in /etc/ssl/certs/*; do
+      [ "$(openssl x509 -in "$f" -noout -fingerprint -sha256 2>/dev/null)" = "$fp" ] && return
+    done
+    FIX="mkcert -install"
+  fi
+}
+
+check_node_ca() {
+  FIX=""
+  command -v mkcert >/dev/null 2>&1 || { FIX="install mkcert, then add to your shell profile: $NODE_EXPORT"; return; }
+  [ "${NODE_EXTRA_CA_CERTS:-}" = "$(caroot_pem)" ] || FIX="add to your shell profile: $NODE_EXPORT"
+}
+# shellcheck disable=SC2016  # printed for the owner's profile; expands there, not here
+NODE_EXPORT='export NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"'
+
+# ------------------------------------------------------------------- trust
+bundle_has_root() { # bundle_has_root <bundle> <root.pem>: the bundle file holds the root PEM
+  python3 -I -c 'import sys
+root = open(sys.argv[2]).read().strip()
+try:
+    bundle = open(sys.argv[1]).read()
+except OSError:
+    sys.exit(1)
+sys.exit(0 if root and root in bundle else 1)' "$1" "$2"
+}
+
+trust_line() { # trust_line <in-effect 0|1> <runtime> <line>
+  if [ "$1" = 1 ]; then printf 'IN EFFECT %s: %s\n' "$2" "$3"
+  else printf 'NOT SET %s: %s\n' "$2" "$3"; fi
+}
+
+do_trust() {
+  command -v mkcert >/dev/null 2>&1 || die "mkcert not on PATH — install mkcert (macOS: brew install mkcert)"
+  local root ok var keytool fp line
+  root=$(caroot_pem)
+  [ -f "$root" ] || die "no mkcert root CA at $root — run: mkcert -install"
+
+  check_ca_trusted; ok=0; [ -n "$FIX" ] || ok=1
+  trust_line $ok system "mkcert -install"
+
+  check_node_ca; ok=0; [ -n "$FIX" ] || ok=1
+  trust_line $ok NODE_EXTRA_CA_CERTS "$NODE_EXPORT"
+
+  # These two replace the default bundle rather than adding to it, so the
+  # file they name must hold the public roots too when the process also
+  # calls public hosts. In effect when the file they name holds the root.
+  for var in REQUESTS_CA_BUNDLE SSL_CERT_FILE; do
+    ok=0
+    [ -n "${!var:-}" ] && bundle_has_root "${!var}" "$root" && ok=1
+    # shellcheck disable=SC2016  # printed for the owner's profile
+    trust_line $ok "$var" "export $var=\"\$(mkcert -CAROOT)/rootCA.pem\"  (replaces the default bundle; use a bundle that also holds the public roots if the process calls public hosts)"
+  done
+
+  if [ -z "${JAVA_HOME:-}" ]; then
+    trust_line 0 jvm "JAVA_HOME is unset: set it, then rerun local-https trust for the keytool line"
+  else
+    keytool="$JAVA_HOME/bin/keytool"
+    # shellcheck disable=SC2016  # $(mkcert -CAROOT) is for the owner's shell
+    printf -v line '%q -importcert -noprompt -cacerts -storepass changeit -alias mkcert-rootCA -file "$(mkcert -CAROOT)/rootCA.pem"' "$keytool"
+    fp=$(openssl x509 -in "$root" -noout -fingerprint -sha256 2>/dev/null | sed 's/^[^=]*=//')
+    ok=0
+    [ -n "$fp" ] && [ -x "$keytool" ] \
+      && "$keytool" -list -cacerts -storepass changeit 2>/dev/null | grep -qiF -- "$fp" && ok=1
+    trust_line $ok jvm "$line"
+  fi
+}
+
+if [ "$cmd" = trust ]; then do_trust; exit 0; fi
+
+# ------------------------------------------------------------ repo facts
+DIR_ABS=$(cd "${DIR_ARG:-.}" 2>/dev/null && pwd -P) || die "no such directory: ${DIR_ARG:-.}"
+REPO_ROOT=$(git -C "$DIR_ABS" rev-parse --show-toplevel 2>/dev/null) || die "not inside a git repository: $DIR_ABS"
+REPO_ROOT=$(cd "$REPO_ROOT" && pwd -P)
+case "$DIR_ABS/" in "$REPO_ROOT"/*) ;; *) die "$DIR_ABS is outside $REPO_ROOT" ;; esac
+SERVER_DIR=${DIR_ABS#"$REPO_ROOT"}; SERVER_DIR=${SERVER_DIR#/}; SERVER_DIR=${SERVER_DIR:-.}
+# Name derivation uses the main checkout, so every linked worktree agrees.
+MAIN_ROOT=$(dirname "$(git -C "$DIR_ABS" rev-parse --path-format=absolute --git-common-dir)")
+
+# -------------------------------------------------------------------- copy
+COPY_SEEN=""
+copy_cert_dir() { # copy_cert_dir <main-checkout> <server rel path, "" for the root>
+  local main=$1 rel=$2 src dst_parent dst real f name label
+  label="${rel:+$rel/}.cert"
+  case $'\n'"$COPY_SEEN" in *$'\n'"$label"$'\n'*) return ;; esac
+  COPY_SEEN+="$label"$'\n'
+  src="$main/$label"
+  # Never follow a symlink: neither the .cert dir nor any parent may lead
+  # outside the main checkout, and only regular files are copied.
+  [ -d "$src" ] && [ ! -L "$src" ] || { note "skip $label: not a plain directory in the main checkout"; return; }
+  real=$(cd "$src" && pwd -P)
+  case "$real/" in "$main"/*) ;; *) note "skip $label: resolves outside the main checkout"; return ;; esac
+  dst_parent="$REPO_ROOT/${rel:-.}"
+  [ -d "$dst_parent" ] || { note "skip $label: ${rel:-.} does not exist in this worktree"; return; }
+  real=$(cd "$dst_parent" && pwd -P)
+  case "$real/" in "$REPO_ROOT"/*) ;; *) note "skip $label: resolves outside this worktree"; return ;; esac
+  dst="$real/.cert"
+  [ ! -L "$dst" ] || { note "skip $label: destination is a symlink"; return; }
+  for f in "$src"/*; do
+    [ -e "$f" ] || [ -L "$f" ] || continue
+    name=${f##*/}
+    case "$name" in rootCA-key.pem) note "never copied: $label/$name"; continue ;; esac
+    [ -f "$f" ] && [ ! -L "$f" ] || { note "skip $label/$name: not a regular file"; continue; }
+    [ ! -L "$dst/$name" ] || { note "skip $label/$name: destination is a symlink"; continue; }
+    if [ $DRY_RUN = 1 ]; then note "would copy $label/$name"; continue; fi
+    mkdir -p "$dst"
+    cp -p -- "$f" "$dst/$name"
+    note "copied $label/$name"
+  done
+  git -C "$REPO_ROOT" check-ignore -q -- "$label/x" \
+    || note "WARN $label is not ignored in this worktree: add .cert/ to .gitignore"
+}
+
+do_copy() {
+  local main entry d
+  # The first `git worktree list` entry is the main checkout.
+  main=$(git -C "$REPO_ROOT" worktree list --porcelain | sed -n '1s/^worktree //p')
+  git -C "$REPO_ROOT" worktree list --porcelain | sed -n '2p' | grep -qx bare \
+    && die "the main worktree is a bare repository: no checkout to copy from"
+  main=$(cd "$main" 2>/dev/null && pwd -P) || die "main checkout not found"
+  [ "$main" != "$REPO_ROOT" ] || die "this is the main checkout ($main): run copy from a linked worktree"
+  note "from: $main"
+  note "to:   $REPO_ROOT"
+  # Ignored entries only (.cert/ is gitignored by setup); --directory lists a
+  # wholly ignored dir as one entry; file entries are covered too.
+  while IFS= read -r -d '' entry; do
+    case "/$entry" in
+      */.cert/) d=${entry%/} ;;
+      */.cert/*) d=${entry%/*}; case "/$d" in */.cert) ;; *) continue ;; esac ;;
+      *) continue ;;
+    esac
+    d=${d%.cert}; d=${d%/}
+    copy_cert_dir "$main" "$d"
+  done < <(git -C "$main" ls-files -z --others --ignored --exclude-standard --directory)
+  [ -n "$COPY_SEEN" ] || note "no .cert/ directories in the main checkout"
+  [ $DRY_RUN = 0 ] || note "dry-run: no files written"
+}
+
+if [ "$cmd" = copy ]; then do_copy; exit 0; fi
+
+# Declaration facts (validated). decl.py exits 3 with INVALID lines; pass both through.
+load_decl() { # load_decl [--write]
+  local out rc=0 key val
+  out=$(python3 -I "$LIB/decl.py" "$REPO_ROOT" --main-root "$MAIN_ROOT" --server "$SERVER_DIR" "$@") || rc=$?
+  if [ $rc = 3 ]; then printf '%s\n' "$out"; exit 3; fi
+  [ $rc = 0 ] || die "decl.py failed ($rc)"
+  while IFS='=' read -r key val; do
+    case "$key" in
+      declared) DECLARED=$val ;;      server_declared) SERVER_DECLARED=$val ;;
+      project) PROJECT=$val ;;        host) HOST=$val ;;
+      server_https) SERVER_HTTPS=$val ;; server_reason) SERVER_REASON=$val ;;
+      sans) SANS_CSV=$val ;;
+      server) SERVERS+=("$val") ;;
+      host_names) IFS=, read -r -a HOST_NAMES <<<"$val" ;;
+    esac
+  done <<<"$out"
+}
+SERVERS=()
+load_decl
+
+CERT_DIR="$DIR_ABS/.cert"
+CERT="$CERT_DIR/$PROJECT.pem"
+KEY="$CERT_DIR/$PROJECT-key.pem"
+P12="$CERT_DIR/$PROJECT.p12"
+IFS=, read -r -a SANS <<<"$SANS_CSV"
+printf -v SETUP_FIX 'local-https setup %q' "$SERVER_DIR"
+
+if [ "$cmd" != doctor ] && [ "$cmd" != proxy ] && [ "$SERVER_HTTPS" = false ]; then
+  note "$SERVER_DIR is declared https:false ($SERVER_REASON); nothing to $cmd"
+  exit 0
+fi
+
+if [ "$cmd" = proxy ]; then
+  [ $DRY_RUN = 1 ] || command -v node >/dev/null 2>&1 || die "node not on PATH: the TLS proxy needs Node"
+  PROXY_JS="$(dirname "$SELF")/tls-proxy.mjs"
+  PROXY_ARGS=(--cert "$CERT" --key "$KEY" --listen "$TLS_PORT" --target "$HTTP_PORT")
+  if [ $DRY_RUN = 1 ]; then
+    note "would run: node $PROXY_JS ${PROXY_ARGS[*]}"
+    exit 0
+  fi
+  [ -f "$CERT" ] && [ -f "$KEY" ] || die "no cert at ${CERT#"$REPO_ROOT"/}; run: $SETUP_FIX"
+  exec node "$PROXY_JS" "${PROXY_ARGS[@]}"
+fi
+
+# ------------------------------------------------ per-server check functions
+check_cert() { FIX=""; [ -f "$CERT" ] || FIX="$SETUP_FIX"; }
+check_key()  { FIX=""; [ -f "$KEY" ]  || FIX="$SETUP_FIX"; }
+
+CERT_FACTS="" CERT_FACTS_LOADED=0
+load_cert_facts() { # cert.py output, read once; empty when no readable cert
+  [ $CERT_FACTS_LOADED = 1 ] && return; CERT_FACTS_LOADED=1
+  [ -f "$CERT" ] && CERT_FACTS=$(python3 -I "$LIB/cert.py" "$CERT" "$SANS_CSV" 2>/dev/null) || CERT_FACTS=""
+}
+cert_fact() { printf '%s\n' "$CERT_FACTS" | sed -n "s/^$1=//p"; }
+
+check_sans() {
+  FIX=""; load_cert_facts
+  [ -n "$CERT_FACTS" ] || { FIX="$SETUP_FIX"; return; }
+  local missing; missing=$(cert_fact missing)
+  [ -z "$missing" ] || FIX="$missing: $SETUP_FIX"
+}
+
+check_expiry() {
+  FIX=""; load_cert_facts
+  [ -n "$CERT_FACTS" ] || { FIX="$SETUP_FIX"; return; }
+  local days; days=$(cert_fact days_left)
+  [ "$days" -ge "$EXPIRY_MIN_DAYS" ] || FIX="expires $(cert_fact not_after): $SETUP_FIX"
+}
+
+hosts_line() { printf '%s %s' "$1" "${HOST_NAMES[*]}"; }
+
+hosts_names_for() { # names on non-comment hosts-file lines for <ip>, one per line
+  sed 's/#.*//' "$HOSTS_FILE" 2>/dev/null | awk -v ip="$1" '$1 == ip { for (i = 2; i <= NF; i++) print $i }'
+}
+
+check_hosts() { # check_hosts <ip>: every name on a non-comment line for <ip>
+  FIX=""
+  local ip=$1 name names line file
+  names=$(hosts_names_for "$ip")
+  for name in "${HOST_NAMES[@]}"; do
+    if ! grep -qixF -- "$name" <<<"$names"; then
+      printf -v line '%q' "$(hosts_line "$ip")"
+      printf -v file '%q' "$HOSTS_FILE"
+      FIX="printf '%s\n' $line | sudo tee -a $file"
+      return
+    fi
+  done
+}
+check_hosts_v4() { check_hosts 127.0.0.1; }
+check_hosts_v6() { check_hosts ::1; }
+
+run_check() { # run_check <item>; sets FIX
+  case "$1" in
+    mkcert) check_mkcert ;;   ca-trusted) check_ca_trusted ;;
+    cert) check_cert ;;       key) check_key ;;
+    sans) check_sans ;;       expiry) check_expiry ;;
+    hosts-v4) check_hosts_v4 ;; hosts-v6) check_hosts_v6 ;;
+    node-ca) check_node_ca ;;
+  esac
+}
+
+case "$cmd" in
+
+# ------------------------------------------------------------------- setup
+setup)
+  note "project: $PROJECT   host: $HOST   server: $SERVER_DIR"
+  note "cert: ${CERT#"$REPO_ROOT"/}"
+  note "key:  ${KEY#"$REPO_ROOT"/}"
+  [ $JVM = 1 ] && note "p12:  ${P12#"$REPO_ROOT"/} (password: changeit)"
+  note "SANs: ${SANS[*]}"
+  grep -qxE '\.cert/?' "$REPO_ROOT/.gitignore" 2>/dev/null || note "will append .cert/ to .gitignore"
+  if [ "$DECLARED" = 0 ]; then note "will write .local-https.json (servers: $SERVER_DIR)"
+  elif [ "$SERVER_DECLARED" = 0 ]; then note "will add $SERVER_DIR to servers in .local-https.json"; fi
+
+  if [ $DRY_RUN = 1 ]; then
+    note "dry-run: no files written"
+  else
+    command -v mkcert >/dev/null 2>&1 || die "mkcert not on PATH — install mkcert (macOS: brew install mkcert)"
+    mkdir -p "$CERT_DIR"
+    set -f   # SANs come from the declaration: never let a shell expand them
+    # mkcert is chatty; its output is shown only when it fails.
+    # `--` ends mkcert's flags: no SAN can be read as an option.
+    out=$(cd "$DIR_ABS" && mkcert -cert-file ".cert/$PROJECT.pem" -key-file ".cert/$PROJECT-key.pem" -- "${SANS[@]}" 2>&1) \
+      || { printf '%s\n' "$out" >&2; die "mkcert failed"; }
+    if [ $JVM = 1 ]; then
+      out=$(cd "$DIR_ABS" && mkcert -pkcs12 -p12-file ".cert/$PROJECT.p12" -- "${SANS[@]}" 2>&1) \
+        || { printf '%s\n' "$out" >&2; die "mkcert -pkcs12 failed"; }
+    fi
+    set +f
+    if ! grep -qxE '\.cert/?' "$REPO_ROOT/.gitignore" 2>/dev/null; then
+      [ ! -s "$REPO_ROOT/.gitignore" ] || [ -z "$(tail -c1 "$REPO_ROOT/.gitignore")" ] || echo >> "$REPO_ROOT/.gitignore"
+      echo '.cert/' >> "$REPO_ROOT/.gitignore"
+    fi
+    [ "$SERVER_DECLARED" = 1 ] || load_decl --write
+    note "cert ready for $SERVER_DIR"
+  fi
+
+  for item in hosts-v4 hosts-v6 ca-trusted node-ca; do
+    run_check "$item"
+    [ -z "$FIX" ] || echo "OWNER: $FIX"
+  done
+  ;;
+
+# ------------------------------------------------------------------- check
+check)
+  missing=0
+  for item in $CHECK_ITEMS; do
+    case ",$IGNORE," in *",$item,"*) echo "SKIP $item"; continue ;; esac
+    run_check "$item"
+    if [ -z "$FIX" ]; then echo "OK $item"
+    else echo "MISSING $item: $FIX"; missing=1; fi
+  done
+  exit $missing
+  ;;
+
+# ------------------------------------------------------------------ doctor
+doctor)
+  # Scoped to this project: other projects' hosts entries are INFO only.
+  # Doctor's own sections print OK/WARN/INFO; only `check` prints MISSING,
+  # and only a MISSING check item makes doctor exit non-zero.
+  # Every declared https server, plus the dir argument (or .) when it is
+  # not one of them and has not opted out.
+  case $'\n'"$(printf '%s\n' ${SERVERS[@]+"${SERVERS[@]}"})"$'\n' in
+    *$'\n'"$SERVER_DIR"$'\n'*) ;;
+    *) if { [ ${#SERVERS[@]} = 0 ] || [ -n "$DIR_ARG" ]; } && [ "$SERVER_HTTPS" != false ]; then
+         SERVERS+=("$SERVER_DIR")
+       fi ;;
+  esac
+  missing=0
+  for dir in ${SERVERS[@]+"${SERVERS[@]}"}; do
+    echo "CHECK $dir"
+    args=(check "$REPO_ROOT/$dir"); [ -z "$IGNORE" ] || args+=(--ignore "$IGNORE")
+    rc=0; out=$("$SELF" "${args[@]}" 2>&1) || rc=$?
+    printf '%s\n' "$out"
+    [ $rc = 0 ] || missing=1
+  done
+
+  echo HOSTS
+  v4=$(hosts_names_for 127.0.0.1); v6=$(hosts_names_for ::1)
+  for name in "${HOST_NAMES[@]}"; do
+    have=""
+    grep -qixF -- "$name" <<<"$v4" && have+=" 127.0.0.1"
+    grep -qixF -- "$name" <<<"$v6" && have+=" ::1"
+    case "$have" in
+      " 127.0.0.1 ::1") echo "OK $name: 127.0.0.1 ::1" ;;
+      " 127.0.0.1")     echo "WARN $name: no ::1 line (IPv6-first clients stall or miss it)" ;;
+      " ::1")           echo "WARN $name: no 127.0.0.1 line" ;;
+      *)                echo "WARN $name: not in $HOSTS_FILE" ;;
+    esac
+  done
+  for ip in 127.0.0.1 ::1; do
+    check_hosts "$ip"; [ -z "$FIX" ] || echo "OWNER: $FIX"
+  done
+
+  echo CERT
+  warned=""
+  for dir in ${SERVERS[@]+"${SERVERS[@]}"}; do
+    rel="${dir%/.}/.cert/$PROJECT.pem"; rel=${rel#./}
+    printf -v fix 'local-https setup %q' "$dir"
+    CERT_FACTS=$(python3 -I "$LIB/cert.py" "$REPO_ROOT/$rel" "$SANS_CSV" 2>/dev/null) \
+      || { echo "WARN cert $dir: no readable cert at $rel; fix: $fix"; continue; }
+    days=$(cert_fact days_left); not_after=$(cert_fact not_after)
+    if [ "$days" -lt "$EXPIRY_MIN_DAYS" ]; then echo "WARN expiry $dir: $rel expires $not_after ($days days); fix: $fix"
+    else echo "OK cert $dir: $rel present, valid until $not_after ($days days)"; fi
+    # Forbidden suffixes (decl.py FORBIDDEN_SUFFIXES) among the SANs the
+    # cert carries and the SANs the declaration asks for.
+    IFS=, read -r -a have <<<"$(cert_fact sans)"
+    for san in ${have[@]+"${have[@]}"} ${SANS[@]+"${SANS[@]}"}; do
+      lower=$(tr '[:upper:]' '[:lower:]' <<<"$san")
+      case "$lower" in
+        *.localhost) why="uses .localhost, which browsers resolve to loopback without the hosts file" ;;
+        *.local)     why="uses .local, which is reserved for mDNS (lookups stall or bypass the hosts file)" ;;
+        *.dev|*.app) why="uses .${lower##*.}, a real TLD on the HSTS preload list" ;;
+        *) continue ;;
+      esac
+      case $'\n'"$warned" in *$'\n'"$lower"$'\n'*) continue ;; esac
+      warned+="$lower"$'\n'
+      if grep -qxF -- "$san" < <(tr , '\n' <<<"$SANS_CSV"); then
+        echo "WARN sans: $san: $why; fix: remove it from extraNames in .local-https.json, then: $fix"
+      else
+        echo "WARN sans: $san: $why; fix: regenerate without it: $fix"
+      fi
+    done
+  done
+  [ -n "$warned" ] || echo "OK sans: no forbidden suffix (.local, .localhost, .dev, .app)"
+
+  echo CA
+  check_ca_trusted
+  if [ -z "$FIX" ]; then echo "OK ca: mkcert root CA installed ($(mkcert -CAROOT))"
+  else echo "WARN ca: $FIX"; fi
+
+  echo INFO
+  host_lc=$(tr '[:upper:]' '[:lower:]' <<<"$HOST"); others=0
+  while read -r -a fields; do
+    [ ${#fields[@]} -ge 2 ] || continue
+    case "${fields[0]}" in 127.0.0.1|::1) ;; *) continue ;; esac
+    names=""
+    for name in "${fields[@]:1}"; do
+      lower=$(tr '[:upper:]' '[:lower:]' <<<"$name")
+      case "$lower" in
+        localhost|localhost.localdomain|broadcasthost|ip6-localhost|ip6-loopback) continue ;;
+        "$host_lc"|*."$host_lc") continue ;;
+      esac
+      names+=" $name"
+    done
+    [ -z "$names" ] || { echo "INFO ${fields[0]}$names"; others=1; }
+  done < <(sed 's/#.*//' "$HOSTS_FILE" 2>/dev/null)
+  [ $others = 1 ] || echo "INFO no other projects' loopback entries in $HOSTS_FILE"
+
+  exit $missing
+  ;;
+esac

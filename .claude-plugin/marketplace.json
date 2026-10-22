@@ -75,6 +75,11 @@
       "name": "opentelemetry",
       "source": "./plugins/opentelemetry",
       "description": "OpenTelemetry rules for server apps: OTLP to a collector via OTEL_* variables, W3C propagation, span tiers, default service metrics, log correlation, serverless flush, and verification against a real collector. Composes with application-logging, which owns record content and the console appender."
+    },
+    {
+      "name": "local-https",
+      "source": "./plugins/local-https",
+      "description": "TLS for every locally run server: mkcert certs at <project>-local, a setup and check tool, a launch guard, a TLS proxy, per-stack recipes and client trust recipes."
     }
   ]
 }

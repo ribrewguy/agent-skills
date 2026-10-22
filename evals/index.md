@@ -31,6 +31,7 @@ A small delta on a strong baseline still matters if it's catching a specific fai
 | [isolated-stack-development](isolated-stack-development) | 100% | 63% | **+36pp** | First behavioral eval set (real fixture repo, graded on file state). The headline eval — "start the app", isolation never mentioned, skill offered by description only — is +100pp: the baseline boots the shared stack from the worktree. |
 | application-logging | not yet run | not yet run | not yet run | Eval set (three cases) is committed with the skill; the with and without comparison has not been run. |
 | opentelemetry | not yet run | not yet run | not yet run | Eval set (five cases), two telemetry-free fixture apps, and a collector-backed verifier are committed; the with and without comparison has not been run. |
+| local-https | not yet run | not yet run | n/a | Five eval cases are written alongside the skill; the with and without runs are deferred. |
 
 Numbers are pass rate across four evals, one run per configuration.
 

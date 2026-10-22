@@ -31,7 +31,9 @@ If the app sets `Secure` session cookies, plain `http://localhost` silently
 drops them and login 401s. Run the dev server with local TLS (Nuxt supports
 `devServer.https` with a local cert/key pair) or front a production build with
 a TLS terminator. The cert tooling and hostname are the repo's business; the
-rule that HTTPS is required is not optional when cookies are `Secure`.
+rule that HTTPS is required is not optional when cookies are `Secure`. The
+`local-https` plugin owns the cert, the `<project>-local` hostname and the
+worktree cert copy.
 
 ## Start and health-check
 
