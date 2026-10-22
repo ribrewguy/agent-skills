@@ -25,7 +25,7 @@ set -f
 INPUT=$(cat)
 HERE=$(cd "$(dirname "$0")" && pwd)
 
-parsed=$(printf '%s' "$INPUT" | python3 -c '
+parsed=$(printf '%s' "$INPUT" | python3 -I -c '
 import json, sys
 d = json.load(sys.stdin)
 print(d.get("tool_input", {}).get("command", "").replace("\n", " "))
@@ -37,7 +37,7 @@ CWD=$(printf '%s\n' "$parsed" | sed -n 2p)
 
 block() { printf '%s\n' "$*" >&2; exit 2; }
 emit_warn() {
-  printf '%s' "$1" | python3 -c '
+  printf '%s' "$1" | python3 -I -c '
 import json, sys
 msg = sys.stdin.read()
 print(json.dumps({
@@ -93,7 +93,7 @@ if [ $is_launch = 0 ] && [ -f "$DECL" ]; then
   while IFS= read -r rx; do
     [ -n "$rx" ] || continue
     if printf '%s' "$CMD" | grep -Eq -- "$rx" 2>/dev/null; then is_launch=1; break; fi
-  done < <(python3 -c '
+  done < <(python3 -I -c '
 import json, sys
 try:
     for s in json.load(open(sys.argv[1])).get("servers", []):
@@ -113,7 +113,7 @@ IS_WORKTREE=0
 [ -n "$GIT_DIR" ] && [ -n "$GIT_COMMON" ] && [ "$(cd "$GIT_DIR" && pwd -P)" != "$GIT_COMMON" ] && IS_WORKTREE=1
 
 # --- declaration facts (validated by decl.py) -------------------------------
-out=$(python3 "$HERE/lib/decl.py" "$REPO_ROOT" --main-root "$MAIN_ROOT" --server "$REL" 2>&1); rc=$?
+out=$(python3 -I "$HERE/lib/decl.py" "$REPO_ROOT" --main-root "$MAIN_ROOT" --server "$REL" 2>&1); rc=$?
 if [ $rc -ne 0 ]; then
   emit_warn "local-https: .local-https.json is invalid, so the TLS rule could not be checked: $(printf '%s' "$out" | tr '\n' ' ')"
   exit 0
@@ -184,7 +184,7 @@ done
 # --- warnings that apply once the cert exists --------------------------------
 if [[ "$CMD" =~ http://(localhost|127\.0\.0\.1):([0-9]+) ]]; then
   port=${BASH_REMATCH[2]}
-  hit=$(python3 -c '
+  hit=$(python3 -I -c '
 import json, sys
 try:
     for s in json.load(open(sys.argv[1])).get("servers", []):

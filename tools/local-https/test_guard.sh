@@ -158,6 +158,17 @@ test_declared_launch_pattern_extends() {
   [ "$RC" = 2 ] || fail_with "rc=$RC out=$OUT"
 }
 
+test_planted_json_module_not_imported() {
+  local r marker; r=$(new_repo planted); declare_servers "$r" '[{"dir":"apps/web"}]'
+  marker="$WORK/planted-marker"
+  printf 'open(%s, "w").write("x")\nraise ImportError("planted")\n' "\"$marker\"" > "$r/json.py"
+  cp "$r/json.py" "$r/apps/web/json.py"
+  (cd "$r" && run_guard "$r" 'pnpm dev')
+  (cd "$r/apps/web" && run_guard "$r/apps/web" 'pnpm dev')
+  (cd "$r/apps/web" && "$ROOT/plugins/local-https/scripts/local-https" check >/dev/null 2>&1) || true
+  [ ! -e "$marker" ] || fail_with "planted json.py ran"
+}
+
 test_non_launch_is_fast() {
   local r s e; r=$(new_repo fast)
   s=$(python3 -I -c 'import time; print(time.time())')
@@ -171,7 +182,7 @@ for t in \
   test_blocks_declared_missing_cert test_allows_declared_with_cert test_cd_resolves_dir \
   test_opt_out_allows test_blocks_reject_unauthorized test_warns_double_dash_port \
   test_warns_http_url_to_declared_port test_warns_without_node_extra_ca \
-  test_worktree_names_copy test_root_launcher_checks_all test_declared_launch_pattern_extends \
+  test_worktree_names_copy test_root_launcher_checks_all test_declared_launch_pattern_extends test_planted_json_module_not_imported \
   test_non_launch_is_fast
 do
   set +e; ( set -e; "$t" ); rc=$?; set -e

@@ -229,7 +229,7 @@ if [ "$cmd" = copy ]; then do_copy; exit 0; fi
 # Declaration facts (validated). decl.py exits 3 with INVALID lines; pass both through.
 load_decl() { # load_decl [--write]
   local out rc=0 key val
-  out=$(python3 "$LIB/decl.py" "$REPO_ROOT" --main-root "$MAIN_ROOT" --server "$SERVER_DIR" "$@") || rc=$?
+  out=$(python3 -I "$LIB/decl.py" "$REPO_ROOT" --main-root "$MAIN_ROOT" --server "$SERVER_DIR" "$@") || rc=$?
   if [ $rc = 3 ]; then printf '%s\n' "$out"; exit 3; fi
   [ $rc = 0 ] || die "decl.py failed ($rc)"
   while IFS='=' read -r key val; do
@@ -277,7 +277,7 @@ check_key()  { FIX=""; [ -f "$KEY" ]  || FIX="$SETUP_FIX"; }
 CERT_FACTS="" CERT_FACTS_LOADED=0
 load_cert_facts() { # cert.py output, read once; empty when no readable cert
   [ $CERT_FACTS_LOADED = 1 ] && return; CERT_FACTS_LOADED=1
-  [ -f "$CERT" ] && CERT_FACTS=$(python3 "$LIB/cert.py" "$CERT" "$SANS_CSV" 2>/dev/null) || CERT_FACTS=""
+  [ -f "$CERT" ] && CERT_FACTS=$(python3 -I "$LIB/cert.py" "$CERT" "$SANS_CSV" 2>/dev/null) || CERT_FACTS=""
 }
 cert_fact() { printf '%s\n' "$CERT_FACTS" | sed -n "s/^$1=//p"; }
 
@@ -425,7 +425,7 @@ doctor)
   for dir in ${SERVERS[@]+"${SERVERS[@]}"}; do
     rel="${dir%/.}/.cert/$PROJECT.pem"; rel=${rel#./}
     printf -v fix 'local-https setup %q' "$dir"
-    CERT_FACTS=$(python3 "$LIB/cert.py" "$REPO_ROOT/$rel" "$SANS_CSV" 2>/dev/null) \
+    CERT_FACTS=$(python3 -I "$LIB/cert.py" "$REPO_ROOT/$rel" "$SANS_CSV" 2>/dev/null) \
       || { echo "WARN cert $dir: no readable cert at $rel; fix: $fix"; continue; }
     days=$(cert_fact days_left); not_after=$(cert_fact not_after)
     if [ "$days" -lt "$EXPIRY_MIN_DAYS" ]; then echo "WARN expiry $dir: $rel expires $not_after ($days days); fix: $fix"
