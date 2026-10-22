@@ -29,6 +29,7 @@ A small delta on a strong baseline still matters if it's catching a specific fai
 | [branch-promotion-discipline](branch-promotion-discipline) | 100% | 84% | **+15pp** | The hotfix-with-forward-merge eval (+62pp) is the discriminator. Three other evals non-discriminating in iteration-1 because the prompts give away the framing; flagged for sharpening. |
 | [throughline](throughline) | 100% | 64% | **+36pp** | The spec-conflict eval (+57pp) is the sharpest: untrained models resolve-then-notify where the skill escalates-then-waits. The baseline also merges to the trunk on "ship it" plus green tests. |
 | [isolated-stack-development](isolated-stack-development) | 100% | 63% | **+36pp** | First behavioral eval set (real fixture repo, graded on file state). The headline eval — "start the app", isolation never mentioned, skill offered by description only — is +100pp: the baseline boots the shared stack from the worktree. |
+| local-https | not yet run | not yet run | n/a | Five eval cases are written alongside the skill; the with and without runs are deferred. |
 
 Numbers are pass rate across four evals, one run per configuration.
 

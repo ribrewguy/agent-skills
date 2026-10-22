@@ -24,6 +24,7 @@ The catalog. Each skill has its own page with a summary, its key opinions, insta
 - **[maven-practices](maven-practices)**: Reproducible Maven builds and effective lifecycle enforcement across modules, profiles and test JVMs.
 - **[java-practices](java-practices)**: Bloch-inspired Java design: immutability, defensive boundaries, small APIs, value contracts and composition, alongside compiler, formatter and analyzer practices.
 - **[kotlin-practices](kotlin-practices)**: Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability.
+- **[local-https](local-https)**: TLS for every locally run server. mkcert certs at `<project>-local`, a `local-https` tool, a PreToolUse guard that blocks a declared server launching without its cert, a TLS proxy for plain-HTTP builds, per-stack recipes and per-runtime client trust. Repos opt in with `.local-https.json`.
 
 ## How skills are evaluated
 
