@@ -120,6 +120,10 @@ aimed at the shared stack, and the dangerous values are the ones that do
 not fail when stale: requests land on the shared system and succeed there.
 This audit is the highest-value step in the whole mechanism.
 
+The gitignored `.cert/` directories are the exception to hand copying: run
+`local-https copy` from the worktree (the `local-https` plugin), which lands
+them at the same relative paths.
+
 While auditing, apply these portable rules — each learned from an incident:
 
 - **A readiness gate must resolve its target the same way the app it gates
