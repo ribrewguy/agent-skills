@@ -8,6 +8,9 @@
 #   local-https copy [--dry-run]                  from a linked worktree: copy the main checkout's
 #                                                 .cert/ dirs to the same paths here
 #   local-https trust                             each runtime's trust line: IN EFFECT / NOT SET
+#   local-https proxy TLS_PORT HTTP_PORT [dir] [--dry-run]
+#                                                 terminate TLS with <dir>'s cert and forward to a
+#                                                 plain-HTTP server on HTTP_PORT (tls-proxy.mjs)
 #
 # Reads the repo's .local-https.json when present, else derives project and
 # host (<project>-local) from the repo directory name. dir defaults to the
@@ -34,21 +37,33 @@ EXPIRY_MIN_DAYS=30
 
 # ------------------------------------------------------------------ args
 cmd=${1:-help}; [ $# -gt 0 ] && shift
-DIR_ARG="" DRY_RUN=0 JVM=0 IGNORE=""
+POS=() DIR_ARG="" DRY_RUN=0 JVM=0 IGNORE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
     --jvm)     JVM=1 ;;
     --ignore)  [ $# -ge 2 ] || die "--ignore needs a comma-separated item list"; IGNORE=$2; shift ;;
     -*)        die "unknown option $1" ;;
-    *)         [ -z "$DIR_ARG" ] || die "only one dir allowed"; DIR_ARG=$1 ;;
+    *)         POS+=("$1") ;;
   esac
   shift
 done
 
+if [ "$cmd" = proxy ]; then
+  [ ${#POS[@]} -ge 2 ] && [ ${#POS[@]} -le 3 ] || die "usage: local-https proxy TLS_PORT HTTP_PORT [dir]"
+  for p in "${POS[0]}" "${POS[1]}"; do
+    case "$p" in ""|*[!0-9]*|0*) die "port must be an integer 1-65535, got: '$p'" ;; esac
+    [ "${#p}" -le 5 ] && [ "$p" -le 65535 ] || die "port must be an integer 1-65535, got: '$p'"
+  done
+  TLS_PORT=${POS[0]} HTTP_PORT=${POS[1]} DIR_ARG=${POS[2]:-}
+else
+  [ ${#POS[@]} -le 1 ] || die "only one dir allowed"
+  DIR_ARG=${POS[0]:-}
+fi
+
 usage() { awk 'NR == 1 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$SELF"; }
 case "$cmd" in
-  setup|check|doctor|copy) ;;
+  setup|check|doctor|copy|proxy) ;;
   trust)            [ -z "$DIR_ARG" ] || die "trust takes no dir" ;;
   help|-h|--help)   usage; exit 0 ;;
   *)                usage >&2; die "unknown command: $cmd" ;;
@@ -238,9 +253,21 @@ P12="$CERT_DIR/$PROJECT.p12"
 IFS=, read -r -a SANS <<<"$SANS_CSV"
 printf -v SETUP_FIX 'local-https setup %q' "$SERVER_DIR"
 
-if [ "$cmd" != doctor ] && [ "$SERVER_HTTPS" = false ]; then
+if [ "$cmd" != doctor ] && [ "$cmd" != proxy ] && [ "$SERVER_HTTPS" = false ]; then
   note "$SERVER_DIR is declared https:false ($SERVER_REASON); nothing to $cmd"
   exit 0
+fi
+
+if [ "$cmd" = proxy ]; then
+  [ $DRY_RUN = 1 ] || command -v node >/dev/null 2>&1 || die "node not on PATH: the TLS proxy needs Node"
+  PROXY_JS="$(dirname "$SELF")/tls-proxy.mjs"
+  PROXY_ARGS=(--cert "$CERT" --key "$KEY" --listen "$TLS_PORT" --target "$HTTP_PORT")
+  if [ $DRY_RUN = 1 ]; then
+    note "would run: node $PROXY_JS ${PROXY_ARGS[*]}"
+    exit 0
+  fi
+  [ -f "$CERT" ] && [ -f "$KEY" ] || die "no cert at ${CERT#"$REPO_ROOT"/}; run: $SETUP_FIX"
+  exec node "$PROXY_JS" "${PROXY_ARGS[@]}"
 fi
 
 # ------------------------------------------------ per-server check functions
@@ -318,6 +345,7 @@ setup)
   else
     command -v mkcert >/dev/null 2>&1 || die "mkcert not on PATH — install mkcert (macOS: brew install mkcert)"
     mkdir -p "$CERT_DIR"
+    set -f   # SANs come from the declaration: never let a shell expand them
     # mkcert is chatty; its output is shown only when it fails.
     # `--` ends mkcert's flags: no SAN can be read as an option.
     out=$(cd "$DIR_ABS" && mkcert -cert-file ".cert/$PROJECT.pem" -key-file ".cert/$PROJECT-key.pem" -- "${SANS[@]}" 2>&1) \
@@ -326,6 +354,7 @@ setup)
       out=$(cd "$DIR_ABS" && mkcert -pkcs12 -p12-file ".cert/$PROJECT.p12" -- "${SANS[@]}" 2>&1) \
         || { printf '%s\n' "$out" >&2; die "mkcert -pkcs12 failed"; }
     fi
+    set +f
     if ! grep -qxE '\.cert/?' "$REPO_ROOT/.gitignore" 2>/dev/null; then
       [ ! -s "$REPO_ROOT/.gitignore" ] || [ -z "$(tail -c1 "$REPO_ROOT/.gitignore")" ] || echo >> "$REPO_ROOT/.gitignore"
       echo '.cert/' >> "$REPO_ROOT/.gitignore"
