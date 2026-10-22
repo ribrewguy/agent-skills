@@ -1,0 +1,9 @@
+{
+  "name": "local-https",
+  "description": "Every locally launched server runs on TLS with mkcert certificates at <project>-local, unless the owner opts a server out. Ships the local-https tool (setup, check, copy, trust, doctor, proxy, all with --dry-run where they write), a PreToolUse guard that blocks a declared server launching without its cert and any TLS-verification bypass, a dependency-free TLS proxy for plain-HTTP builds, per-stack server recipes (Nuxt, Vite, Node, Spring, Python), the hostname naming rule (never .local, .dev, .app or .localhost) and client trust recipes per runtime. Repos record servers and opt-outs in a tracked .local-https.json.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}

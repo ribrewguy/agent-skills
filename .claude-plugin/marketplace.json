@@ -65,6 +65,11 @@
       "name": "kotlin-practices",
       "source": "./plugins/kotlin-practices",
       "description": "Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability."
+    },
+    {
+      "name": "local-https",
+      "source": "./plugins/local-https",
+      "description": "TLS for every locally run server: mkcert certs at <project>-local, a setup and check tool, a launch guard, a TLS proxy, per-stack recipes and client trust recipes."
     }
   ]
 }
