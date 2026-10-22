@@ -91,7 +91,7 @@ Span status `ERROR` is not an attribute; set it through the span API. A handled 
 
 ## Log records
 
-These are fields of the OTel log data model, filled by the pipeline appender ([Logs](../SKILL.md#logs)), not attributes you add. The structured key-value arguments of the log call become record attributes beside them.
+These are the record's trace-context and severity fields under the names the stack's appender and JSON output use (the log data model's own names are `TraceId`, `SpanId`, `TraceFlags`, `SeverityText`, `SeverityNumber`, `Body`), filled by the pipeline appender ([Logs](../SKILL.md#logs)), not attributes you add. The structured key-value arguments of the log call become record attributes beside them.
 
 | Field | Example | When to set |
 |---|---|---|
@@ -118,9 +118,9 @@ Instrument choice:
 | Instrument | Criterion | Example name | Unit | When to set |
 |---|---|---|---|---|
 | Counter | Counts events; the value only ever increases | `order.placed`, `app.service.calls` | `{order}`, `{call}` | When someone will ask how many, or how often, something happened. |
-| UpDownCounter | Tracks a level the app changes itself, up and down | `order.in_flight` | `{order}` | When the app increments on start and decrements on finish. |
+| UpDownCounter | Tracks an additive level that rises and falls (summing it across instances or attributes is meaningful) | `order.in_flight`, `audit.queue.depth` | `{order}`, `{message}` | When the app increments on start and decrements on finish (`order.in_flight`). When the level is owned elsewhere (a broker queue, a pool), use an observable UpDownCounter read at collection time (`audit.queue.depth`). |
 | Histogram | Records a distribution of measured values | `app.service.duration`, `pricing.quote.duration` | `s` | For durations and sizes, where percentiles matter. |
-| Observable gauge | Samples a current value the app does not own, read in a callback | `audit.queue.depth` | `{message}` | When the value lives elsewhere (a broker, a pool) and is read at collection time. |
+| Observable gauge | A non-additive current value (ratio, temperature) sampled at collection time | `pricing.cache.hit_ratio` | `1` | When summing the value across instances would be meaningless. Being read in a callback makes an instrument asynchronous; it does not make it a gauge. |
 
 The default service metrics fit this table: `app.service.calls` is a Counter with unit `{call}` and `app.service.duration` a Histogram with unit `s`, both with attributes `code.function.name` and `outcome`, both recorded by the Tier 2 wrapper on every public service and repository call.
 

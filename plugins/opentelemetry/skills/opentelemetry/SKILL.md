@@ -103,9 +103,9 @@ The application exports traces, metrics, and logs over **OTLP to a collector**. 
 | Instrument | Use for | Example |
 |---|---|---|
 | Counter | Events that only go up | `order.placed` (`{order}`) |
-| UpDownCounter | Levels that rise and fall | `order.in_flight` (`{order}`) |
+| UpDownCounter | Additive levels that rise and fall; an observable UpDownCounter when the level is owned elsewhere and read at collection time | `order.in_flight` (`{order}`); `audit.queue.depth` (`{message}`) read from the broker |
 | Histogram | Durations and sizes | `pricing.quote.duration` (`s`) |
-| Observable gauge | Sampled values the app does not own | `audit.queue.depth` read from the broker |
+| Observable gauge | A non-additive current value (ratio, temperature) sampled at collection time | `pricing.cache.hit_ratio` (`1`) |
 
 **Naming rules:**
 
