@@ -1,0 +1,9 @@
+{
+  "name": "application-logging",
+  "description": "What an application logs, at which level, and in which shape: level meanings, structured fields instead of interpolation, a never-log denylist for credentials, tokens and personal data, logging an exception once at its handling boundary, a human-readable console appender with a LOG_FORMAT=json switch alongside the OTel pipeline appender, and request-scoped context set once per request.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}
