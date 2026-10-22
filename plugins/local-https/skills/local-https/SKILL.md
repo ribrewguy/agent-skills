@@ -8,7 +8,7 @@ description: "Use whenever starting, configuring, or reviewing a locally run ser
 ## Overview
 
 Every server an agent starts on this machine runs on TLS, with an mkcert
-certificate, bound to the project hostname. Plain `http://localhost:3000` is
+certificate, bound to the project hostname. Plain-http `localhost:3000` is
 how a `Secure` cookie gets dropped and a login "succeeds" and then 401s with no
 visible error, and how a backend ends up called through a trust bypass.
 
@@ -114,7 +114,7 @@ you ask the owner to run them. Full options and output format are in
 launches a server. It blocks `NODE_TLS_REJECT_UNAUTHORIZED=0` anywhere, and in
 a declared repo blocks a launch whose server directory has no cert (the message
 names `local-https copy` in a worktree whose main checkout has one, else
-`setup <dir>`). It warns, never blocks, for undeclared repos, `http://localhost`
+`setup <dir>`). It warns, never blocks, for undeclared repos, plain-http `localhost`
 URLs aimed at a declared port, a `--` that swallows `--port`, a Node launch
 without `NODE_EXTRA_CA_CERTS`, and a stale worktree cert. It never fires on
 tests, builds, installs, `docker compose` or `supabase`. Pattern list and
@@ -178,7 +178,7 @@ skill's step.
 | "The backend is only called by the frontend over loopback" | Its client still needs trust; configure it once now. |
 
 Red flags in a diff: `rejectUnauthorized: false`, `verify=False`, `-k`,
-`http://localhost` or `http://127.0.0.1` in a config or env file, a hostname
+a plain-http `localhost` or `127.0.0.1` URL in a config or env file, a hostname
 ending `.local`, a server option block gated behind an env flag that defaults off.
 
 ## How to present findings
