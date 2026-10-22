@@ -8,7 +8,7 @@ Component tests run the whole app in-process (`@SpringBootTest` on a random port
 
 Metrics on this path go through Micrometer, not an OTel `SdkMeterProvider`, so an `InMemoryMetricReader` would see nothing; the component tests assert on the `MeterRegistry` bean, which holds exactly the meters the OTLP registry exports. `InMemoryMetricReader` applies only to the serverless profile, where Micrometer is bridged into an `SdkMeterProvider`. The integration test then proves the real export: metrics, spans, and logs at a real collector.
 
-Spring Boot switches tracing off in tests unless asked. Boot 3: `@AutoConfigureObservability`. Boot 4: `@AutoConfigureTracing` and `@AutoConfigureMetrics` (Boot 4 split the annotation; confirm the names against the Boot version the project pins).
+Spring Boot switches tracing off in tests unless asked. Boot 3: `@AutoConfigureObservability`. Boot 4: `@AutoConfigureTracing` and `@AutoConfigureMetrics` (Boot 4 split the annotation). The imports below are Boot 3's. Boot 4's modularisation moved the test annotations and `LocalServerPort` into per-technology test modules (`spring-boot-micrometer-tracing-test`, `spring-boot-micrometer-metrics-test`, and the web server test module) under new packages; take the imports from the pinned Boot version rather than these.
 
 The same test class serves `mvc` and `webflux`; only `coroutine hop keeps the parent span` changes its comment (the hop is `withContext(Dispatchers.IO)` in MVC and `subscribeOn(Schedulers.boundedElastic())` in WebFlux).
 
@@ -127,6 +127,9 @@ class TelemetryComponentTest(@Autowired private val meters: MeterRegistry) {
         assertThat(service.attributes.asMap().mapKeys { it.key.key })
             .containsEntry("code.function.name", "fixture.OrderService.getOrder")
             .doesNotContainKey("code.namespace")
+        assertThat(repository.attributes.asMap().mapKeys { it.key.key })
+            .containsEntry("code.function.name", "fixture.OrderRepository.findById")
+            .doesNotContainKey("code.namespace")
     }
 
     @Test
@@ -203,7 +206,8 @@ class TelemetryComponentTest(@Autowired private val meters: MeterRegistry) {
         val job = named("AuditJob.record")
         assertThat(job.parentSpanContext.isValid).isFalse()                          // root span
         assertThat(job.traceId).isNotEqualTo(request.traceId)                       // own trace
-        assertThat(job.links.map { it.spanContext.traceId }).contains(request.traceId) // link back to the request
+        // the link targets the span current at enqueue time (OrderService.getOrder), which is in the request's trace
+        assertThat(job.links.map { it.spanContext.traceId }).contains(request.traceId)
     }
 }
 ```
@@ -252,7 +256,7 @@ class CollectorIntegrationTest {
             .withCopyFileToContainer(MountableFile.forClasspathResource("collector-test.yaml"), "/etc/otelcol-contrib/config.yaml")
             .withCopyToContainer(Transferable.of("", 0b110_110_110), "/out/telemetry.jsonl") // writable by the image's non-root user
             .withExposedPorts(4318)
-            .waitingFor(Wait.forListeningPort())
+            .waitingFor(Wait.forLogMessage(".*Everything is ready.*", 1))
 
         @DynamicPropertySource @JvmStatic
         fun otel(registry: DynamicPropertyRegistry) {

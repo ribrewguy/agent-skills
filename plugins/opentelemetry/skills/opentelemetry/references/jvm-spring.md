@@ -38,12 +38,16 @@ Spring's Micrometer path reads `management.*` properties, not most `OTEL_*` vari
 | `OTEL_EXPORTER_OTLP_ENDPOINT` + `/v1/metrics` | `management.otlp.metrics.export.url` | same |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` + `/v1/logs` | `management.opentelemetry.logging.export.otlp.endpoint` | `management.otlp.logging.endpoint` |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `management.opentelemetry.tracing.export.otlp.transport`, `management.opentelemetry.logging.export.otlp.transport` (`http` or `grpc`) | `management.otlp.tracing.transport`, `management.otlp.logging.transport` |
+| `OTEL_EXPORTER_OTLP_HEADERS` (backend auth) | `management.opentelemetry.tracing.export.otlp.headers.*`, `management.opentelemetry.logging.export.otlp.headers.*`, `management.otlp.metrics.export.headers.*` | `management.otlp.tracing.headers.*`, `management.otlp.logging.headers.*`, `management.otlp.metrics.export.headers.*` |
+| `OTEL_METRIC_EXPORT_INTERVAL` (milliseconds) | `management.otlp.metrics.export.step` (a duration: `60s` is the OTel default) | same |
 | `OTEL_TRACES_SAMPLER` | `management.opentelemetry.tracing.sampler` | none; Boot 3 always uses parent-based ratio sampling |
 | `OTEL_TRACES_SAMPLER_ARG` | `management.tracing.sampling.probability`, default `1.0` here | same |
 | `OTEL_RESOURCE_ATTRIBUTES` | merged into the `Resource` and the OTLP registry; `management.opentelemetry.resource-attributes.*` overrides | same on 3.5 (verify on 3.4, see [Known complexities](#known-complexities)) |
 | (none) | `management.otlp.metrics.export.base-time-unit: seconds`, so `app.service.duration` is in `s` | same |
 
 Boot 4 also maps `OTEL_*` variables onto these properties by itself (`management.opentelemetry.map-environment-variables`, default `true`). The explicit placeholders below make the mapping visible, work identically on Boot 3, and also resolve from test property sources, which is what lets the integration test configure the app through `OTEL_EXPORTER_OTLP_ENDPOINT`. Each endpoint honours the signal-specific variable first, then the general one plus the signal path, then the standard local default.
+
+`OTEL_EXPORTER_OTLP_HEADERS` is a comma-separated `key=value` list and a placeholder cannot split it into a map property. Give each header its own placeholder (`"[authorization]": ${OTLP_AUTHORIZATION:}` under each `headers` key, the value from a secret) in the profile that talks to an authenticated backend, or leave auth to a collector sidecar. Boot 4's own environment mapping may handle the variable directly; check the bound value under `/actuator/configprops` before relying on it. Never put the header value in the file.
 
 **Boot 4.x `application.yaml`:**
 
@@ -121,13 +125,18 @@ import io.opentelemetry.api.trace.StatusCode
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
+import org.aspectj.lang.reflect.MethodSignature
+import org.reactivestreams.Publisher
 import org.springframework.aop.support.AopUtils
+import org.springframework.core.KotlinDetector
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.SignalType
+import reactor.util.context.ContextView
 import java.util.Collections
 import java.util.WeakHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Aspect
 @Component
@@ -145,11 +154,28 @@ class ServiceObservationAspect(
     )
     fun observe(pjp: ProceedingJoinPoint): Any? {
         val type = AopUtils.getTargetClass(pjp.target)
-        val function = "${type.name}.${pjp.signature.name}"
-        val observation = Observation.createNotStarted(DURATION, observations)
-            .contextualName("${type.simpleName}.${pjp.signature.name}")
+        val method = (pjp.signature as MethodSignature).method
+        val function = "${type.name}.${method.name}"
+        val name = "${type.simpleName}.${method.name}"
+        // A suspend fun reaches the aspect as a Mono (Spring AOP adapts coroutines through Reactor).
+        return when {
+            KotlinDetector.isSuspendingFunction(method) || Mono::class.java.isAssignableFrom(method.returnType) ->
+                Mono.deferContextual { ctx -> observeReactive(pjp, ctx, name, function) { Mono.from(it) } }
+            Flux::class.java.isAssignableFrom(method.returnType) ->
+                Flux.deferContextual { ctx -> observeReactive(pjp, ctx, name, function) { Flux.from(it) } }
+            else -> observeBlocking(pjp, name, function)
+        }
+    }
+
+    private fun start(name: String, function: String, parent: Observation?): Observation =
+        Observation.createNotStarted(DURATION, observations)
+            .contextualName(name)
             .lowCardinalityKeyValue(CODE_FUNCTION, function)
+            .parentObservation(parent ?: observations.currentObservation)
             .start()
+
+    private fun observeBlocking(pjp: ProceedingJoinPoint, name: String, function: String): Any? {
+        val observation = start(name, function, parent = null)
         val result = try {
             observation.openScope().use { pjp.proceed() }
         } catch (e: Throwable) {
@@ -157,18 +183,30 @@ class ServiceObservationAspect(
             complete(observation, function, failed = true)
             throw e
         }
-        // A suspend fun reaches the aspect as a Mono (Spring AOP adapts coroutines through Reactor).
-        return when (result) {
-            is Mono<*> -> result
-                .doOnError { fail(observation, it) }
-                .doFinally { complete(observation, function, failed = it == SignalType.ON_ERROR) }
-                .contextWrite { it.put(ObservationThreadLocalAccessor.KEY, observation) }
-            is Flux<*> -> result
-                .doOnError { fail(observation, it) }
-                .doFinally { complete(observation, function, failed = it == SignalType.ON_ERROR) }
-                .contextWrite { it.put(ObservationThreadLocalAccessor.KEY, observation) }
-            else -> result.also { complete(observation, function, failed = false) }
+        complete(observation, function, failed = false)
+        return result
+    }
+
+    // Starts at subscription, not assembly. Subscribes the source inside the observation's scope, so a
+    // coroutine body (started synchronously on Dispatchers.Unconfined) sees this span as current on
+    // every Spring line, not only where PropagationContextElement exists.
+    private fun <P : Publisher<Any?>> observeReactive(
+        pjp: ProceedingJoinPoint, ctx: ContextView, name: String, function: String, wrap: (Publisher<Any?>) -> P,
+    ): P {
+        val observation = start(name, function, ctx.getOrDefault<Observation>(ObservationThreadLocalAccessor.KEY, null))
+        val done = AtomicBoolean(false)
+        @Suppress("UNCHECKED_CAST")
+        val source: Publisher<Any?> = try {
+            observation.openScope().use { pjp.proceed() as Publisher<Any?> }
+        } catch (e: Throwable) {
+            Mono.error(e)
         }
+        val scoped = Publisher<Any?> { subscriber -> observation.openScope().use { source.subscribe(subscriber) } }
+        val observed: Publisher<Any?> = Flux.from(scoped)
+            .doOnError { fail(observation, it) }
+            .doFinally { if (done.compareAndSet(false, true)) complete(observation, function, failed = it == SignalType.ON_ERROR) }
+            .contextWrite { it.put(ObservationThreadLocalAccessor.KEY, observation) }
+        return wrap(observed)
     }
 
     private fun fail(observation: Observation, error: Throwable) {
@@ -206,7 +244,7 @@ Notes:
 
 - `observation.error(e)` makes the bridge record the `exception` event and set `ERROR`. The `recorded` set is what keeps an ancestor Tier 2 span (`OrderService.getOrder` when `OrderRepository.findById` threw) from recording the same exception again; it sets `ERROR` through the OTel API while the observation's scope makes its span current. Ancestors that catch the exception never see it and stay `UNSET`.
 - `DefaultMeterObservationHandler` also tags the timer with `error` (the exception's simple class name or `none`) and registers a long-task timer `app.service.duration.active`. Both are Micrometer's defaults; dashboards read `outcome`. On an ancestor that only set status, the timer's `error` tag stays `none`.
-- The suspend and `Mono` branches rely on Spring AOP handing the aspect a `Mono` for a `suspend fun` (Spring Framework 6.1 and later, with `kotlinx-coroutines-reactor` present) and on automatic context propagation restoring the observation inside the coroutine (Spring 6.2 and later add `PropagationContextElement` in that case). The fixture test `coroutine hop keeps the parent span` is the proof; if it fails on an older Spring, see [Spring MVC](#spring-mvc).
+- The reactive path relies on Spring AOP handing the aspect a `Mono` for a `suspend fun` (it needs `kotlinx-coroutines-reactor` on the classpath). The observation starts when the `Mono` is subscribed, not when it is assembled, and the source is subscribed inside the observation's scope. Spring runs the coroutine on `Dispatchers.Unconfined`, so its body starts synchronously inside that scope, and the service's `Context.current()` captures the service span on Boot 3 and Boot 4 alike ([Spring MVC](#spring-mvc)). On Boot 4 (Spring Framework 7), `PropagationContextElement` additionally restores the observation on every resumption. `done` guards against a second `stop()` when both an error and a cancel arrive. The fixture test `coroutine hop keeps the parent span` is the proof on both lines.
 - The aspect does not cover `AuditJob` (a `@Component`), controllers, or Spring Data repository interfaces, which carry no `@Repository` annotation; add `|| this(org.springframework.data.repository.Repository)` to the pointcut for those.
 
 ## Spring MVC
@@ -215,10 +253,14 @@ Inbound requests get a SERVER span from `ServerHttpObservationFilter`, auto-conf
 
 ```kotlin
 @Component
-class PricingClient(builder: RestClient.Builder, @Value("\${local.server.port:8080}") port: Int) {
-    private val client = builder.baseUrl("http://localhost:$port").build() // injected builder carries the observation registry
+class PricingClient(builder: RestClient.Builder, private val env: Environment) {
+    private val client = builder.build() // the injected builder carries the observation registry
 
-    fun quote(id: String): Price = client.get().uri("/pricing/{id}", id).retrieve().body<Price>()!!
+    // The port is read per call: singletons are built before the embedded server picks its port,
+    // so a constructor-time local.server.port would fall back to a default under RANDOM_PORT.
+    fun quote(id: String): Price =
+        client.get().uri("http://localhost:{port}/pricing/{id}", env.getProperty("local.server.port"), id)
+            .retrieve().body<Price>()!!
 }
 ```
 
@@ -242,7 +284,7 @@ class OrderService(private val orders: OrderRepository, private val pricing: Pri
 }
 ```
 
-`Context.current()` is evaluated inside the service method, so it captures the `OrderService.getOrder` span the aspect made current, and the repository span on the IO thread parents correctly. With `spring.reactor.context-propagation: auto` on Spring 6.2 and later, Spring's own `PropagationContextElement` already restores the observation (and with it the span and MDC) on every resumption; the explicit elements are then redundant but harmless, and they are what keeps an older Spring correct. Any `launch` or `async` in a scope without these elements (an application `CoroutineScope`, `GlobalScope`) starts with no trace context: High.
+`Context.current()` is evaluated when the coroutine body starts, which the aspect arranges to happen inside the `OrderService.getOrder` observation's scope, so it captures that span and the repository span on the IO thread parents correctly. On Boot 3 these explicit elements are required. On Boot 4 (Spring Framework 7) with `spring.reactor.context-propagation: auto`, Spring's own `PropagationContextElement` also restores the observation (and with it the span and MDC) on every resumption; the explicit elements are then redundant but harmless. Any `launch` or `async` in a scope without these elements (an application `CoroutineScope`, `GlobalScope`) starts with no trace context: High.
 
 `ServiceObservationAspect` sees `getOrder` as a `Mono`; the `Mono` branch keeps the span open until the coroutine completes, not until it first suspends.
 
@@ -318,11 +360,13 @@ class AuditJob(private val tracer: Tracer) {   // io.micrometer.tracing.Tracer
 }
 ```
 
-The decorator carries what `context-propagation` accessors hold, chiefly Micrometer's current observation. On Spring older than 6.2, code inside `withContext(Dispatchers.IO + Context.current().asContextElement())` has the OTel context but not the observation thread-local, so the job sees no trigger; enqueue the job before the dispatcher hop there, or upgrade.
+The decorator carries what `context-propagation` accessors hold, chiefly Micrometer's current observation. On Boot 3, code inside `withContext(Dispatchers.IO + Context.current().asContextElement())` has the OTel context but not the observation thread-local (only Spring Framework 7's `PropagationContextElement` restores it), so the decorator snapshots no observation and the job sees no trigger. There, enqueue the job before the dispatcher hop, or upgrade to Boot 4.
+
+The link points at the span that was current when the job was enqueued: `OrderService.getOrder`, which lives in the request's trace. It is not the SERVER span itself; assertions compare the link's trace ID with the request's.
 
 On WebFlux, return `Mono<Void>` and capture `trigger` when `record` is called (assembly runs on the caller's restored context), then build the root span inside `Mono.fromRunnable { ... }`. Capturing at assembly avoids depending on whether a fire-and-forget `subscribe()` carries the caller's context.
 
-**`@Scheduled`: root span, no parent, no link.** Spring instruments scheduled methods as an observation with no parent (Boot 3.2 and later), so nothing to add: the job starts its own trace. Do not invent a link; nothing triggered it.
+**`@Scheduled`: root span, no parent, no link.** Spring instruments scheduled methods as an observation with no parent, so nothing to add: the job starts its own trace. Do not invent a link; nothing triggered it.
 
 ## RabbitMQ with Spring AMQP
 
@@ -336,6 +380,8 @@ spring:
     listener:
       simple:
         observation-enabled: true
+      direct:
+        observation-enabled: true     # when the app uses direct listener containers
 ```
 
 Or in code, for a template or container you build: `rabbitTemplate.setObservationEnabled(true)` and `container.setObservationEnabled(true)`. Build the `RabbitTemplate` from Boot's `RabbitTemplateConfigurer` or inject the auto-configured one, so it carries the `ObservationRegistry`.
@@ -350,7 +396,7 @@ class AuditListener(openTelemetry: OpenTelemetry) {
     @RabbitListener(queues = ["orders.audit"])
     fun onAudit(message: Message) {
         val producer = propagator.extract(Context.root(), message.messageProperties.headers, HeaderGetter)
-        Span.current().addLink(Span.fromContext(producer).spanContext)   // OTel API 1.37 and later
+        Span.current().addLink(Span.fromContext(producer).spanContext)   // Span.addLink after start: needs an OTel API recent enough to have it
         // ... handle the message under the consumer span
     }
 
@@ -430,4 +476,4 @@ The test templates are in a separate file, `references/jvm-spring-tests.md`, lis
 - **Self-invocation.** A call from one method of `OrderService` to another on `this` bypasses the proxy and gets no span. Accept it (it is the same unit of work) or move the callee to its own bean.
 - **Exceptions thrown as singletons.** The aspect's `recorded` set is identity-based; a reused exception instance gets its event only the first time. Do not reuse exception instances.
 - **Server span and the exception.** Spring's server observation records the exception that escapes the handler, so on `GET /orders/boom` both the service span and the server span carry an `exception` event. The error rule accepts this auto-instrumented default.
-- **Not compiled in this reference.** The following are from documentation and memory, to be confirmed by the fixture build: Micrometer `Span.Builder.setNoParent()` and `addLink(Link)`; Spring AOP handing the aspect a `Mono` for a `suspend fun`; the contrib collector image's default config path; `OpenTelemetryMeterRegistry` exporting timers in seconds; HTTP-only Micrometer OTLP registry.
+- **Not compiled in this reference.** The following are from documentation and memory, to be confirmed by the fixture build: the WebFlux `Mono.fromCallable` plus `subscribeOn(Schedulers.boundedElastic())` hop keeping the service span current through automatic propagation; the aspect's subscribe-inside-scope behaviour on Boot 3; Micrometer `Span.Builder.setNoParent()` and `addLink(Link)`; Spring AOP handing the aspect a `Mono` for a `suspend fun`; the contrib collector image's default config path; `OpenTelemetryMeterRegistry` exporting timers in seconds; HTTP-only Micrometer OTLP registry.
