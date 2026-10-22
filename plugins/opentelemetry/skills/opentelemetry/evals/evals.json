@@ -1,0 +1,94 @@
+{
+  "skill_name": "opentelemetry",
+  "evals": [
+    {
+      "id": 0,
+      "name": "greenfield-spring-kotlin",
+      "prompt": "The directory evals/opentelemetry-workspace/fixtures/spring-kotlin is a Kotlin Spring Boot app with two Maven modules, mvc (Web MVC with suspend service functions and an @Async AuditJob) and webflux (Mono-returning services). It has no telemetry. This app must support OpenTelemetry; wire it fully in the mvc module and prove it works. The service name is fixture-spring-kotlin.",
+      "expectations": [
+        "Uses the Micrometer path (Actuator, Micrometer Tracing with the OpenTelemetry bridge, OTLP registry/exporters) rather than the raw OpenTelemetry SDK or the Java agent",
+        "Export is configured only through standard OTEL_* environment variables (placeholders such as ${OTEL_EXPORTER_OTLP_ENDPOINT} in application.yaml); no endpoint or sampler is hard-coded in code",
+        "W3C tracecontext and baggage propagation are configured and both enabled",
+        "Resource attributes service.name, service.version and deployment.environment.name are set from OTEL_SERVICE_NAME and OTEL_RESOURCE_ATTRIBUTES; verification fails (or the agent says it must) if service.name is unset rather than shipping unknown_service",
+        "Service and repository beans get Tier 2 spans through a class-level aspect (ServiceObservationAspect or equivalent) named ClassName.method with code.namespace and code.function.name; no spans on the controller",
+        "The aspect records the default metrics app.service.calls (counter) and app.service.duration (histogram, unit s) with the outcome attribute",
+        "The coroutine hop in the suspend service function keeps the parent span (OpenTelemetry Kotlin context element and MDCContext, or equivalent context propagation)",
+        "The @Async AuditJob runs as its own root span with a span link to the triggering request span, not as a child",
+        "The OpenTelemetry Logback appender is installed alongside a console pattern that includes trace_id and span_id",
+        "Component tests use in-memory span, log record and metric exporters and assert: descendant order of service and repository spans, outbound client span with same-trace server span, coroutine hop keeps parent, log carries trace_id and span_id, default metrics, no ERROR on happy path and one on failure, job link",
+        "Exactly one Testcontainers integration test starts a collector container with the file exporter config and asserts spans, logs and metrics arrived and that a log carries a span's trace ID",
+        "A compose file for local viewing is added, with host ports read from environment variables with standard defaults",
+        "The app is shown to start and serve requests with no collector reachable, or the agent explains the SDK's non-blocking export behaviour",
+        "No library version numbers appear in any instructions or prose outside the project's build file",
+        "The agent does not claim done without running the component and integration tests and reporting their results"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "greenfield-nuxt",
+      "prompt": "The directory evals/opentelemetry-workspace/fixtures/nuxt is a Nuxt 4 app (Nitro node-server preset, Nitro tasks enabled) with OrderService, OrderRepository, PricingClient and an audit task. It has no telemetry. This app must support OpenTelemetry; wire it fully and prove it works. The service name is fixture-nuxt.",
+      "expectations": [
+        "Initialises the OpenTelemetry Node SDK in a --import preload file (for example instrumentation.mjs) loaded before the server, and states why: Nitro plugins load after the HTTP server and database modules are imported, so they cannot patch them",
+        "Export is configured only through standard OTEL_* environment variables; no endpoint or sampler in code; HTTP/protobuf OTLP by default",
+        "W3C tracecontext and baggage propagators are configured; resource carries service.name, service.version and deployment.environment.name, and verification fails if service.name is unset",
+        "A withSpan helper (exported from a server utils module) wraps public methods of services and repositories with span name ClassName.method, code.namespace and code.function.name; no spans on route handlers",
+        "withSpan records app.service.calls and app.service.duration (unit s) with an outcome attribute",
+        "The audit task started with runTask opens its own root span with a span link to the triggering request span",
+        "pino is used with the OpenTelemetry pino instrumentation so log records carry trace_id and span_id, and logs are exported over OTLP; console output stays readable and LOG_FORMAT selects JSON",
+        "The SDK flushes and shuts down on SIGTERM with a bounded timeout",
+        "Batch processors are used on this long-lived server, with export failures not crashing the app",
+        "vitest component tests use in-memory span, log record and metric exporters and assert the same list as the Spring template (parentage order, client span with same-trace server span, async hop keeps parent, log correlation, default metrics, error status rules, job link)",
+        "Exactly one Testcontainers integration test runs a real collector with the file exporter and asserts spans, logs and metrics arrived and that a log carries a span's trace ID",
+        "A compose file for local viewing is added",
+        "No package version numbers appear in instructions or prose outside package.json",
+        "The agent does not claim done without running the tests and reporting their results"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "review-pr-propagation-and-loops",
+      "prompt": "Review this pull request against our observability standards. Server-side TypeScript and Kotlin, OpenTelemetry already wired.\n\n```diff\n+++ server/services/InvoiceService.ts\n+export async function syncInvoices(accountId: string, invoices: Invoice[]) {\n+  const tracer = trace.getTracer('invoices')\n+  for (const inv of invoices) {\n+    const span = tracer.startSpan('invoice.sync')\n+    span.setAttribute('invoice.id', inv.id)\n+    await pushToLedger(inv)\n+    span.end()\n+  }\n+}\n+\n+async function pushToLedger(inv: Invoice) {\n+  const res = await fetch(`${LEDGER_URL}/entries`, {\n+    method: 'POST',\n+    headers: { 'content-type': 'application/json' },\n+    body: JSON.stringify(inv),\n+  })\n+  logger.info(`pushed invoice ${inv.id} status ${res.status}`)\n+}\n\n+++ src/main/kotlin/billing/BillingController.kt\n+@RestController\n+class BillingController(private val billing: BillingService) {\n+    @WithSpan\n+    @GetMapping(\"/billing/{id}\")\n+    fun get(@PathVariable id: String) = billing.find(id)\n+}\n```\n\nThe logger in InvoiceService is the module-level pino instance, not the per-request child logger from the Nitro middleware.",
+      "expectations": [
+        "Flags the hand-built fetch that does not carry trace context headers as High (or Critical if framed as context lost across a process boundary), noting that the ledger side will start a new trace; suggests using the auto-instrumented client or injecting the propagator headers",
+        "Flags the per-item span inside the for loop as High and recommends one span with an item.count attribute (plus a span only around the batch), unless the body is shown to do IO worth individual bars",
+        "Flags the log line as High: it is not correlated (module-level logger instead of the request child logger) and interpolates the invoice id and status into the message instead of passing fields",
+        "Flags @WithSpan on the controller as Low (the server span already covers the handler)",
+        "Notes the span in the loop is never ended on error (no try/finally) or that invoice.id as a span attribute is acceptable while an ID in a span name or metric attribute would not be",
+        "Every finding carries a severity tag from Critical, High, Medium, Low",
+        "Findings cite file and line or hunk and give a concrete fix",
+        "Does not cite the skill by name in the output",
+        "States a clear verdict rather than only a list"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "metrics-design-trap",
+      "prompt": "We are adding metrics to our order service (Spring Boot, Kotlin) so ops can see how it is doing. I was thinking of a counter called orders_total with an order_id label so we can find a specific order, a gauge for how many orders are open right now, and a timer for how long placing an order takes in milliseconds. Give me the metric definitions and the Kotlin code to register them.",
+      "expectations": [
+        "Rejects the order_id attribute (high cardinality) and explains that individual orders are found through traces or logs, not metric attributes",
+        "Renames the counter to orders.placed (dotted lowercase, domain first, no plural noun, no _total suffix) and explains that the backend adds suffixes",
+        "Uses an up-down counter for the open-orders level that rises and falls, rather than a plain counter, and notes a gauge is for sampled values the app does not own",
+        "Records order placement duration as a histogram in seconds (UCUM unit s), not milliseconds, and not a gauge",
+        "Suggests a histogram for order value with a UCUM-appropriate unit if value is measured, or notes the unit must be stated",
+        "Uses only low-cardinality attributes (for example outcome, payment method category), none of which is an ID, email or free text",
+        "Mentions that Tier 2 service methods already emit the default metrics app.service.calls and app.service.duration, so duplicate timers on the same methods are not needed",
+        "Registers the instruments through Micrometer on Spring while keeping OpenTelemetry-style names, and does not hard-code an exporter endpoint"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "nuxt-serverless-preset",
+      "prompt": "Our Nuxt 4 app deploys to a serverless platform (Nitro preset for a Lambda-style runtime, with a variant for an edge runtime). It must support OpenTelemetry. How should I wire it? Give the file layout and code.",
+      "expectations": [
+        "Does not use a batch span or log processor; uses simple processors that export immediately, or calls forceFlush on every signal before the invocation returns, because the process can freeze at any time",
+        "Flushes per invocation (for example in a Nitro afterResponse hook or equivalent) and does not rely on a SIGTERM shutdown hook or a periodic metric reader timer",
+        "States that the --import preload flag is not available on serverless and replaces it with explicit SDK initialisation at module load",
+        "Names which Node auto-instrumentations are unavailable on the edge runtime and gives manual fetch instrumentation or context propagation as the alternative there",
+        "Uses a streaming export path if the platform offers one, or says it checked",
+        "Export still configured only through OTEL_* environment variables with OTLP over HTTP/protobuf; no vendor SDK; W3C propagators on",
+        "Sets service.name, service.version and deployment.environment.name and fails loudly if service.name is missing",
+        "Keeps the app serving requests when the collector is unreachable (short export timeout, errors logged once)"
+      ]
+    }
+  ]
+}

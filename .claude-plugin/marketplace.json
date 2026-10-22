@@ -65,6 +65,16 @@
       "name": "kotlin-practices",
       "source": "./plugins/kotlin-practices",
       "description": "Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability."
+    },
+    {
+      "name": "application-logging",
+      "source": "./plugins/application-logging",
+      "description": "Application logging rules: level meanings, structured fields, a never-log denylist, exception-once at the handling boundary, a readable console appender with a LOG_FORMAT=json switch, and request-scoped context. Composes with opentelemetry, which owns the pipeline appender and trace correlation."
+    },
+    {
+      "name": "opentelemetry",
+      "source": "./plugins/opentelemetry",
+      "description": "OpenTelemetry rules for server apps: OTLP to a collector via OTEL_* variables, W3C propagation, span tiers, default service metrics, log correlation, serverless flush, and verification against a real collector. Composes with application-logging, which owns record content and the console appender."
     }
   ]
 }

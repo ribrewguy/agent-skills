@@ -29,6 +29,8 @@ Other tools (Gemini CLI, Codex CLI, Copilot CLI, Cline, Cursor, Aider) plus the 
 - **[maven-practices](https://ribrewguy.github.io/agent-skills/skills/maven-practices/)**: Reproducible Maven builds and effective lifecycle enforcement across modules, profiles and test JVMs.
 - **[java-practices](https://ribrewguy.github.io/agent-skills/skills/java-practices/)**: Bloch-inspired Java design: immutability, defensive boundaries, small APIs, value contracts and composition, alongside compiler, formatter and analyzer practices.
 - **[kotlin-practices](https://ribrewguy.github.io/agent-skills/skills/kotlin-practices/)**: Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability.
+- **[application-logging](https://ribrewguy.github.io/agent-skills/skills/application-logging/)**: what a server logs, at which level, in which shape. Two appenders (console for humans, OpenTelemetry for the pipeline), fields as arguments, a never-log denylist, exceptions logged once.
+- **[opentelemetry](https://ribrewguy.github.io/agent-skills/skills/opentelemetry/)**: make a server application support OpenTelemetry and prove it. OTLP via `OTEL_*` variables, three span tiers, context propagation, default service metrics, log correlation, serverless flush, verification against a real collector.
 
 Full catalog: **[Skills](https://ribrewguy.github.io/agent-skills/skills/)**.
 
@@ -46,6 +48,19 @@ plugins/                             # canonical skill source (what AI tools loa
     .claude-plugin/plugin.json
     skills/structured-code-review/
       SKILL.md
+      evals/evals.json
+  application-logging/
+    .claude-plugin/plugin.json
+    skills/application-logging/
+      SKILL.md
+      references/
+      evals/evals.json
+  opentelemetry/
+    .claude-plugin/plugin.json
+    skills/opentelemetry/
+      SKILL.md
+      references/
+      assets/
       evals/evals.json
 index.md, install/, concepts/, skills/   # GitHub Pages docs site
 LICENSE                              # MIT

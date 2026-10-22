@@ -1,0 +1,9 @@
+{
+  "name": "opentelemetry",
+  "description": "OpenTelemetry for server applications: OTLP export to a collector configured only by standard OTEL_* environment variables, W3C propagation across every process boundary, three span tiers with class-level service and repository spans, default service metrics, the pipeline log appender with trace correlation, background jobs as linked root spans, serverless flush, and verification against an in-memory exporter and a real collector.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}

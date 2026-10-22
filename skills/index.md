@@ -24,6 +24,8 @@ The catalog. Each skill has its own page with a summary, its key opinions, insta
 - **[maven-practices](maven-practices)**: Reproducible Maven builds and effective lifecycle enforcement across modules, profiles and test JVMs.
 - **[java-practices](java-practices)**: Bloch-inspired Java design: immutability, defensive boundaries, small APIs, value contracts and composition, alongside compiler, formatter and analyzer practices.
 - **[kotlin-practices](kotlin-practices)**: Kotlin JVM targets, ktlint, detekt, coverage and reliable Java interoperability.
+- **[application-logging](application-logging)**: what a server logs, at which level, in which shape. Two appenders (console for humans, OpenTelemetry for the pipeline), fields as arguments, a never-log denylist, exceptions logged once.
+- **[opentelemetry](opentelemetry)**: make a server application support OpenTelemetry and prove it. OTLP via `OTEL_*` variables, three span tiers, context propagation, default service metrics, log correlation, serverless flush, verification against a real collector.
 
 ## How skills are evaluated
 
