@@ -99,23 +99,23 @@ check_ca_trusted() {
 check_cert() { FIX=""; [ -f "$CERT" ] || FIX="$SETUP_FIX"; }
 check_key()  { FIX=""; [ -f "$KEY" ]  || FIX="$SETUP_FIX"; }
 
-CERT_FACTS=""
-cert_facts() { # cached cert.py output; empty when no readable cert
-  [ -n "$CERT_FACTS" ] || { [ -f "$CERT" ] && CERT_FACTS=$(python3 "$LIB/cert.py" "$CERT" "$SANS_CSV" 2>/dev/null); } || true
-  printf '%s' "$CERT_FACTS"
+CERT_FACTS="" CERT_FACTS_LOADED=0
+load_cert_facts() { # cert.py output, read once; empty when no readable cert
+  [ $CERT_FACTS_LOADED = 1 ] && return; CERT_FACTS_LOADED=1
+  [ -f "$CERT" ] && CERT_FACTS=$(python3 "$LIB/cert.py" "$CERT" "$SANS_CSV" 2>/dev/null) || CERT_FACTS=""
 }
-cert_fact() { cert_facts | sed -n "s/^$1=//p"; }
+cert_fact() { printf '%s\n' "$CERT_FACTS" | sed -n "s/^$1=//p"; }
 
 check_sans() {
-  FIX=""
-  [ -n "$(cert_facts)" ] || { FIX="$SETUP_FIX"; return; }
+  FIX=""; load_cert_facts
+  [ -n "$CERT_FACTS" ] || { FIX="$SETUP_FIX"; return; }
   local missing; missing=$(cert_fact missing)
   [ -z "$missing" ] || FIX="$missing: $SETUP_FIX"
 }
 
 check_expiry() {
-  FIX=""
-  [ -n "$(cert_facts)" ] || { FIX="$SETUP_FIX"; return; }
+  FIX=""; load_cert_facts
+  [ -n "$CERT_FACTS" ] || { FIX="$SETUP_FIX"; return; }
   local days; days=$(cert_fact days_left)
   [ "$days" -ge "$EXPIRY_MIN_DAYS" ] || FIX="expires $(cert_fact not_after): $SETUP_FIX"
 }
