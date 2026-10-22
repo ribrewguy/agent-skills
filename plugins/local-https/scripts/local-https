@@ -1,0 +1,205 @@
+#!/usr/bin/env bash
+# local-https — every locally launched server runs on TLS with mkcert certs.
+#
+#   local-https setup [dir] [--dry-run] [--jvm]   mint/refresh <dir>/.cert/, declare the server
+#   local-https check [dir] [--ignore a,b]        OK/MISSING per item; exit 0 only if nothing MISSING
+#
+# Reads the repo's .local-https.json when present, else derives project and
+# host (<project>-local) from the repo directory name. dir defaults to the
+# current directory and names the server whose .cert/ is minted or checked.
+#
+# This tool never edits /etc/hosts or the shell profile and never copies
+# rootCA-key.pem: steps that need the owner are printed prefixed OWNER:.
+
+set -euo pipefail
+
+die()  { printf 'local-https: %s\n' "$*" >&2; exit 1; }
+note() { printf 'local-https: %s\n' "$*"; }
+
+LIB="$(cd "$(dirname "$0")" && pwd)/lib"
+HOSTS_FILE=/etc/hosts
+CHECK_ITEMS="mkcert ca-trusted cert key sans expiry hosts-v4 hosts-v6 node-ca"
+EXPIRY_MIN_DAYS=30
+
+# ------------------------------------------------------------------ args
+cmd=${1:-help}; [ $# -gt 0 ] && shift
+DIR_ARG="" DRY_RUN=0 JVM=0 IGNORE=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run) DRY_RUN=1 ;;
+    --jvm)     JVM=1 ;;
+    --ignore)  [ $# -ge 2 ] || die "--ignore needs a comma-separated item list"; IGNORE=$2; shift ;;
+    -*)        die "unknown option $1" ;;
+    *)         [ -z "$DIR_ARG" ] || die "only one dir allowed"; DIR_ARG=$1 ;;
+  esac
+  shift
+done
+
+case "$cmd" in setup|check) ;; *) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+
+# ------------------------------------------------------------ repo facts
+DIR_ABS=$(cd "${DIR_ARG:-.}" 2>/dev/null && pwd -P) || die "no such directory: ${DIR_ARG:-.}"
+REPO_ROOT=$(git -C "$DIR_ABS" rev-parse --show-toplevel 2>/dev/null) || die "not inside a git repository: $DIR_ABS"
+REPO_ROOT=$(cd "$REPO_ROOT" && pwd -P)
+case "$DIR_ABS/" in "$REPO_ROOT"/*) ;; *) die "$DIR_ABS is outside $REPO_ROOT" ;; esac
+SERVER_DIR=${DIR_ABS#"$REPO_ROOT"}; SERVER_DIR=${SERVER_DIR#/}; SERVER_DIR=${SERVER_DIR:-.}
+
+# Declaration facts (validated). decl.py exits 3 with INVALID lines; pass both through.
+load_decl() { # load_decl [--write]
+  local out rc=0 key val
+  out=$(python3 "$LIB/decl.py" "$REPO_ROOT" --server "$SERVER_DIR" "$@") || rc=$?
+  if [ $rc = 3 ]; then printf '%s\n' "$out"; exit 3; fi
+  [ $rc = 0 ] || die "decl.py failed ($rc)"
+  while IFS='=' read -r key val; do
+    case "$key" in
+      declared) DECLARED=$val ;;      project) PROJECT=$val ;;   host) HOST=$val ;;
+      server_https) SERVER_HTTPS=$val ;; server_reason) SERVER_REASON=$val ;;
+      sans) SANS_CSV=$val ;;          subdomains) SUBS_CSV=$val ;;
+    esac
+  done <<<"$out"
+}
+load_decl
+
+CERT_DIR="$DIR_ABS/.cert"
+CERT="$CERT_DIR/$PROJECT.pem"
+KEY="$CERT_DIR/$PROJECT-key.pem"
+P12="$CERT_DIR/$PROJECT.p12"
+SETUP_FIX="local-https setup $SERVER_DIR"
+HOST_NAMES="$HOST${SUBS_CSV:+ $(printf '%s' "$SUBS_CSV" | tr ',' '\n' | sed "s/\$/.$HOST/" | tr '\n' ' ' | sed 's/ $//')}"
+
+caroot_pem() { printf '%s/rootCA.pem' "$(mkcert -CAROOT)"; }
+
+if [ "$SERVER_HTTPS" = false ]; then
+  note "$SERVER_DIR is declared https:false ($SERVER_REASON); nothing to $cmd"
+  exit 0
+fi
+
+# ------------------------------------------------- per-item check functions
+# Each sets FIX: empty when OK, else "<detail: >fix command".
+check_mkcert() { FIX=""; command -v mkcert >/dev/null 2>&1 || FIX="install mkcert (macOS: brew install mkcert; Linux: your package manager)"; }
+
+check_ca_trusted() {
+  FIX=""
+  command -v mkcert >/dev/null 2>&1 || { FIX="install mkcert, then: mkcert -install"; return; }
+  if [ "$(uname -s)" = Darwin ]; then
+    security find-certificate -c "mkcert" /Library/Keychains/System.keychain >/dev/null 2>&1 \
+      || security find-certificate -c "mkcert" >/dev/null 2>&1 \
+      || FIX="mkcert -install"
+  else
+    local root fp f
+    root=$(caroot_pem)
+    fp=$(openssl x509 -in "$root" -noout -fingerprint -sha256 2>/dev/null) || { FIX="mkcert -install"; return; }
+    for f in /etc/ssl/certs/*; do
+      [ "$(openssl x509 -in "$f" -noout -fingerprint -sha256 2>/dev/null)" = "$fp" ] && return
+    done
+    FIX="mkcert -install"
+  fi
+}
+
+check_cert() { FIX=""; [ -f "$CERT" ] || FIX="$SETUP_FIX"; }
+check_key()  { FIX=""; [ -f "$KEY" ]  || FIX="$SETUP_FIX"; }
+
+CERT_FACTS=""
+cert_facts() { # cached cert.py output; empty when no readable cert
+  [ -n "$CERT_FACTS" ] || { [ -f "$CERT" ] && CERT_FACTS=$(python3 "$LIB/cert.py" "$CERT" "$SANS_CSV" 2>/dev/null); } || true
+  printf '%s' "$CERT_FACTS"
+}
+cert_fact() { cert_facts | sed -n "s/^$1=//p"; }
+
+check_sans() {
+  FIX=""
+  [ -n "$(cert_facts)" ] || { FIX="$SETUP_FIX"; return; }
+  local missing; missing=$(cert_fact missing)
+  [ -z "$missing" ] || FIX="$missing: $SETUP_FIX"
+}
+
+check_expiry() {
+  FIX=""
+  [ -n "$(cert_facts)" ] || { FIX="$SETUP_FIX"; return; }
+  local days; days=$(cert_fact days_left)
+  [ "$days" -ge "$EXPIRY_MIN_DAYS" ] || FIX="expires $(cert_fact not_after): $SETUP_FIX"
+}
+
+hosts_line() { printf '%s %s' "$1" "$HOST_NAMES"; }
+
+check_hosts() { # check_hosts <ip>: every name on a non-comment line for <ip>
+  FIX=""
+  local ip=$1 name names
+  names=$(sed 's/#.*//' "$HOSTS_FILE" 2>/dev/null | awk -v ip="$ip" '$1 == ip { for (i = 2; i <= NF; i++) print $i }')
+  for name in $HOST_NAMES; do
+    grep -qixF "$name" <<<"$names" || { FIX="echo '$(hosts_line "$ip")' | sudo tee -a $HOSTS_FILE"; return; }
+  done
+}
+check_hosts_v4() { check_hosts 127.0.0.1; }
+check_hosts_v6() { check_hosts ::1; }
+
+check_node_ca() {
+  FIX=""
+  command -v mkcert >/dev/null 2>&1 || { FIX="install mkcert, then add to your shell profile: export NODE_EXTRA_CA_CERTS=\"\$(mkcert -CAROOT)/rootCA.pem\""; return; }
+  [ "${NODE_EXTRA_CA_CERTS:-}" = "$(caroot_pem)" ] \
+    || FIX="add to your shell profile: export NODE_EXTRA_CA_CERTS=\"\$(mkcert -CAROOT)/rootCA.pem\""
+}
+
+run_check() { # run_check <item>; sets FIX
+  case "$1" in
+    mkcert) check_mkcert ;;   ca-trusted) check_ca_trusted ;;
+    cert) check_cert ;;       key) check_key ;;
+    sans) check_sans ;;       expiry) check_expiry ;;
+    hosts-v4) check_hosts_v4 ;; hosts-v6) check_hosts_v6 ;;
+    node-ca) check_node_ca ;;
+  esac
+}
+
+case "$cmd" in
+
+# ------------------------------------------------------------------- setup
+setup)
+  SANS=$(printf '%s' "$SANS_CSV" | tr ',' ' ')
+  note "project: $PROJECT   host: $HOST   server: $SERVER_DIR"
+  note "cert: ${CERT#"$REPO_ROOT"/}"
+  note "key:  ${KEY#"$REPO_ROOT"/}"
+  [ $JVM = 1 ] && note "p12:  ${P12#"$REPO_ROOT"/} (password: changeit)"
+  note "SANs: $SANS"
+  grep -qxE '\.cert/?' "$REPO_ROOT/.gitignore" 2>/dev/null || note "will append .cert/ to .gitignore"
+  [ "$DECLARED" = 1 ] || note "will write .local-https.json (servers: $SERVER_DIR)"
+
+  if [ $DRY_RUN = 1 ]; then
+    note "dry-run: no files written"
+  else
+    command -v mkcert >/dev/null 2>&1 || die "mkcert not on PATH — install mkcert (macOS: brew install mkcert)"
+    mkdir -p "$CERT_DIR"
+    # mkcert is chatty; its output is shown only when it fails.
+    # shellcheck disable=SC2086 # SANS is a deliberate word list
+    out=$(cd "$DIR_ABS" && mkcert -cert-file ".cert/$PROJECT.pem" -key-file ".cert/$PROJECT-key.pem" $SANS 2>&1) \
+      || { printf '%s\n' "$out" >&2; die "mkcert failed"; }
+    if [ $JVM = 1 ]; then
+      # shellcheck disable=SC2086
+      out=$(cd "$DIR_ABS" && mkcert -pkcs12 -p12-file ".cert/$PROJECT.p12" $SANS 2>&1) \
+        || { printf '%s\n' "$out" >&2; die "mkcert -pkcs12 failed"; }
+    fi
+    if ! grep -qxE '\.cert/?' "$REPO_ROOT/.gitignore" 2>/dev/null; then
+      [ ! -s "$REPO_ROOT/.gitignore" ] || [ -z "$(tail -c1 "$REPO_ROOT/.gitignore")" ] || echo >> "$REPO_ROOT/.gitignore"
+      echo '.cert/' >> "$REPO_ROOT/.gitignore"
+    fi
+    [ "$DECLARED" = 1 ] || load_decl --write
+    note "cert ready for $SERVER_DIR"
+  fi
+
+  for item in hosts-v4 hosts-v6 ca-trusted node-ca; do
+    run_check "$item"
+    [ -z "$FIX" ] || echo "OWNER: $FIX"
+  done
+  ;;
+
+# ------------------------------------------------------------------- check
+check)
+  missing=0
+  for item in $CHECK_ITEMS; do
+    case ",$IGNORE," in *",$item,"*) echo "SKIP $item"; continue ;; esac
+    run_check "$item"
+    if [ -z "$FIX" ]; then echo "OK $item"
+    else echo "MISSING $item: $FIX"; missing=1; fi
+  done
+  exit $missing
+  ;;
+esac
