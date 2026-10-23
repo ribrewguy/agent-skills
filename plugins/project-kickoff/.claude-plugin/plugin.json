@@ -1,0 +1,9 @@
+{
+  "name": "project-kickoff",
+  "description": "Kick off a project the same way every time: git on main, Beads with bd init --skip-agents, cass-memory, byte-identical CLAUDE.md and AGENTS.md, a documentation tree (business-only PRD, technical decision register with required/selected/proposed/unresolved statuses, vendor-neutral architecture, feature designs, research, each directory indexed), a portable documentation checker and a pre-commit gate. Ships the project-kickoff tool (preflight, init, write, gate, seed, commit, all, each writing step with --dry-run) that checks before every write and reports OK/KEEP/WRITE/RUN/SKIP/ASK/FAIL, so rerunning it or running it in an existing project reports gaps and fills them without overwriting anything. Enforces no dates in filenames, open decisions tracked in Beads under an epic, and review records kept out of source control.",
+  "version": "0.1.0",
+  "author": {
+    "name": "ribrewguy"
+  },
+  "homepage": "https://github.com/ribrewguy/agent-skills"
+}
