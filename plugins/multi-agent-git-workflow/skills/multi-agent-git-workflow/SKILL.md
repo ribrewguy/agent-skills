@@ -417,11 +417,9 @@ use orchestrator acceptance; parent merges into `develop` still require user acc
 Neither grants permission to discard unrelated work. Single-agent cleanup likewise
 happens in the same close-out as its accepted merge into `develop`.
 
-Prefer committed worker branches and normal merges over copying uncommitted files.
-If changes were transferred another way, verify and record their incorporation first.
+Prefer normal worker merges over copying files; otherwise verify and record incorporation first.
 
 Tear down in this order:
-
 1. Verify the branch is fully integrated into its designated target. Inspect
    staged, unstaged, untracked and relevant ignored files; preserve any work or
    local data that has not been incorporated. Never force-remove a dirty
