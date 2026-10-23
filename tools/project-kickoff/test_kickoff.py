@@ -292,5 +292,106 @@ class InitTests(unittest.TestCase):
         self.assertTrue((self.sb.root / ".git").is_dir())
 
 
+def sha(path: Path) -> str:
+    import hashlib
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+class WriteTests(unittest.TestCase):
+    def setUp(self):
+        self.sb = Sandbox()
+        self.addCleanup(self.sb.cleanup)
+        self.sb.git("init", "-q")
+
+    def write(self, parent="auto", name="demo-app"):
+        return kickoff.write(self.sb.root, name, "A demo.", parent, dry_run=False)
+
+    def test_fresh_write_creates_everything(self):
+        report = self.write()
+        self.assertEqual(0, report.status, report.lines)
+        root = self.sb.root
+        self.assertEqual((root / "CLAUDE.md").read_bytes(), (root / "AGENTS.md").read_bytes())
+        for rel in kickoff.DOC_PATHS("demo-app"):
+            self.assertTrue((root / rel).is_file(), rel)
+        for script in ("check_docs.py", "test_check_docs.py"):
+            self.assertEqual((root / "scripts" / script).read_bytes(), (kickoff.ASSETS / script).read_bytes())
+        ignore = (root / ".gitignore").read_text().splitlines()
+        for line in kickoff.GITIGNORE_LINES:
+            self.assertEqual(1, ignore.count(line), line)
+        self.assertNotIn("## Parent instructions", (root / "CLAUDE.md").read_text())
+
+    def test_parent_section_when_parent_agents_exists(self):
+        (self.sb.parent / "AGENTS.md").write_text("# parent\n")
+        self.write()
+        text = (self.sb.root / "CLAUDE.md").read_text()
+        self.assertIn("## Parent instructions", text)
+        self.assertIn("../AGENTS.md", text)
+
+    def test_parent_flag_no_overrides_detection(self):
+        (self.sb.parent / "AGENTS.md").write_text("# parent\n")
+        self.write(parent="no")
+        self.assertNotIn("## Parent instructions", (self.sb.root / "CLAUDE.md").read_text())
+
+    def test_parent_flag_yes_without_parent_fails(self):
+        report = self.write(parent="yes")
+        self.assertEqual(1, report.status, report.lines)
+
+    def test_write_is_idempotent(self):
+        self.write()
+        files = sorted(p for p in self.sb.root.rglob("*") if p.is_file() and ".git/" not in str(p))
+        before = {p: sha(p) for p in files}
+        report = self.write()
+        self.assertNotIn("WRITE", report.kinds(), report.lines)
+        self.assertEqual(before, {p: sha(p) for p in files})
+
+    def test_asks_when_instruction_files_differ(self):
+        (self.sb.root / "CLAUDE.md").write_text("one\n")
+        (self.sb.root / "AGENTS.md").write_text("two\n")
+        report = self.write()
+        self.assertEqual(2, report.status, report.lines)
+        self.assertEqual("one\n", (self.sb.root / "CLAUDE.md").read_text())
+        self.assertEqual("two\n", (self.sb.root / "AGENTS.md").read_text())
+        self.assertTrue((self.sb.root / "docs/research/README.md").is_file())
+
+    def test_asks_when_only_one_instruction_file_exists(self):
+        (self.sb.root / "AGENTS.md").write_text("only\n")
+        report = self.write()
+        self.assertEqual(2, report.status, report.lines)
+        self.assertFalse((self.sb.root / "CLAUDE.md").exists())
+
+    def test_keeps_identical_existing_instruction_files(self):
+        for name in ("CLAUDE.md", "AGENTS.md"):
+            (self.sb.root / name).write_text("custom\n")
+        report = self.write()
+        self.assertEqual(0, report.status, report.lines)
+        self.assertEqual("custom\n", (self.sb.root / "CLAUDE.md").read_text())
+
+    def test_keeps_differing_checker(self):
+        (self.sb.root / "scripts").mkdir()
+        (self.sb.root / "scripts/check_docs.py").write_text("# mine\n")
+        report = self.write()
+        self.assertTrue(any(line.startswith("KEEP scripts/check_docs.py") and "differs" in line for line in report.lines), report.lines)
+        self.assertEqual("# mine\n", (self.sb.root / "scripts/check_docs.py").read_text())
+
+    def test_rejects_invalid_name(self):
+        report = self.write(name="Demo App")
+        self.assertEqual(1, report.status)
+        self.assertFalse((self.sb.root / "CLAUDE.md").exists())
+
+    def test_dry_run_writes_nothing(self):
+        report = kickoff.write(self.sb.root, "demo-app", "A demo.", "auto", dry_run=True)
+        self.assertFalse((self.sb.root / "CLAUDE.md").exists())
+        self.assertFalse((self.sb.root / "docs").exists())
+        self.assertIn("WRITE", report.kinds())
+
+    def test_generated_project_passes_its_own_checker(self):
+        self.write()
+        self.sb.git("add", "-A")
+        for cmd in (["python3", "scripts/check_docs.py"],
+                    ["python3", "-m", "unittest", "discover", "-s", "scripts", "-p", "test_*.py"]):
+            result = subprocess.run(cmd, cwd=self.sb.root, env=self.sb.env, capture_output=True, text=True)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
