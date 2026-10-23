@@ -519,5 +519,128 @@ class SeedTests(unittest.TestCase):
         self.assertEqual(UNRESOLVED, kickoff.unresolved_rows(register))
 
 
+TRAILER = "Co-Authored-By: Example Agent <agent@example.com>"
+LAUNCHER = REPO / "plugins/project-kickoff/scripts/project-kickoff"
+
+
+class CommitTests(unittest.TestCase):
+    def setUp(self):
+        self.sb = Sandbox()
+        self.addCleanup(self.sb.cleanup)
+        kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        kickoff.write(self.sb.root, "demo-app", "A demo.", "auto", dry_run=False)
+
+    def test_commits_everything_with_message_and_trailer(self):
+        kickoff.seed(self.sb.root, "demo-app", dry_run=False)
+        report = kickoff.commit(self.sb.root, "demo-app", [TRAILER], dry_run=False)
+        self.assertEqual(0, report.status, report.lines)
+        self.assertEqual("chore: kick off demo-app", self.sb.git("log", "-1", "--format=%s").strip())
+        self.assertIn(TRAILER, self.sb.git("log", "-1", "--format=%b"))
+        self.assertEqual("", self.sb.git("status", "--porcelain"))
+
+    def test_nothing_to_commit_is_ok(self):
+        kickoff.commit(self.sb.root, "demo-app", [], dry_run=False)
+        report = kickoff.commit(self.sb.root, "demo-app", [], dry_run=False)
+        self.assertEqual(0, report.status, report.lines)
+        self.assertTrue(any("nothing to commit" in line for line in report.lines), report.lines)
+        self.assertEqual("1", self.sb.git("rev-list", "--count", "HEAD").strip())
+
+    def test_fails_when_checker_fails(self):
+        dated = self.sb.root / "docs/specs/2026-01-01-x.md"
+        dated.parent.mkdir()
+        dated.write_text("# dated\n")
+        report = kickoff.commit(self.sb.root, "demo-app", [], dry_run=False)
+        self.assertEqual(1, report.status, report.lines)
+        self.assertNotEqual(0, subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.sb.root, env=self.sb.env,
+                                              capture_output=True).returncode)
+
+    def test_warns_about_placeholder(self):
+        report = kickoff.commit(self.sb.root, "demo-app", [], dry_run=False)   # no seed ran
+        self.assertEqual(0, report.status, report.lines)
+        self.assertTrue(any(kickoff.PLACEHOLDER in line and "README.md" in line for line in report.lines), report.lines)
+
+    def test_dry_run_does_not_commit(self):
+        report = kickoff.commit(self.sb.root, "demo-app", [], dry_run=True)
+        self.assertNotEqual(0, subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.sb.root, env=self.sb.env,
+                                              capture_output=True).returncode)
+        self.assertTrue(any(line.startswith("RUN git commit") for line in report.lines), report.lines)
+
+
+class AllAndCliTests(unittest.TestCase):
+    def setUp(self):
+        self.sb = Sandbox()
+        self.addCleanup(self.sb.cleanup)
+
+    def cli(self, *args: str, cwd: Path | None = None) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, str(LAUNCHER), *args], cwd=cwd or self.sb.root, env=self.sb.env,
+                              capture_output=True, text=True)
+
+    def all_args(self, *extra: str) -> tuple:
+        return ("all", "--dir", str(self.sb.root), "--home", str(self.sb.home), "--purpose", "A demo.",
+                "--trailer", TRAILER, *extra)
+
+    def check_fresh(self, expect_parent: bool) -> None:
+        root = self.sb.root
+        self.assertEqual((root / "CLAUDE.md").read_bytes(), (root / "AGENTS.md").read_bytes())
+        self.assertEqual(expect_parent, "## Parent instructions" in (root / "CLAUDE.md").read_text())
+        for rel in kickoff.DOC_PATHS("demo-app"):
+            self.assertTrue((root / rel).is_file(), rel)
+        self.assertTrue((root / ".cass/playbook.yaml").is_file())
+        self.assertIn(kickoff.GATE_MARKER, (root / kickoff.HOOK).read_text())
+        self.assertEqual("1", self.sb.git("rev-list", "--count", "HEAD").strip())
+        self.assertNotIn(kickoff.PLACEHOLDER, (root / "README.md").read_text())
+        self.assertEqual(0, subprocess.run(["python3", "scripts/check_docs.py"], cwd=root, env=self.sb.env,
+                                           capture_output=True).returncode)
+
+    def test_all_fresh_under_parent(self):
+        (self.sb.parent / "AGENTS.md").write_text("# parent\n")
+        result = self.cli(*self.all_args())
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.check_fresh(expect_parent=True)
+
+    def test_all_without_parent(self):
+        result = self.cli(*self.all_args())
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.check_fresh(expect_parent=False)
+
+    def test_all_dry_run_touches_nothing(self):
+        sb = Sandbox(beads_skill=False); self.addCleanup(sb.cleanup); self.sb = sb
+        result = self.cli(*self.all_args("--dry-run"))
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual([], list(sb.root.iterdir()))
+        self.assertIn("RUN git init", result.stdout)
+        self.assertIn("WRITE CLAUDE.md", result.stdout)
+        self.assertEqual("", sb.logged("npx"))
+
+    def test_all_rerun_is_quiet(self):
+        self.cli(*self.all_args())
+        creates_before = self.sb.logged("bd").count("create ")
+        result = self.cli(*self.all_args())
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertNotIn("WRITE ", result.stdout)
+        self.assertEqual("1", self.sb.git("rev-list", "--count", "HEAD").strip())
+        self.assertEqual(creates_before, self.sb.logged("bd").count("create "))
+
+    def test_all_stops_at_ask(self):
+        self.sb.git("init", "-q")
+        hook = self.sb.root / ".git/hooks/pre-commit"
+        hook.write_text("#!/bin/sh\nexit 0\n")
+        result = self.cli(*self.all_args())
+        self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+        self.assertIn("ASK ", result.stdout)
+        self.assertFalse((self.sb.root / ".beads").exists())
+        self.assertFalse((self.sb.root / "CLAUDE.md").exists())
+
+    def test_cli_requires_purpose_for_write(self):
+        result = self.cli("write", "--dir", str(self.sb.root))
+        self.assertEqual(2, result.returncode)
+        self.assertIn("--purpose", result.stderr)
+
+    def test_cli_defaults_name_to_directory_slug(self):
+        result = self.cli("init", "--dir", str(self.sb.root), "--dry-run")
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("--prefix demo-app", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+"""project-kickoff — stand up a project the owner's way, idempotently.
+
+  project-kickoff preflight [--dir D] [--dry-run]
+  project-kickoff init      [--dir D] [--name N] [--dry-run]
+  project-kickoff write     [--dir D] [--name N] --purpose P [--parent auto|yes|no] [--dry-run]
+  project-kickoff gate      [--dir D] [--dry-run]
+  project-kickoff seed      [--dir D] [--name N] [--dry-run]
+  project-kickoff commit    [--dir D] [--name N] [--trailer LINE]... [--dry-run]
+  project-kickoff all       [--dir D] [--name N] --purpose P [--parent ...] [--trailer LINE]... [--dry-run]
+
+Prints one line per fact or action: OK, KEEP, WRITE, RUN, SKIP, ASK, FAIL.
+Exit 0 when nothing needs the owner; 2 when an ASK line needs a decision; 1 on FAIL.
+"""
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import kickoff  # noqa: E402
+
+if __name__ == "__main__":
+    sys.exit(kickoff.main(sys.argv[1:]))

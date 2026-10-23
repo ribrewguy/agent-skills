@@ -448,3 +448,100 @@ def seed(root: Path, name: str, dry_run: bool) -> Report:
     if not dry_run and (root / "CLAUDE.md").is_file() and (root / "AGENTS.md").is_file():
         (root / "AGENTS.md").write_bytes((root / "CLAUDE.md").read_bytes())
     return report
+
+
+# -------------------------------------------------------------------- commit
+def commit(root: Path, name: str, trailers: list, dry_run: bool) -> Report:
+    report = Report()
+    if _name_error(name, report):
+        return report
+    root = root.resolve()
+    findings = _checker_findings(root)
+    if findings:
+        for finding in findings:
+            report.add("FAIL", f"check_docs: {finding}")
+        return report
+    report.add("OK", "check_docs passes")
+    if (root / "scripts/test_check_docs.py").is_file():
+        tests = run(["python3", "-m", "unittest", "discover", "-s", "scripts", "-p", "test_*.py"], root)
+        if tests.returncode != 0:
+            report.add("FAIL", f"checker tests: {_tail(tests.stderr or tests.stdout)}")
+            return report
+        report.add("OK", "checker tests pass")
+    run(["git", "add", "-A"], root)
+    if not run(["git", "status", "--porcelain"], root).stdout.strip():
+        report.add("OK", "nothing to commit")
+        return report
+    message = f"chore: kick off {name}\n" + ("\n" + "\n".join(trailers) + "\n" if trailers else "")
+    report.add("RUN", f"git commit -m 'chore: kick off {name}'" + (f" (+{len(trailers)} trailer lines)" if trailers else ""))
+    if dry_run:
+        run(["git", "reset", "-q"], root)
+        return report
+    result = run(["git", "commit", "-q", "-F", "-"], root, stdin=message)
+    if result.returncode != 0:
+        report.add("FAIL", f"git commit: {_tail(result.stderr or result.stdout)}")
+        return report
+    report.add("OK", f"committed {run(['git', 'rev-parse', '--short', 'HEAD'], root).stdout.strip()}")
+    leftover = [rel for rel in PLACEHOLDER_FILES if (root / rel).is_file() and PLACEHOLDER in (root / rel).read_text()]
+    if leftover:
+        report.add("SKIP", f"{PLACEHOLDER} remains in {', '.join(leftover)}; run seed once bd is available, then commit again")
+    return report
+
+
+# ----------------------------------------------------------------------- all
+def all_steps(root: Path, home: Path, name: str, purpose: str, parent: str, trailers: list, dry_run: bool) -> Report:
+    report = Report()
+    steps = [
+        lambda: preflight(root, home, dry_run),
+        lambda: init(root, name, dry_run),
+        lambda: write(root, name, purpose, parent, dry_run),
+        lambda: gate(root, dry_run),
+        lambda: seed(root, name, dry_run),
+        lambda: commit(root, name, trailers, dry_run),
+    ]
+    for step in steps:
+        if dry_run and step is steps[3]:
+            # Nothing exists yet on a dry run; gate and seed would only report missing inputs.
+            report.add("RUN", "gate, seed and commit follow once the files above exist")
+            break
+        part = step()
+        report.extend(part)
+        if part.status != 0:
+            break
+    return report
+
+
+# ----------------------------------------------------------------------- cli
+def main(argv: list) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="project-kickoff",
+                                     description="Stand up a project: git, Beads, cass-memory, identical instruction files, the documentation tree, checker and gate.")
+    parser.add_argument("step", choices=["preflight", "init", "write", "gate", "seed", "commit", "all"])
+    parser.add_argument("--dir", default=".", help="project directory (default: current directory)")
+    parser.add_argument("--name", help="project name and Beads prefix (default: slug of the directory name)")
+    parser.add_argument("--purpose", help="one sentence for README.md and the PRD (required by write and all)")
+    parser.add_argument("--parent", choices=["auto", "yes", "no"], default="auto",
+                        help="parent instructions one level up: auto-detect, require, or ignore")
+    parser.add_argument("--trailer", action="append", default=[], metavar="LINE", help="trailer line for the kickoff commit (repeatable)")
+    parser.add_argument("--home", default=str(Path.home()), help=argparse.SUPPRESS)
+    parser.add_argument("--dry-run", action="store_true", help="report what would happen; write nothing")
+    args = parser.parse_args(argv)
+
+    root = Path(args.dir).resolve()
+    name = args.name or slug(root.name)
+    if args.step in ("write", "all") and not args.purpose:
+        parser.error(f"{args.step} requires --purpose")
+    home = Path(args.home)
+    dispatch = {
+        "preflight": lambda: preflight(root, home, args.dry_run),
+        "init": lambda: init(root, name, args.dry_run),
+        "write": lambda: write(root, name, args.purpose, args.parent, args.dry_run),
+        "gate": lambda: gate(root, args.dry_run),
+        "seed": lambda: seed(root, name, args.dry_run),
+        "commit": lambda: commit(root, name, args.trailer, args.dry_run),
+        "all": lambda: all_steps(root, home, name, args.purpose, args.parent, args.trailer, args.dry_run),
+    }
+    report = dispatch[args.step]()
+    print("\n".join(report.lines))
+    return report.status
