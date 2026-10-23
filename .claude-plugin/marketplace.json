@@ -19,7 +19,7 @@
     {
       "name": "task-handoff-summaries",
       "source": "./plugins/task-handoff-summaries",
-      "description": "Three rigorous structured report formats: implementation summary (before commit, single-agent or orchestrator), worker handoff summary (multi-agent worker \u2192 orchestrator), closeout summary (after completion). Hard rules against using the summary to mask incomplete work."
+      "description": "Three rigorous structured report formats: implementation summary (before commit, single-agent or orchestrator), worker handoff summary (multi-agent worker → orchestrator), closeout summary (after completion). Hard rules against using the summary to mask incomplete work."
     },
     {
       "name": "cross-agent-review",
@@ -80,6 +80,11 @@
       "name": "local-https",
       "source": "./plugins/local-https",
       "description": "TLS for every locally run server: mkcert certs at <project>-local, a setup and check tool, a launch guard, a TLS proxy, per-stack recipes and client trust recipes."
+    },
+    {
+      "name": "project-kickoff",
+      "source": "./plugins/project-kickoff",
+      "description": "Stand up a new project in one idempotent pass: git, Beads (bd init --skip-agents), cass-memory, identical CLAUDE.md and AGENTS.md, the documentation tree, a documentation checker and a pre-commit gate, via a project-kickoff tool with --dry-run. Adopt mode brings an existing project up to the same standard without overwriting anything."
     }
   ]
 }

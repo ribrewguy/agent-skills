@@ -1,0 +1,57 @@
+{
+  "skill_name": "project-kickoff",
+  "evals": [
+    {
+      "id": 0,
+      "name": "fresh-kickoff-under-parent",
+      "fixture_mode": "base",
+      "prompt": "I just made an empty directory demo-app inside my projects folder, which has its own AGENTS.md one level up. Kick off the project. It is a visual builder for example agent graphs.",
+      "expectations": [
+        "Runs or plans project-kickoff all with --purpose, reading a --dry-run first",
+        "Initialises Beads with bd init --skip-agents (never plain bd init) and cass-memory with cm init --repo",
+        "Produces CLAUDE.md and AGENTS.md as byte-identical files with a Parent instructions section pointing at ../AGENTS.md and ../../../AGENTS.md from a worktree",
+        "Creates the documentation tree with a business-only PRD, a technical decision register whose stack rows are unresolved, and README indexes, with no date in any filename",
+        "Installs scripts/check_docs.py and the pre-commit gate, seeds an Open decisions epic with one child per unresolved row, and makes one kickoff commit without pushing"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "fresh-kickoff-no-parent",
+      "fixture_mode": "base",
+      "prompt": "Set up a new repo for example-service, a small HTTP API for issuing example tokens. It lives in a plain folder with nothing above it.",
+      "expectations": [
+        "Does not add a Parent instructions section because no parent AGENTS.md or CLAUDE.md exists one level up",
+        "Does not choose a language or framework; the register rows stay unresolved and become Decide tasks",
+        "Does not write a Beads managed block or .claude, .codex or .cursor files into the project",
+        "Reports SKIP lines for any missing tool instead of inventing a workaround",
+        "Ends with the verification checks: identical pair, checker PASS, gate present, placeholder replaced"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "adopt-divergent-instructions-and-dated-spec",
+      "fixture_mode": "base",
+      "prompt": "example-service was started yesterday without the kickoff. It has a CLAUDE.md with a Beads managed block, an AGENTS.md that says something different, and a design doc at docs/specs/2026-03-14-example-service-v1-design.md. Bring it up to standard.",
+      "expectations": [
+        "Starts with a dry run as the gap report and reads it back before changing anything",
+        "Adds what is missing mechanically (checker, .cass, gitignore lines, missing indexes) and keeps every existing file",
+        "Stops on the ASK for the differing instruction files and proposes a merged file that drops the Beads managed block and keeps project-specific rules, writing only after a yes",
+        "Proposes a stable undated name for the spec and renames only on a yes, never silently and never with an exemption",
+        "Does not install the pre-commit gate until check_docs.py passes"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "beads-skill-missing",
+      "fixture_mode": "base",
+      "prompt": "Kick off demo-app here. By the way this is a fresh laptop; I have bd and cm installed but I have not installed any agent skills yet.",
+      "expectations": [
+        "Checks for ~/.agents/skills/beads/SKILL.md during preflight and finds it missing",
+        "Installs it with npx skills add steveyegge/beads --skill beads --global -y, not with bd setup codex --global",
+        "Reports SKIP with the install command if npx is unavailable instead of stopping the kickoff",
+        "Continues with init, write, gate, seed and commit after the skill is in place",
+        "Never writes the Beads skill or a managed block into the project itself"
+      ]
+    }
+  ]
+}

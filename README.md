@@ -25,6 +25,7 @@ Other tools (Gemini CLI, Codex CLI, Copilot CLI, Cline, Cursor, Aider) plus the 
 - **[throughline](https://ribrewguy.github.io/agent-skills/skills/throughline/)**: the lifecycle spine — requirements to architecture to task to implementation to commit to merge to closeout. Owns the Kickoff Declaration, the three completion phases and the source-of-truth ladder; dispatches everything else to the skill that owns it.
 - **[isolated-stack-development](https://ribrewguy.github.io/agent-skills/skills/isolated-stack-development/)**: one isolated local Supabase stack per worktree, so parallel worktrees don't collide. Ships a `stack` tool and a PreToolUse guard alongside the skill; repos opt in with `.isolated-stack.json`.
 - **[local-https](https://ribrewguy.github.io/agent-skills/skills/local-https/)**: TLS for every locally run server, with mkcert certs at `<project>-local`. Ships a `local-https` tool, a PreToolUse guard and a TLS proxy alongside the skill; repos opt in with `.local-https.json`.
+- **[project-kickoff](https://ribrewguy.github.io/agent-skills/skills/project-kickoff/)**: the first hour of a project, every time: git, Beads with `bd init --skip-agents`, cass-memory, byte-identical `CLAUDE.md` and `AGENTS.md`, the documentation tree, a documentation checker and its pre-commit gate. Ships a `project-kickoff` tool with `--dry-run`; reruns and existing projects get a gap report, never an overwrite.
 
 - **[jvm-quality](https://ribrewguy.github.io/agent-skills/skills/jvm-quality/)**: Shared JVM quality policy for tests, module coverage, runtime compatibility, exceptions and dependency vulnerability scanning.
 - **[maven-practices](https://ribrewguy.github.io/agent-skills/skills/maven-practices/)**: Reproducible Maven builds and effective lifecycle enforcement across modules, profiles and test JVMs.
@@ -62,6 +63,14 @@ plugins/                             # canonical skill source (what AI tools loa
       SKILL.md
       references/
       assets/
+      evals/evals.json
+  project-kickoff/
+    .claude-plugin/plugin.json
+    scripts/project-kickoff           # the tool; lib/kickoff.py holds the logic
+    skills/project-kickoff/
+      SKILL.md
+      references/
+      assets/                         # check_docs.py, gate block, templates
       evals/evals.json
 index.md, install/, concepts/, skills/   # GitHub Pages docs site
 LICENSE                              # MIT

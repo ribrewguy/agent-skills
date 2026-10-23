@@ -27,6 +27,7 @@ The catalog. Each skill has its own page with a summary, its key opinions, insta
 - **[application-logging](application-logging)**: what a server logs, at which level, in which shape. Two appenders (console for humans, OpenTelemetry for the pipeline), fields as arguments, a never-log denylist, exceptions logged once.
 - **[opentelemetry](opentelemetry)**: make a server application support OpenTelemetry and prove it. OTLP via `OTEL_*` variables, three span tiers, context propagation, default service metrics, log correlation, serverless flush, verification against a real collector.
 - **[local-https](local-https)**: TLS for every locally run server. mkcert certs at `<project>-local`, a `local-https` tool, a PreToolUse guard that blocks a declared server launching without its cert, a TLS proxy for plain-HTTP builds, per-stack recipes and per-runtime client trust. Repos opt in with `.local-https.json`.
+- **[project-kickoff](project-kickoff)**: the first hour of a project, every time. git on `main`, Beads with `bd init --skip-agents`, cass-memory, byte-identical `CLAUDE.md` and `AGENTS.md`, a documentation tree with a business-only PRD and a decision register, a documentation checker and its pre-commit gate. A `project-kickoff` tool with `--dry-run` does the mechanical steps; reruns and existing projects get a gap report, never an overwrite.
 
 ## How skills are evaluated
 
