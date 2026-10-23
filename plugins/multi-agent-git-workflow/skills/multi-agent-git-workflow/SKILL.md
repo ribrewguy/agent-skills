@@ -410,18 +410,32 @@ Single-agent close-out ends after:
 
 ### Branch cleanup
 
-Clean up in the **same** close-out as the merge — the merge already carried the
-user's acceptance, so nothing is left to hold the environment for. Deferred
-cleanup is what leaves worktrees, branches, and disposable stacks strewn across
-sessions.
+**The orchestrator owns cleanup for every worker and descendant worktree.**
+Clean up in the **same integration step** after accepting a worker into its designated
+`integration/*` branch; do not wait for the parent to reach `develop`. Worker merges
+use orchestrator acceptance; parent merges into `develop` still require user acceptance.
+Neither grants permission to discard unrelated work. Single-agent cleanup likewise
+happens in the same close-out as its accepted merge into `develop`.
+
+Prefer committed worker branches and normal merges over copying uncommitted files.
+If changes were transferred another way, verify and record their incorporation first.
 
 Tear down in this order:
 
-1. Any disposable environment the branch owned (database stack, preview deploy)
-2. Verify the branch has been fully merged into its integration target
+1. Verify the branch is fully integrated into its designated target. Inspect
+   staged, unstaged, untracked and relevant ignored files; preserve any work or
+   local data that has not been incorporated. Never force-remove a dirty
+   worktree merely because its committed HEAD is already merged.
+2. Stop task-owned services and tear down its disposable environment. Confirm
+   ownership first; preserve shared services and resources still in use.
 3. **Remove the dedicated worktree**
 4. Delete the local branch
-5. Delete the remote branch if it was published
+5. Delete the remote branch if it was published and deletion is authorized
+
+At every orchestrator handoff and close-out, inventory remaining task-owned worktrees,
+including descendants: report path, branch, services, reason and responsible owner.
+Retain workers only for explicitly requested use or unresolved work that needs them;
+an unfinished parent epic alone is not a retention reason.
 
 **Worktree removal MUST come before branch deletion.** Git refuses to delete a
 branch a worktree still has checked out (`error: cannot delete branch '<x>' used
@@ -439,8 +453,6 @@ Retaining an environment past close-out is the **exception** and requires an
 explicit request from the user. You may propose it with a concrete reason; you
 may not take it unilaterally. When retained, report it — path, branch, what is
 running — so it stays visible instead of becoming cruft.
-
-The orchestrator is responsible for deleting accepted worker `feature/*` branches during cleanup, both locally and on remote when those branches were published.
 
 ## Hard rules
 
