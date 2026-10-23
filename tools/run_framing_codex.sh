@@ -12,7 +12,7 @@
 #   bash tools/run_framing_codex.sh probe   # run one cell only as a sanity check
 set -uo pipefail
 
-REPO="/Users/user/Projects/agent-skills"
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
 CORPUS="$REPO/skills/cross-agent-review-workspace/framing-corpus"
 WORKSPACE="$REPO/skills/cross-agent-review-workspace/iteration-1/framing-experiment"
 

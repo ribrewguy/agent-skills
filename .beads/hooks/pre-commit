@@ -57,3 +57,16 @@ if command -v bd >/dev/null 2>&1; then
   if [ "$_bd_exit" -ne 0 ]; then exit "$_bd_exit"; fi
 fi
 # --- END BEADS INTEGRATION v1.3.1 ---
+
+# --- BEGIN AGENT-SKILLS LOCAL-CONTENT GATE ---
+# Kept outside the beads-managed markers, which bd preserves across hook installs.
+# Refuses staged content that identifies one machine, and a divergent AGENTS.md/CLAUDE.md pair.
+_as_root=$(git rev-parse --show-toplevel)
+if [ -f "$_as_root/tools/check_local_refs.py" ]; then
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo >&2 "agent-skills: python3 is required for tools/check_local_refs.py --staged"
+    exit 1
+  fi
+  python3 "$_as_root/tools/check_local_refs.py" --staged || exit 1
+fi
+# --- END AGENT-SKILLS LOCAL-CONTENT GATE ---

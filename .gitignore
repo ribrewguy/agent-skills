@@ -33,3 +33,9 @@ tasks/
 .beads-credential-key
 .beads/proxieddb/
 *.gate.lock*
+
+# Local settings never enter the repository (see AGENTS.md hard rule 2)
+.claude/settings.local.json
+.env
+.env.*
+!.env.example
