@@ -128,3 +128,113 @@ def inventory(root: Path, home: Path, name: Optional[str] = None) -> dict:
         "beads_skill": (Path(home) / ".agents/skills/beads/SKILL.md").is_file(),
         "tools": {tool: which(tool) for tool in ("git", "bd", "cm", "python3", "npx")},
     }
+
+
+# ----------------------------------------------------------------- preflight
+BEADS_SKILL_INSTALL = ["npx", "skills", "add", "steveyegge/beads", "--skill", "beads", "--global", "-y"]
+INSTALL_HINTS = {
+    "bd": "install bd (the Beads CLI); Beads steps will be skipped",
+    "cm": "install cm (cass-memory); the cass step will be skipped",
+}
+
+
+def _tail(text: str, lines: int = 3) -> str:
+    return " | ".join(line for line in text.strip().splitlines()[-lines:])
+
+
+def preflight(root: Path, home: Path, dry_run: bool) -> Report:
+    report = Report()
+    inv = inventory(root, home)
+    tools = inv["tools"]
+    for tool in ("git", "python3"):
+        if not tools[tool]:
+            report.add("FAIL", f"{tool} is not on PATH")
+    if tools["git"]:
+        for key in ("user.name", "user.email"):
+            value = run(["git", "config", "--get", key], root).stdout.strip()
+            if value:
+                report.add("OK", f"git {key} is set")
+            else:
+                report.add("FAIL", f"git {key} is not set; set it before the kickoff commit")
+    for tool, hint in INSTALL_HINTS.items():
+        if tools[tool]:
+            version = run([tool, "--version"], root).stdout.strip().splitlines()
+            report.add("OK", f"{tool} on PATH ({version[0] if version else 'version unknown'})")
+        else:
+            report.add("SKIP", f"{tool} not on PATH: {hint}")
+    if inv["beads_skill"]:
+        report.add("OK", "Beads skill installed at ~/.agents/skills/beads")
+    elif not tools["npx"]:
+        report.add("SKIP", f"Beads skill missing and npx not on PATH; install it with: {' '.join(BEADS_SKILL_INSTALL)}")
+    else:
+        report.add("RUN", " ".join(BEADS_SKILL_INSTALL))
+        if not dry_run:
+            result = run(BEADS_SKILL_INSTALL, root)
+            if result.returncode != 0 or not inventory(root, home)["beads_skill"]:
+                report.add("FAIL", f"Beads skill install did not land: {_tail(result.stderr or result.stdout)}")
+            else:
+                report.add("OK", "Beads skill installed")
+    report.add("OK" if inv["is_git"] else "KEEP", "git repository" if inv["is_git"] else "no git repository yet")
+    for key, label in (("has_beads", ".beads"), ("has_cass", ".cass"), ("has_checker", "scripts/check_docs.py"), ("has_gate", "pre-commit documentation gate")):
+        report.add("OK", f"{label}: {'present' if inv[key] else 'absent'}")
+    if inv["claude"] or inv["agents"]:
+        state = "identical" if inv["instructions_identical"] else "differ or one is missing"
+        report.add("OK", f"instruction files: {state}")
+    else:
+        report.add("OK", "instruction files: absent")
+    report.add("OK", f"documents missing: {len(inv['docs_missing'])} of 7")
+    return report
+
+
+# ---------------------------------------------------------------------- init
+def _name_error(name: str, report: Report) -> bool:
+    if NAME_RE.match(name):
+        return False
+    report.add("FAIL", f"name {name!r} is not a valid prefix; use lowercase letters, digits and hyphens, e.g. {slug(name) or 'demo-app'!r}")
+    return True
+
+
+def init(root: Path, name: str, dry_run: bool) -> Report:
+    report = Report()
+    if _name_error(name, report):
+        return report
+    inv = inventory(root, Path.home(), name)
+    if inv["is_git"]:
+        report.add("KEEP", "git repository")
+    else:
+        report.add("RUN", "git init && git symbolic-ref HEAD refs/heads/main")
+        if not dry_run:
+            result = run(["git", "init", "-q"], root)
+            if result.returncode != 0:
+                report.add("FAIL", f"git init: {_tail(result.stderr)}")
+                return report
+            run(["git", "symbolic-ref", "HEAD", "refs/heads/main"], root)
+            inv = inventory(root, Path.home(), name)
+    if inv["has_beads"]:
+        report.add("KEEP", ".beads (already initialised)")
+    else:
+        foreign_hooks = inv["has_git_hook"] or (inv["hooks_path"] and not inv["hooks_path"].rstrip("/").endswith(".beads/hooks"))
+        if foreign_hooks:
+            where = ".git/hooks/pre-commit" if inv["has_git_hook"] else f"core.hooksPath={inv['hooks_path']}"
+            report.add("ASK", f"existing hook setup ({where}); bd init would displace it. Chain it from the Beads hook or remove it, then rerun init")
+        elif not which("bd"):
+            report.add("SKIP", "bd not on PATH; .beads not initialised")
+        else:
+            cmd = ["bd", "init", "--skip-agents", "--prefix", name, "--non-interactive"]
+            report.add("RUN", " ".join(cmd))
+            if not dry_run:
+                result = run(cmd, root)
+                if result.returncode != 0 or not (root / ".beads/config.yaml").is_file():
+                    report.add("FAIL", f"bd init: {_tail(result.stderr or result.stdout)}")
+    if inv["has_cass"]:
+        report.add("KEEP", ".cass (already initialised)")
+    elif not which("cm"):
+        report.add("SKIP", "cm not on PATH; .cass not initialised")
+    else:
+        cmd = ["cm", "init", "--repo", "--no-interactive"]
+        report.add("RUN", " ".join(cmd))
+        if not dry_run:
+            result = run(cmd, root)
+            if result.returncode != 0 or not (root / ".cass/playbook.yaml").is_file():
+                report.add("FAIL", f"cm init: {_tail(result.stderr or result.stdout)}")
+    return report

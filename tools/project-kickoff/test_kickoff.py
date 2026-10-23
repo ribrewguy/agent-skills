@@ -40,7 +40,7 @@ class Sandbox:
         gitconfig = self.temp / "gitconfig"
         gitconfig.write_text("[user]\n\tname = Demo Person\n\temail = demo@example.com\n" if git_identity else "")
         self.env = {
-            "PATH": f"{self.bin}:/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin",
+            "PATH": f"{self.bin}:/usr/bin:/bin",
             "HOME": str(self.home),
             "GIT_CONFIG_GLOBAL": str(gitconfig),
             "GIT_CONFIG_NOSYSTEM": "1",
@@ -193,6 +193,103 @@ class InventoryTests(unittest.TestCase):
         self.assertIsNone(kickoff.detect_parent(self.sb.root))
         (self.sb.parent / "AGENTS.md").write_text("# parent")
         self.assertEqual(self.sb.parent / "AGENTS.md", kickoff.detect_parent(self.sb.root))
+
+
+class PreflightTests(unittest.TestCase):
+    def test_installs_missing_beads_skill(self):
+        sb = Sandbox(beads_skill=False); self.addCleanup(sb.cleanup)
+        report = kickoff.preflight(sb.root, sb.home, dry_run=False)
+        self.assertIn("RUN", report.kinds())
+        self.assertIn("skills add steveyegge/beads --skill beads --global -y", sb.logged("npx"))
+        self.assertTrue((sb.home / ".agents/skills/beads/SKILL.md").is_file())
+        self.assertEqual(0, report.status)
+
+    def test_keeps_present_beads_skill(self):
+        sb = Sandbox(); self.addCleanup(sb.cleanup)
+        report = kickoff.preflight(sb.root, sb.home, dry_run=False)
+        self.assertEqual("", sb.logged("npx"))
+        self.assertTrue(any(line.startswith("OK ") and "beads skill" in line.lower() for line in report.lines), report.lines)
+
+    def test_dry_run_does_not_install(self):
+        sb = Sandbox(beads_skill=False); self.addCleanup(sb.cleanup)
+        report = kickoff.preflight(sb.root, sb.home, dry_run=True)
+        self.assertTrue(any(line.startswith("RUN npx skills add") for line in report.lines), report.lines)
+        self.assertEqual("", sb.logged("npx"))
+        self.assertFalse((sb.home / ".agents/skills/beads/SKILL.md").exists())
+
+    def test_fails_without_git_identity(self):
+        sb = Sandbox(git_identity=False); self.addCleanup(sb.cleanup)
+        report = kickoff.preflight(sb.root, sb.home, dry_run=False)
+        self.assertEqual(1, report.status)
+        self.assertTrue(any(line.startswith("FAIL") and "user.name" in line for line in report.lines), report.lines)
+
+    def test_skips_when_bd_missing(self):
+        sb = Sandbox(with_bd=False); self.addCleanup(sb.cleanup)
+        report = kickoff.preflight(sb.root, sb.home, dry_run=False)
+        self.assertEqual(0, report.status)
+        self.assertTrue(any(line.startswith("SKIP") and "bd" in line for line in report.lines), report.lines)
+
+    def test_skips_skill_install_when_npx_missing(self):
+        sb = Sandbox(beads_skill=False, with_npx=False); self.addCleanup(sb.cleanup)
+        report = kickoff.preflight(sb.root, sb.home, dry_run=False)
+        self.assertEqual(0, report.status)
+        self.assertTrue(any(line.startswith("SKIP") and "npx" in line for line in report.lines), report.lines)
+
+
+class InitTests(unittest.TestCase):
+    def setUp(self):
+        self.sb = Sandbox()
+        self.addCleanup(self.sb.cleanup)
+
+    def test_fresh_dir_gets_git_beads_cass(self):
+        report = kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        self.assertEqual(0, report.status, report.lines)
+        self.assertTrue((self.sb.root / ".git").is_dir())
+        self.assertEqual("refs/heads/main\n", self.sb.git("symbolic-ref", "HEAD"))
+        self.assertTrue((self.sb.root / ".beads/config.yaml").is_file())
+        self.assertTrue((self.sb.root / ".cass/playbook.yaml").is_file())
+        log = self.sb.logged("bd")
+        for flag in ("--skip-agents", "--prefix demo-app", "--non-interactive"):
+            self.assertIn(flag, log)
+        self.assertIn("init --repo --no-interactive", self.sb.logged("cm"))
+
+    def test_init_is_idempotent(self):
+        kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        before = self.sb.logged("bd")
+        report = kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        self.assertEqual({"KEEP"}, report.kinds(), report.lines)
+        self.assertEqual(before, self.sb.logged("bd"))
+
+    def test_dry_run_creates_nothing(self):
+        report = kickoff.init(self.sb.root, "demo-app", dry_run=True)
+        self.assertEqual([], list(self.sb.root.iterdir()))
+        self.assertTrue(any(line.startswith("RUN git init") for line in report.lines), report.lines)
+        self.assertTrue(any(line.startswith("RUN bd init --skip-agents") for line in report.lines), report.lines)
+
+    def test_asks_when_git_hook_exists(self):
+        self.sb.git("init", "-q")
+        hook = self.sb.root / ".git/hooks/pre-commit"
+        hook.write_text("#!/bin/sh\nexit 0\n")
+        report = kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        self.assertEqual(2, report.status, report.lines)
+        self.assertFalse((self.sb.root / ".beads").exists())
+
+    def test_asks_when_hooks_path_foreign(self):
+        self.sb.git("init", "-q")
+        self.sb.git("config", "core.hooksPath", ".husky")
+        report = kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        self.assertEqual(2, report.status, report.lines)
+        self.assertFalse((self.sb.root / ".beads").exists())
+
+    def test_rejects_invalid_name(self):
+        report = kickoff.init(self.sb.root, "Demo App", dry_run=False)
+        self.assertEqual(1, report.status)
+        self.assertEqual([], list(self.sb.root.iterdir()))
+
+    def test_nested_in_parent_repo_runs_git_init(self):
+        self.sb.git("init", "-q", cwd=self.sb.parent)
+        kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        self.assertTrue((self.sb.root / ".git").is_dir())
 
 
 if __name__ == "__main__":
