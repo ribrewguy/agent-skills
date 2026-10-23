@@ -85,7 +85,20 @@ case "$1" in
     git config core.hooksPath .beads/hooks
     echo "bd initialized" ;;
   list)
-    if [ -f "$STUB_LOG/issues.json" ]; then cat "$STUB_LOG/issues.json"; else echo "[]"; fi ;;
+    parent=""; type=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --parent) parent=$2; shift ;;
+        --parent=*) parent=${1#--parent=} ;;
+        --type|-t) type=$2; shift ;;
+        --type=*) type=${1#--type=} ;;
+      esac; shift
+    done
+    if [ -f "$STUB_LOG/issues.json" ]; then
+      python3 -c "import json,sys; d=json.load(open(sys.argv[1])); p=sys.argv[2]; t=sys.argv[3]
+out=[i for i in d if (not p or i.get('parent')==p) and (not t or i.get('issue_type')==t)]
+print(json.dumps([{k:v for k,v in i.items() if k!='parent'} for i in out]))" "$STUB_LOG/issues.json" "$parent" "$type"
+    else echo "[]"; fi ;;
   create)
     title=""; parent="null"; type="task"
     while [ $# -gt 0 ]; do
@@ -391,6 +404,119 @@ class WriteTests(unittest.TestCase):
                     ["python3", "-m", "unittest", "discover", "-s", "scripts", "-p", "test_*.py"]):
             result = subprocess.run(cmd, cwd=self.sb.root, env=self.sb.env, capture_output=True, text=True)
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+
+class GateTests(unittest.TestCase):
+    def setUp(self):
+        self.sb = Sandbox()
+        self.addCleanup(self.sb.cleanup)
+        kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        kickoff.write(self.sb.root, "demo-app", "A demo.", "auto", dry_run=False)
+        self.sb.git("add", "-A")
+        self.hook = self.sb.root / ".beads/hooks/pre-commit"
+
+    def test_installs_block_when_checker_passes(self):
+        report = kickoff.gate(self.sb.root, dry_run=False)
+        self.assertEqual(0, report.status, report.lines)
+        text = self.hook.read_text()
+        self.assertEqual(1, text.count(kickoff.GATE_MARKER))
+        self.assertLess(text.index("END BEADS INTEGRATION"), text.index(kickoff.GATE_MARKER))
+        self.assertTrue(os.access(self.hook, os.X_OK))
+
+    def test_gate_is_idempotent(self):
+        kickoff.gate(self.sb.root, dry_run=False)
+        report = kickoff.gate(self.sb.root, dry_run=False)
+        self.assertIn("KEEP", report.kinds(), report.lines)
+        self.assertEqual(1, self.hook.read_text().count(kickoff.GATE_MARKER))
+
+    def test_not_installed_while_checker_fails(self):
+        dated = self.sb.root / "docs/specs/2026-01-01-x.md"
+        dated.parent.mkdir()
+        dated.write_text("# dated\n")
+        self.sb.git("add", "-A")
+        report = kickoff.gate(self.sb.root, dry_run=False)
+        self.assertEqual(1, report.status, report.lines)
+        self.assertTrue(any("date-bearing filename" in line for line in report.lines), report.lines)
+        self.assertNotIn(kickoff.GATE_MARKER, self.hook.read_text())
+
+    def test_fails_without_beads_hook(self):
+        self.hook.unlink()
+        report = kickoff.gate(self.sb.root, dry_run=False)
+        self.assertEqual(1, report.status, report.lines)
+        self.assertTrue(any("init" in line for line in report.lines), report.lines)
+
+    def test_dry_run_does_not_touch_hook(self):
+        before = self.hook.read_text()
+        report = kickoff.gate(self.sb.root, dry_run=True)
+        self.assertEqual(before, self.hook.read_text())
+        self.assertIn("WRITE", report.kinds(), report.lines)
+
+
+UNRESOLVED = ["Backend language", "Frontend stack", "Build tooling", "Persistence", "Telemetry"]
+
+
+class SeedTests(unittest.TestCase):
+    def setUp(self):
+        self.sb = Sandbox()
+        self.addCleanup(self.sb.cleanup)
+        kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        kickoff.write(self.sb.root, "demo-app", "A demo.", "auto", dry_run=False)
+
+    def creates(self):
+        return [line for line in self.sb.logged("bd").splitlines() if line.startswith("create ")]
+
+    def test_creates_epic_and_children_and_replaces_placeholder(self):
+        report = kickoff.seed(self.sb.root, "demo-app", dry_run=False)
+        self.assertEqual(0, report.status, report.lines)
+        creates = self.creates()
+        self.assertEqual(1, sum("--type epic" in c for c in creates), creates)
+        children = [c for c in creates if "--parent demo-1" in c]
+        self.assertEqual(5, len(children), creates)
+        for concern in UNRESOLVED:
+            self.assertTrue(any(f"Decide: {concern}" in c for c in children), concern)
+        for name in ("CLAUDE.md", "AGENTS.md", "README.md"):
+            text = (self.sb.root / name).read_text()
+            self.assertNotIn(kickoff.PLACEHOLDER, text, name)
+            self.assertIn("demo-1", text, name)
+        self.assertEqual((self.sb.root / "CLAUDE.md").read_bytes(), (self.sb.root / "AGENTS.md").read_bytes())
+
+    def test_reuses_existing_epic_and_children(self):
+        (self.sb.log / "issues.json").write_text(json.dumps([
+            {"id": "demo-9", "title": kickoff.EPIC_TITLE, "parent": None, "issue_type": "epic"},
+            {"id": "demo-9.1", "title": "Decide: Backend language", "parent": "demo-9", "issue_type": "task"},
+        ]))
+        report = kickoff.seed(self.sb.root, "demo-app", dry_run=False)
+        self.assertEqual(0, report.status, report.lines)
+        creates = self.creates()
+        self.assertEqual(0, sum("--type epic" in c for c in creates), creates)
+        self.assertEqual(4, len(creates), creates)
+        self.assertIn("demo-9", (self.sb.root / "README.md").read_text())
+
+    def test_seed_is_idempotent(self):
+        kickoff.seed(self.sb.root, "demo-app", dry_run=False)
+        before = self.creates()
+        report = kickoff.seed(self.sb.root, "demo-app", dry_run=False)
+        self.assertEqual(before, self.creates())
+        self.assertNotIn("WRITE", report.kinds(), report.lines)
+
+    def test_skips_without_bd(self):
+        sb = Sandbox(with_bd=False); self.addCleanup(sb.cleanup)
+        kickoff.init(sb.root, "demo-app", dry_run=False)
+        kickoff.write(sb.root, "demo-app", "A demo.", "auto", dry_run=False)
+        report = kickoff.seed(sb.root, "demo-app", dry_run=False)
+        self.assertEqual(0, report.status, report.lines)
+        self.assertIn("SKIP", report.kinds())
+        self.assertIn(kickoff.PLACEHOLDER, (sb.root / "README.md").read_text())
+
+    def test_dry_run_creates_nothing(self):
+        report = kickoff.seed(self.sb.root, "demo-app", dry_run=True)
+        self.assertEqual([], self.creates())
+        self.assertIn(kickoff.PLACEHOLDER, (self.sb.root / "README.md").read_text())
+        self.assertTrue(any(line.startswith("RUN bd create") for line in report.lines), report.lines)
+
+    def test_unresolved_rows(self):
+        register = (self.sb.root / "docs/policies/development/technical-decisions.md").read_text()
+        self.assertEqual(UNRESOLVED, kickoff.unresolved_rows(register))
 
 
 if __name__ == "__main__":

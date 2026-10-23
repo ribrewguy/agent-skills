@@ -320,3 +320,131 @@ def write(root: Path, name: str, purpose: str, parent: str, dry_run: bool) -> Re
     else:
         report.add("KEEP", ".gitignore")
     return report
+
+
+# ---------------------------------------------------------------------- gate
+GATE_MARKER = "# --- BEGIN PROJECT KICKOFF DOCUMENTATION GATE ---"
+HOOK = ".beads/hooks/pre-commit"
+
+
+def _checker_findings(root: Path) -> list:
+    result = run(["python3", "scripts/check_docs.py"], root)
+    if result.returncode == 0:
+        return []
+    findings = [line[len("FAIL: "):] for line in result.stderr.splitlines() if line.startswith("FAIL: ")]
+    return findings or [_tail(result.stderr or result.stdout)]
+
+
+def gate(root: Path, dry_run: bool) -> Report:
+    report = Report()
+    root = root.resolve()
+    hook = root / HOOK
+    if not hook.is_file():
+        report.add("FAIL", f"{HOOK} is missing; run init (bd init) first")
+        return report
+    if not (root / "scripts/check_docs.py").is_file():
+        report.add("FAIL", "scripts/check_docs.py is missing; run write first")
+        return report
+    findings = _checker_findings(root)
+    if findings:
+        for finding in findings:
+            report.add("FAIL", f"check_docs: {finding}")
+        report.add("SKIP", "gate not installed while the checker fails; fix the findings and rerun gate")
+        return report
+    report.add("OK", "check_docs passes")
+    if GATE_MARKER in hook.read_text():
+        report.add("KEEP", f"{HOOK} already carries the documentation gate")
+        return report
+    report.add("WRITE", f"{HOOK} (+documentation gate after the beads markers)")
+    if not dry_run:
+        with hook.open("a") as handle:
+            handle.write((ASSETS / "pre-commit-gate.sh").read_text())
+        hook.chmod(hook.stat().st_mode | 0o111)
+    return report
+
+
+# ---------------------------------------------------------------------- seed
+EPIC_TITLE = "Open decisions"
+EPIC_DESCRIPTION = ("Every unresolved technical or product decision is a child of this epic. "
+                    "When a decision is made, record it with its status in the register or owning "
+                    "document and close the child.")
+REGISTER = "docs/policies/development/technical-decisions.md"
+PLACEHOLDER_FILES = ("CLAUDE.md", "AGENTS.md", "README.md")
+
+
+def unresolved_rows(register_text: str) -> list:
+    rows = []
+    for line in register_text.splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) >= 3 and cells[2] == "unresolved":
+            rows.append(cells[0])
+    return rows
+
+
+def _bd_json(root: Path, args: list) -> list:
+    result = run(["bd", *args, "--json"], root)
+    if result.returncode != 0:
+        raise RuntimeError(_tail(result.stderr or result.stdout))
+    import json
+    data = json.loads(result.stdout or "[]")
+    return data if isinstance(data, list) else [data]
+
+
+def _bd_create(root: Path, title_text: str, issue_type: str, report: Report, dry_run: bool,
+               parent: Optional[str] = None, description: str = "") -> Optional[str]:
+    cmd = ["bd", "create", "--title", title_text, "--type", issue_type, "--priority", "2"]
+    if parent:
+        cmd += ["--parent", parent]
+    if description:
+        cmd += ["--description", description]
+    report.add("RUN", " ".join(cmd[:8]) + (f" --parent {parent}" if parent else ""))
+    if dry_run:
+        return None
+    created = _bd_json(root, cmd[1:])
+    return created[0]["id"]
+
+
+def seed(root: Path, name: str, dry_run: bool) -> Report:
+    report = Report()
+    root = root.resolve()
+    if not which("bd"):
+        report.add("SKIP", f"bd not on PATH; no open-decisions epic created and {PLACEHOLDER} stays in the instruction files and README")
+        return report
+    if not (root / ".beads/config.yaml").is_file():
+        report.add("SKIP", ".beads not initialised; run init first")
+        return report
+    try:
+        epics = [e for e in _bd_json(root, ["list", "--type", "epic"]) if e.get("title") == EPIC_TITLE]
+        if epics:
+            epic_id = epics[0]["id"]
+            report.add("KEEP", f"epic {epic_id} ({EPIC_TITLE})")
+        else:
+            epic_id = _bd_create(root, EPIC_TITLE, "epic", report, dry_run, description=EPIC_DESCRIPTION)
+            if epic_id:
+                report.add("OK", f"epic {epic_id} created")
+        register = root / REGISTER
+        concerns = unresolved_rows(register.read_text()) if register.is_file() else []
+        existing = {c.get("title") for c in _bd_json(root, ["list", "--parent", epic_id])} if epic_id else set()
+        for concern in concerns:
+            child_title = f"Decide: {concern}"
+            if child_title in existing:
+                report.add("KEEP", f"child {child_title!r}")
+            else:
+                _bd_create(root, child_title, "task", report, dry_run, parent=epic_id,
+                           description=f"Resolve the {concern} row of {REGISTER} and record its status.")
+    except RuntimeError as error:
+        report.add("FAIL", f"bd: {error}")
+        return report
+    if not epic_id:
+        return report
+    for rel in PLACEHOLDER_FILES:
+        path = root / rel
+        if path.is_file() and PLACEHOLDER in path.read_text():
+            report.add("WRITE", f"{rel} ({PLACEHOLDER} -> {epic_id})")
+            if not dry_run:
+                path.write_text(path.read_text().replace(PLACEHOLDER, epic_id))
+    if not dry_run and (root / "CLAUDE.md").is_file() and (root / "AGENTS.md").is_file():
+        (root / "AGENTS.md").write_bytes((root / "CLAUDE.md").read_bytes())
+    return report
