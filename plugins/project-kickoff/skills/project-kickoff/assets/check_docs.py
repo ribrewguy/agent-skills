@@ -1,5 +1,7 @@
 """Check project documentation: instruction parity, portable links, undated filenames, indexes, design structure.
 
+Usage: python3 scripts/check_docs.py [--root DIR] [--staged]
+
 Installed by the project-kickoff skill; runs standalone with the macOS system python3.
 """
 
@@ -105,7 +107,11 @@ def design_errors(root: Path) -> list[str]:
 def check(root: Path = ROOT, names: list[str] | None = None) -> list[str]:
     """Check documents under root; names defaults to its tracked and unignored files."""
     errors = []
-    if (root / "AGENTS.md").read_bytes() != (root / "CLAUDE.md").read_bytes():
+    instruction_files = [root / "AGENTS.md", root / "CLAUDE.md"]
+    for path in instruction_files:
+        if not path.is_file():
+            errors.append(f"{path.name} is missing")
+    if all(path.is_file() for path in instruction_files) and instruction_files[0].read_bytes() != instruction_files[1].read_bytes():
         errors.append("AGENTS.md and CLAUDE.md differ")
 
     if names is None:
@@ -117,8 +123,8 @@ def check(root: Path = ROOT, names: list[str] | None = None) -> list[str]:
         if date_in_name(Path(name).name):
             errors.append(f"date-bearing filename: {name}")
 
-    documents = [root / name for name in ("README.md", "AGENTS.md", "CLAUDE.md")]
-    documents += sorted((root / "docs").rglob("*.md"))
+    documents = [root / name for name in ("README.md", "AGENTS.md", "CLAUDE.md") if (root / name).is_file()]
+    documents += sorted((root / "docs").rglob("*.md")) if (root / "docs").is_dir() else []
     for document in documents:
         for target in re.findall(r"\]\(([^)]+)\)", document.read_text()):
             error = link_error(document, target, root)
@@ -141,10 +147,14 @@ def check_staged(repo: Path = ROOT) -> list[str]:
 
 
 if __name__ == "__main__":
-    staged = sys.argv[1:] == ["--staged"]
-    if sys.argv[1:] and not staged:
-        sys.exit("Usage: python3 scripts/check_docs.py [--staged]")
-    findings = check_staged() if staged else check()
+    args = sys.argv[1:]
+    root = ROOT
+    if len(args) >= 2 and args[0] == "--root":
+        root, args = Path(args[1]).resolve(), args[2:]
+    staged = args == ["--staged"]
+    if args and not staged:
+        sys.exit("Usage: python3 scripts/check_docs.py [--root DIR] [--staged]")
+    findings = check_staged(root) if staged else check(root)
     for finding in findings:
         print(f"FAIL: {finding}", file=sys.stderr)
     if findings:

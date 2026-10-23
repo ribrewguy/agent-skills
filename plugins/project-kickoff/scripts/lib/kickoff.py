@@ -327,31 +327,42 @@ GATE_MARKER = "# --- BEGIN PROJECT KICKOFF DOCUMENTATION GATE ---"
 HOOK = ".beads/hooks/pre-commit"
 
 
-def _checker_findings(root: Path) -> list:
-    result = run(["python3", "scripts/check_docs.py"], root)
+def _checker_findings(root: Path, dry_run: bool = False) -> list:
+    if (root / "scripts/check_docs.py").is_file():
+        result = run(["python3", "scripts/check_docs.py"], root)
+    else:
+        result = run(["python3", str(ASSETS / "check_docs.py"), "--root", str(root)], root)
     if result.returncode == 0:
         return []
     findings = [line[len("FAIL: "):] for line in result.stderr.splitlines() if line.startswith("FAIL: ")]
-    return findings or [_tail(result.stderr or result.stdout)]
+    if dry_run:
+        # A dry run reports gaps in what exists; files the run itself would write are not gaps.
+        findings = [f for f in findings if not f.endswith(" is missing")]
+    return findings or ([] if dry_run else [_tail(result.stderr or result.stdout)])
 
 
 def gate(root: Path, dry_run: bool) -> Report:
     report = Report()
     root = root.resolve()
     hook = root / HOOK
-    if not hook.is_file():
-        report.add("FAIL", f"{HOOK} is missing; run init (bd init) first")
-        return report
-    if not (root / "scripts/check_docs.py").is_file():
+    if not (root / "scripts/check_docs.py").is_file() and not dry_run:
         report.add("FAIL", "scripts/check_docs.py is missing; run write first")
         return report
-    findings = _checker_findings(root)
+    findings = _checker_findings(root, dry_run)
     if findings:
         for finding in findings:
             report.add("FAIL", f"check_docs: {finding}")
         report.add("SKIP", "gate not installed while the checker fails; fix the findings and rerun gate")
         return report
     report.add("OK", "check_docs passes")
+    if not hook.is_file():
+        if (root / ".beads/config.yaml").is_file():
+            report.add("FAIL", f"{HOOK} is missing although .beads exists; run bd hooks install, then gate")
+        elif dry_run:
+            report.add("RUN", f"gate into {HOOK} once bd init has created it")
+        else:
+            report.add("SKIP", ".beads not initialised (bd absent or init skipped); documentation gate not installed")
+        return report
     if GATE_MARKER in hook.read_text():
         report.add("KEEP", f"{HOOK} already carries the documentation gate")
         return report
@@ -388,7 +399,12 @@ def _bd_json(root: Path, args: list) -> list:
     if result.returncode != 0:
         raise RuntimeError(_tail(result.stderr or result.stdout))
     import json
-    data = json.loads(result.stdout or "[]")
+    try:
+        data = json.loads(result.stdout or "[]")
+    except ValueError:
+        raise RuntimeError(f"unexpected non-JSON output: {_tail(result.stdout)}")
+    if data is None:
+        return []
     return data if isinstance(data, list) else [data]
 
 
@@ -445,18 +461,29 @@ def seed(root: Path, name: str, dry_run: bool) -> Report:
             report.add("WRITE", f"{rel} ({PLACEHOLDER} -> {epic_id})")
             if not dry_run:
                 path.write_text(path.read_text().replace(PLACEHOLDER, epic_id))
-    if not dry_run and (root / "CLAUDE.md").is_file() and (root / "AGENTS.md").is_file():
-        (root / "AGENTS.md").write_bytes((root / "CLAUDE.md").read_bytes())
     return report
 
 
 # -------------------------------------------------------------------- commit
+def owned_paths(root: Path, name: str) -> list:
+    """Paths the kickoff is responsible for; nothing else is staged."""
+    candidates = ["CLAUDE.md", "AGENTS.md", ".gitignore", "scripts/check_docs.py", "scripts/test_check_docs.py",
+                  ".beads", ".cass"] + DOC_PATHS(name)
+    return [rel for rel in candidates if (root / rel).exists()]
+
+
 def commit(root: Path, name: str, trailers: list, dry_run: bool) -> Report:
     report = Report()
     if _name_error(name, report):
         return report
     root = root.resolve()
-    findings = _checker_findings(root)
+    if not inventory(root, Path.home(), name)["is_git"]:
+        if dry_run:
+            report.add("RUN", f"git commit -m 'chore: kick off {name}' once init has created the repository")
+        else:
+            report.add("FAIL", "not a git repository here (a parent repository does not count); run init first")
+        return report
+    findings = _checker_findings(root, dry_run)
     if findings:
         for finding in findings:
             report.add("FAIL", f"check_docs: {finding}")
@@ -468,20 +495,25 @@ def commit(root: Path, name: str, trailers: list, dry_run: bool) -> Report:
             report.add("FAIL", f"checker tests: {_tail(tests.stderr or tests.stdout)}")
             return report
         report.add("OK", "checker tests pass")
-    run(["git", "add", "-A"], root)
-    if not run(["git", "status", "--porcelain"], root).stdout.strip():
+    owned = owned_paths(root, name)
+    pending = run(["git", "status", "--porcelain", "--untracked-files=all", "--"] + owned, root).stdout.splitlines()
+    if not pending:
         report.add("OK", "nothing to commit")
         return report
     message = f"chore: kick off {name}\n" + ("\n" + "\n".join(trailers) + "\n" if trailers else "")
+    report.add("RUN", f"git add -- {' '.join(owned)}")
     report.add("RUN", f"git commit -m 'chore: kick off {name}'" + (f" (+{len(trailers)} trailer lines)" if trailers else ""))
     if dry_run:
-        run(["git", "reset", "-q"], root)
         return report
-    result = run(["git", "commit", "-q", "-F", "-"], root, stdin=message)
+    run(["git", "add", "--"] + owned, root)
+    result = run(["git", "commit", "-q", "-F", "-", "--only", "--"] + owned, root, stdin=message)
     if result.returncode != 0:
         report.add("FAIL", f"git commit: {_tail(result.stderr or result.stdout)}")
         return report
     report.add("OK", f"committed {run(['git', 'rev-parse', '--short', 'HEAD'], root).stdout.strip()}")
+    others = [line[3:] for line in run(["git", "status", "--porcelain"], root).stdout.splitlines()]
+    if others:
+        report.add("SKIP", f"left alone, not part of the kickoff: {', '.join(others)}")
     leftover = [rel for rel in PLACEHOLDER_FILES if (root / rel).is_file() and PLACEHOLDER in (root / rel).read_text()]
     if leftover:
         report.add("SKIP", f"{PLACEHOLDER} remains in {', '.join(leftover)}; run seed once bd is available, then commit again")
@@ -500,13 +532,9 @@ def all_steps(root: Path, home: Path, name: str, purpose: str, parent: str, trai
         lambda: commit(root, name, trailers, dry_run),
     ]
     for step in steps:
-        if dry_run and step is steps[3]:
-            # Nothing exists yet on a dry run; gate and seed would only report missing inputs.
-            report.add("RUN", "gate, seed and commit follow once the files above exist")
-            break
         part = step()
         report.extend(part)
-        if part.status != 0:
+        if part.status != 0 and not dry_run:
             break
     return report
 

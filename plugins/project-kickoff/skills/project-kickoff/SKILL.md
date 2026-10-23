@@ -176,7 +176,8 @@ there, per project, never in this skill.
 - `references/instruction-files.md`: both rendered variants of the instruction
   file (with and without a parent), the worktree path rule, and how to propose
   a merge when files already exist.
-- `references/doc-tree.md`: every seed document as rendered, the register
-  vocabulary, and how a feature design is added.
+- `references/doc-tree.md`: the documentation tree, what goes where, the
+  register vocabulary, and how a feature design is added; the exact seed text
+  lives in `assets/templates/`.
 - `references/tools.md`: the exact `git`, `bd`, `cm` and `npx skills` commands
   the tool runs, why each flag, what each writes, and the failure cases seen.

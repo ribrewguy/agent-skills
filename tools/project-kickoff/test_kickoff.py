@@ -85,6 +85,7 @@ case "$1" in
     git config core.hooksPath .beads/hooks
     echo "bd initialized" ;;
   list)
+    if [ -f "$STUB_LOG/garbage" ]; then echo "notice: not json"; exit 0; fi
     parent=""; type=""
     while [ $# -gt 0 ]; do
       case "$1" in
@@ -443,7 +444,7 @@ class GateTests(unittest.TestCase):
         self.hook.unlink()
         report = kickoff.gate(self.sb.root, dry_run=False)
         self.assertEqual(1, report.status, report.lines)
-        self.assertTrue(any("init" in line for line in report.lines), report.lines)
+        self.assertTrue(any("bd hooks install" in line for line in report.lines), report.lines)
 
     def test_dry_run_does_not_touch_hook(self):
         before = self.hook.read_text()
@@ -640,6 +641,87 @@ class AllAndCliTests(unittest.TestCase):
         result = self.cli("init", "--dir", str(self.sb.root), "--dry-run")
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("--prefix demo-app", result.stdout)
+
+
+class ReviewFixTests(unittest.TestCase):
+    """Regressions from the whole-branch review."""
+
+    def setUp(self):
+        self.sb = Sandbox()
+        self.addCleanup(self.sb.cleanup)
+
+    def cli(self, sb, *args):
+        return subprocess.run([sys.executable, str(LAUNCHER), *args], cwd=sb.root, env=sb.env,
+                              capture_output=True, text=True)
+
+    def test_seed_leaves_differing_instruction_files_alone(self):
+        kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        (self.sb.root / "CLAUDE.md").write_text("one <open-decisions-epic>\n")
+        (self.sb.root / "AGENTS.md").write_text("two\n")
+        kickoff.write(self.sb.root, "demo-app", "A demo.", "auto", dry_run=False)   # ASK, docs still written
+        report = kickoff.seed(self.sb.root, "demo-app", dry_run=False)
+        self.assertEqual(0, report.status, report.lines)
+        self.assertEqual("one demo-1\n", (self.sb.root / "CLAUDE.md").read_text())
+        self.assertEqual("two\n", (self.sb.root / "AGENTS.md").read_text())
+
+    def test_all_without_bd_commits_and_warns(self):
+        sb = Sandbox(with_bd=False); self.addCleanup(sb.cleanup)
+        result = self.cli(sb, "all", "--home", str(sb.home), "--purpose", "A demo.")
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual("1", sb.git("rev-list", "--count", "HEAD").strip())
+        self.assertFalse((sb.root / ".beads").exists())
+        self.assertIn(kickoff.PLACEHOLDER, result.stdout)
+        self.assertNotIn("FAIL", result.stdout)
+
+    def test_commit_fails_outside_a_repository_here(self):
+        self.sb.git("init", "-q", cwd=self.sb.parent)
+        kickoff.write(self.sb.root, "demo-app", "A demo.", "no", dry_run=False)
+        report = kickoff.commit(self.sb.root, "demo-app", [], dry_run=False)
+        self.assertEqual(1, report.status, report.lines)
+        self.assertEqual("", self.sb.git("diff", "--cached", "--name-only", cwd=self.sb.parent))
+        self.assertNotEqual(0, subprocess.run(["git", "rev-parse", "HEAD"], cwd=self.sb.parent, env=self.sb.env,
+                                              capture_output=True).returncode)
+
+    def test_commit_dry_run_leaves_the_index_alone(self):
+        kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        kickoff.write(self.sb.root, "demo-app", "A demo.", "auto", dry_run=False)
+        (self.sb.root / "notes.md").write_text("owner's notes\n")
+        self.sb.git("add", "notes.md")
+        report = kickoff.commit(self.sb.root, "demo-app", [], dry_run=True)
+        self.assertEqual(0, report.status, report.lines)
+        self.assertEqual("notes.md\n", self.sb.git("diff", "--cached", "--name-only"))
+
+    def test_commit_stages_only_what_the_kickoff_owns(self):
+        kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        kickoff.write(self.sb.root, "demo-app", "A demo.", "auto", dry_run=False)
+        (self.sb.root / "scratch.txt").write_text("half-finished work\n")
+        report = kickoff.commit(self.sb.root, "demo-app", [], dry_run=False)
+        self.assertEqual(0, report.status, report.lines)
+        committed = self.sb.git("show", "--name-only", "--format=", "HEAD").split()
+        self.assertNotIn("scratch.txt", committed)
+        self.assertIn("CLAUDE.md", committed)
+        self.assertIn("?? scratch.txt", self.sb.git("status", "--porcelain"))
+        self.assertTrue(any("scratch.txt" in line for line in report.lines), report.lines)
+
+    def test_all_dry_run_reports_dated_filename_as_gap(self):
+        self.sb.git("init", "-q")
+        dated = self.sb.root / "docs/specs/2026-01-01-x.md"
+        dated.parent.mkdir(parents=True)
+        dated.write_text("# dated\n")
+        self.sb.git("add", "-A")
+        result = self.cli(self.sb, "all", "--home", str(self.sb.home), "--purpose", "A demo.", "--dry-run")
+        self.assertIn("date-bearing filename", result.stdout)
+        self.assertIn("WRITE CLAUDE.md", result.stdout)
+        self.assertFalse((self.sb.root / "CLAUDE.md").exists())
+        self.assertEqual("docs/specs/2026-01-01-x.md\n", self.sb.git("diff", "--cached", "--name-only"))
+
+    def test_seed_reports_non_json_from_bd_as_fail(self):
+        kickoff.init(self.sb.root, "demo-app", dry_run=False)
+        kickoff.write(self.sb.root, "demo-app", "A demo.", "auto", dry_run=False)
+        (self.sb.log / "garbage").write_text("")
+        report = kickoff.seed(self.sb.root, "demo-app", dry_run=False)
+        self.assertEqual(1, report.status, report.lines)
+        self.assertTrue(any(line.startswith("FAIL bd:") for line in report.lines), report.lines)
 
 
 if __name__ == "__main__":

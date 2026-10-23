@@ -100,6 +100,15 @@ class StructureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             self.assertEqual([], check(self.fixture(temp)))
 
+    def test_missing_instruction_file_is_a_finding(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = self.fixture(temp)
+            (root / "CLAUDE.md").unlink()
+            (root / "README.md").unlink()
+            errors = check(root)
+            self.assertIn("CLAUDE.md is missing", errors)
+            self.assertFalse(any("README" in e for e in errors), errors)
+
     def test_unindexed_documents_are_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root = self.fixture(temp)
